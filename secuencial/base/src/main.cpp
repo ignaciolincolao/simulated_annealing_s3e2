@@ -7,9 +7,12 @@
 #include <cstdint>
 #include <cstring>
 
+
+
 ///////////////////////////////////////////////////
 ///////////////////////////////////////////////////
 using namespace std;
+
 
 int n_students, n_colegios;
 
@@ -24,37 +27,37 @@ int n_students, n_colegios;
 
 
 
-double alpha1 = 15; // Alpha de distancia valor 1 < alpha1
-double alpha2 = 30; // Alpha de segregación valor 1 < alpha2
-double alpha3 = 25; // Alpha de costocupo valor 1 < alpha3
-double coolingRate = 0.98; // Tasa de enfriamiento valores entre 0 < coolingRate < 1
-double temp = 100000.0; // Temperatura inicial
-double min_temp = 0.00000009; // Minima temperatura que puede llegar
+long double alpha1 = 15; // Alpha de distancia valor 1 < alpha1
+long double alpha2 = 30; // Alpha de segregación valor 1 < alpha2
+long double alpha3 = 25; // Alpha de costocupo valor 1 < alpha3
+long double coolingRate = 0.98; // Tasa de enfriamiento valores entre 0 < coolingRate < 1
+long double temp = 100000.0; // Temperatura inicial
+long double min_temp = 0.00000009; // Minima temperatura que puede llegar
 int n_block = 256;
 int n_thread = 1;
-double max_temp = 0;
-double k_reheating = 0.98;
+long double max_temp = 0;
+long double k_reheating = 0.98;
 int n_reheating = 29853; // Variable ligada a cuanto debe esperar para iniciar recalentamiento
 int seed = 12315;
 float len1 =1;// 0.00000009; // Minima temperatura que puede llegar
 float len2 =85;
-double len3 = 1.0;
-double len4 = 0.99;
-double e_const=0.01;
-double Th = 1.1;
+long double len3 = 1.0;
+long double len4 = 0.99;
+long double e_const=0.01;
+long double Th = 1.1;
 string name_exp= "base";
 
 
 string ruta_save = "../save/"; // Ruta para guardar los archivos
-double alpha[3]={alpha1,alpha2,alpha3}; // Valores del alpha con orden Distancia, Segregación, Costo Cupo
+long double alpha[3]={alpha1,alpha2,alpha3}; // Valores del alpha con orden Distancia, Segregación, Costo Cupo
 random_device rd;
 mt19937 mt(rd());
 uniform_int_distribution<int> dist(0,0);
 uniform_int_distribution<int> dist2(0,0);
-uniform_real_distribution<double> dist_accepta(0.0, 1.0);
-double max_dist=0.0;
-double min_dist=0.0;
-double init_dist=0.0;
+uniform_real_distribution<long double> dist_accepta(0.0, 1.0);
+long double max_dist=0.0;
+long double min_dist=0.0;
+long double init_dist=0.0;
 
 char timestr[20];
 
@@ -102,7 +105,7 @@ int main(int argc, char *argv[]) {
     alpha[2]=alpha3;
     mt.seed(seed);
     
-    double a = sasFunc();
+    long double a = sasFunc();
     return (EXIT_SUCCESS);
 
 }

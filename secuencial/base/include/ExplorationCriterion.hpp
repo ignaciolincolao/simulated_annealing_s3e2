@@ -16,47 +16,66 @@ extern int n_thread;
 extern mt19937 mt;
 extern uniform_int_distribution<int> dist;
 extern uniform_int_distribution<int> dist2;
-extern double newSolution_v2(int n_students,int n_colegios,int totalVuln,int aluxcol[],int aluVulxCol[],int cupoArray[],double **distMat, int currentSolution[], const double ptr_alpha[]);
+extern long double newSolution_v2(int n_students,int n_colegios,int totalVuln,int aluxcol[],int aluVulxCol[],int cupoArray[],long double **distMat, int currentSolution[], const long double ptr_alpha[]);
 extern void shuffle(int values[], const int max_change, std::uniform_int_distribution<int> distri);
-extern double calCosto(int currentSolution[], double **distMat, const double ptr_alpha[], int alumnosSep[], int totalVuln, int cupoArray[]);
-double solutionNE1(int n_students,
+extern long double calCosto(int currentSolution[], long double **distMat, const long double ptr_alpha[], int alumnosSep[], int totalVuln, int cupoArray[]);
+extern const int DECIMAL;
+extern long double round_n(long double x);
+
+long double solutionNE1(int n_students,
         int n_colegios,
         int totalVuln,
         int *aluxcol,
         int *aluVulxCol,
         int *cupoArray,
-        double **distMat, 
+        long double **distMat, 
         int *currentSolution,
-        double costCurrentSolution,
-        const double *ptr_alpha,
+        long double costCurrentSolution,
+        const long double *ptr_alpha,
         int *shuffle_student,
         int *shuffle_colegios,
         int *alumnosSep);
 
-double solutionNE3(int n_students,
+long double solutionNE1_v2(int n_students,
         int n_colegios,
         int totalVuln,
         int *aluxcol,
         int *aluVulxCol,
         int *cupoArray,
-        double **distMat, 
+        long double **distMat, 
         int *currentSolution,
-        double costCurrentSolution,
-        const double *ptr_alpha,
+        long double costCurrentSolution,
+        const long double *ptr_alpha,
+        int *shuffle_student,
+        int *shuffle_colegios,
+        int *alumnosSep,
+        long double *currentVars,
+        long double max_dist);
+
+long double solutionNE3(int n_students,
+        int n_colegios,
+        int totalVuln,
+        int *aluxcol,
+        int *aluVulxCol,
+        int *cupoArray,
+        long double **distMat, 
+        int *currentSolution,
+        long double costCurrentSolution,
+        const long double *ptr_alpha,
         int *shuffle_student,
         int *shuffle_colegios,
         int *alumnosSep);
 
-double solutionNE4(int n_students,
+long double solutionNE4(int n_students,
         int n_colegios,
         int totalVuln,
         int *aluxcol,
         int *aluVulxCol,
         int *cupoArray,
-        double **distMat, 
+        long double **distMat, 
         int *currentSolution,
-        double costCurrentSolution,
-        const double *ptr_alpha,
+        long double costCurrentSolution,
+        const long double *ptr_alpha,
         int *shuffle_student,
         int *shuffle_colegios,
         int *alumnosSep);

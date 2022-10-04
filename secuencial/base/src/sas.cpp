@@ -5,6 +5,12 @@
 #include <TemperatureLength.hpp>
 #include <ReheatingMethods.hpp>
 #include <CoolingScheme.hpp>
+
+#include <limits>
+
+#define DECIMAL 16
+typedef std::numeric_limits< long double > dbl;
+
 ///////////////////////////////////////////////////
 /// Variables globales.
 ///////////////////////////////////////////////////
@@ -12,10 +18,11 @@
 
 
 
-double sasFunc() {
+long double sasFunc() {
     int x=0,z=0;
     int totalVuln=0;
-
+    cout.precision(dbl::max_digits10);
+    //cout << fixed << setprecision(70) << endl;
     //srand(time(NULL));
     ///////////////////////////////////////////////////
     /// Genera archivo de almacenamiento de datos
@@ -75,12 +82,12 @@ double sasFunc() {
     int *previousSolution= nullptr;
     int *bestSolution= nullptr;
     int *currentSolution=nullptr;
-    double **distMat=nullptr;
+    long double **distMat=nullptr;
     int *cupoArray=nullptr;
     int *alumnosSep=nullptr;
 
     
-    double  costBestSolution,
+    long double  costBestSolution,
         costPreviousSolution,
         costCurrentSolution,
         *ptr_alpha = &alpha[0];
@@ -90,11 +97,11 @@ double sasFunc() {
     previousSolution = (int *)malloc(sizeof(int)*n_students);
     bestSolution=(int *)malloc(sizeof(int)*n_students);
     currentSolution=(int *)malloc(sizeof(int)*n_students);
-    distMat=(double **)malloc(sizeof(double)*n_students);
+    distMat=(long double **)malloc(sizeof(long double)*n_students);
     cupoArray=(int *)malloc(sizeof(int)*n_colegios);
     alumnosSep = (int *)malloc( sizeof(int)*n_students);
     for(x=0; x < n_students; x++) {
-        distMat[ x ]=(double *)malloc(sizeof(double)*n_colegios);
+        distMat[ x ]=(long double *)malloc(sizeof(long double)*n_colegios);
     }
 
     ///////////////////////////////////////////////////
@@ -190,11 +197,11 @@ double sasFunc() {
     ///////////////////////////////////////////////////
 
 
-    vector<double> vector_costCurrentSolution;
-    vector<double> vector_meanDist;
-    vector<double> vector_segregation;
-    vector<double> vector_costoCupo;
-    vector<double> vector_temp;
+    vector<long double> vector_costCurrentSolution;
+    vector<long double> vector_meanDist;
+    vector<long double> vector_segregation;
+    vector<long double> vector_costoCupo;
+    vector<long double> vector_temp;
     vector<int> vector_count;
 
     
@@ -204,95 +211,80 @@ double sasFunc() {
     int c_cooling_temperature = 0;
     int valmaxheating=n_colegios;
     int count_reheating = 0;
-    double bestTemp = 0;
-    double k_reheating_init = k_reheating;
-    double temp_init = temp;
+    long double bestTemp = 0;
+    long double k_reheating_init = k_reheating;
+    long double temp_init = temp;
     int count_trials = 0;
     float len1_init = len1;
     float len2_init = len2;
-    double len3_init = len3;
-    double len4_init = len4;
+    long double len3_init = len3;
+    long double len4_init = len4;
 
     ////////////////////////////////////////////////////////////////////////
     // VARIABLES DE PRUEBA
     ////////////////////////////////////////////////////////////////////////
 
-    double costCurrentSolutionV2 = costCurrentSolution;
-    double *currentVars = (double *)malloc(3 * sizeof(double));
-    double *previousVars = (double *)malloc(3 * sizeof(double));
-    currentVars[0] = meanDist(currentSolution,distMat);
-    currentVars[1] = S(currentSolution, alumnosSep, totalVuln);
-    currentVars[2] = costCupo(currentSolution,cupoArray);
+    long double costCurrentSolutionV2 = costCurrentSolution;
+    long double *currentVars = (long double *)malloc(3 * sizeof(long double));
+    long double *previousVars = (long double *)malloc(3 * sizeof(long double));
+    long double *bestVars = (long double *)malloc(3 * sizeof(long double));
+
+    currentVars[0] = sumDist(currentSolution,distMat);
+    currentVars[1] = sumS(currentSolution, alumnosSep, totalVuln);
+    currentVars[2] = sumCostCupo(currentSolution,cupoArray);
     previousVars[0] = currentVars[0];
     previousVars[1] = currentVars[1];
     previousVars[2] = currentVars[2];
 
 
+    auto start_compare = chrono::high_resolution_clock::now();
+    auto end_compare = chrono::high_resolution_clock::now();
+    long double time_taken_v1 = chrono::duration_cast<chrono::nanoseconds>(end_compare - start_compare).count();
+    long double time_taken_v2;
+    long double vector_time1 =0;
+    long double vector_time2=0;
     
     while(temp > min_temp){
 
-        for(x=0;x< n_students; x++){
-            currentSolution[x] = previousSolution[x];
-        }
-        for(x=0; x < n_colegios; x++){
-            aluxcol[x]=previousAluxCol[x];
-            aluVulxCol[x]=previousAluVulxCol[x];
-        }
-        ////////////////////////////////
-        // Vars copy
-        ////////////////////////////////
-        previousVars[0] = currentVars[0];
-        previousVars[1] = currentVars[1];
-        previousVars[2] = currentVars[2];
+        memcpy(currentSolution,previousSolution,sizeof(int)*n_students);
+        memcpy(aluxcol,previousAluxCol,sizeof(int)*n_colegios);
+        memcpy(aluVulxCol,previousAluVulxCol,sizeof(int)*n_colegios);
+        memcpy(currentVars,previousVars,sizeof(long double)*3);
         ////////////////////////////////
 
         ///////////////////////////////////////////////////
         ///  Selecciona aleatoria mente a los alumnos
         ///////////////////////////////////////////////////
-        costCurrentSolution = solutionNE1(n_students,n_colegios,totalVuln,aluxcol,aluVulxCol,cupoArray,distMat,currentSolution,costCurrentSolution,ptr_alpha,shuffle_student,shuffle_colegios,alumnosSep);
+        
+        start_compare = chrono::high_resolution_clock::now();
+        costCurrentSolution = solutionNE1_v2(n_students,n_colegios,totalVuln,aluxcol,aluVulxCol,cupoArray,distMat,currentSolution,costCurrentSolution,ptr_alpha,shuffle_student,shuffle_colegios,alumnosSep,currentVars, max_dist);
+        end_compare = chrono::high_resolution_clock::now();
+        time_taken_v1 = chrono::duration_cast<chrono::nanoseconds>(end_compare - start_compare).count();
+        time_taken_v1 *= 1e-9;
+        vector_time1+=time_taken_v1;
         
         
-        
-        if(costCurrentSolution<0.00){
-
-            cout << "distancia: " << meanDist(currentSolution,distMat) << "\n";
-            cout << "Segregación: " << S(currentSolution, alumnosSep, totalVuln) << "\n";
-            cout << "CostoCupo: " << costCupo(currentSolution,cupoArray) << "\n";
-            cout << costCurrentSolution;
-            exit(1);
-        }
-
         // Verifica si el costo actual es mejor que la mejor solución
         // en el caso que el costo actual es menor a la mejor solución, acepta la solución y los
         // guarda en el estado como mejor solución
-        //cout << "CostoCurreent segundo" << costCurrentSolution << "\n";
 
 
 
 
         if(costCurrentSolution < costBestSolution){
-            // guarda la actual solución como la mejor
-            for(x=0;x<n_students;x++){
-                bestSolution[x]=currentSolution[x];
-                previousSolution[x]=currentSolution[x];
-            }
-            for(x = 0; x < n_colegios; x++){
-                previousAluxCol[x] = aluxcol[x];
-                previousAluVulxCol[x] = aluVulxCol[x];
-            }
+
+            memcpy(bestSolution,currentSolution,sizeof(int)*n_students);
+            memcpy(previousSolution,currentSolution,sizeof(int)*n_students);
+            memcpy(previousAluxCol,aluxcol,sizeof(int)*n_colegios);
+            memcpy(previousAluVulxCol,aluVulxCol,sizeof(int)*n_colegios);
+            memcpy(previousVars,currentVars,sizeof(long double)*3);
+            memcpy(bestVars,currentVars,sizeof(long double)*3);
+
+
             costBestSolution=costCurrentSolution;
             costPreviousSolution=costCurrentSolution;
 
-
-
-            ////////////////////////////////
-            /// vars
-            ////////////////////////////////
-            previousVars[0] = currentVars[0];
-            previousVars[1] = currentVars[1];
-            previousVars[2] = currentVars[2];
-            /////////////////////////////////
-
+            
             vector_costCurrentSolution.push_back(costCurrentSolution);
             vector_meanDist.push_back(meanDist(currentSolution,distMat));
             vector_segregation.push_back(S(currentSolution, alumnosSep, totalVuln));
@@ -307,22 +299,13 @@ double sasFunc() {
         // a la función acepta
         else{
             if(metropolisAC1(costPreviousSolution,costCurrentSolution)==1){
-                for(x=0;x<n_students;x++){
-                    previousSolution[x]=currentSolution[x];
-                }
-                for(x = 0; x < n_colegios; x++){
-                    previousAluxCol[x] = aluxcol[x];
-                    previousAluVulxCol[x] = aluVulxCol[x];
-                }
+                memcpy(previousSolution,currentSolution,sizeof(int)*n_students);
+                memcpy(previousAluxCol,aluxcol,sizeof(int)*n_colegios);
+                memcpy(previousAluVulxCol,aluVulxCol,sizeof(int)*n_colegios);
+                memcpy(previousVars,currentVars,sizeof(long double)*3);
+
                 costPreviousSolution=costCurrentSolution;
-                
-                ////////////////////////////////
-                /// vars
-                ////////////////////////////////
-                previousVars[0] = currentVars[0];
-                previousVars[1] = currentVars[1];
-                previousVars[2] = currentVars[2];
-                /////////////////////////////////
+
                 count_rechaso=0;
                 c_accepta++;
             }
@@ -351,7 +334,7 @@ double sasFunc() {
     /// Obtiene el tiempo de ejecución
     ///////////////////////////////////////////////////
     auto end = chrono::high_resolution_clock::now();
-    double time_taken = chrono::duration_cast<chrono::nanoseconds>(end - start).count();
+    long double time_taken = chrono::duration_cast<chrono::nanoseconds>(end - start).count();
     time_taken *= 1e-9;
 
     for(x=0;x<n_students;x++){
@@ -375,16 +358,30 @@ double sasFunc() {
     ///////////////////////////////////////////////////
     /// Almacenamiento de datos
     ///////////////////////////////////////////////////
-
+    cout.precision(dbl::max_digits10);
     cout << "--------------- Resultado Final ----------------" << "\n";
     cout << "Numero de Ciclos " << count << "\n";
     cout << "Costo de la solución previa: " << costPreviousSolution << "\n";
     cout << "Costo de la mejor solución: " << costBestSolution << "\n";
     cout << "Costo de la solución actual: " << costCurrentSolution << "\n";
-    cout << "Tiempo de ejecución de SA: " << fixed << time_taken << setprecision(9) << "\n";
+    cout << "Tiempo de ejecución de SA: " << time_taken << "\n";
     cout << "distancia: " << meanDist(bestSolution,distMat) << "\n";
     cout << "Segregación: " << S(bestSolution, alumnosSep, totalVuln) << "\n";
     cout << "CostoCupo: " << costCupo(bestSolution,cupoArray) << "\n";
+
+    cout << "Cal costo" << calCosto(bestSolution,distMat,ptr_alpha, alumnosSep, totalVuln, cupoArray) << endl;
+    cout << "Costo de:" << costBestSolution << "\n";
+
+
+    //cout << fixed << setprecision(70) << endl;
+    cout << sumDist(bestSolution,distMat) << "\n";
+    cout << bestVars[0] << endl;
+    cout << sumS(bestSolution, alumnosSep, totalVuln) << "\n";
+    cout << bestVars[1] << endl;
+    cout << sumCostCupo(bestSolution,cupoArray) << "\n";
+    cout << bestVars[2] << endl;
+    cout << "Tiempo de ejecución de SA get_result: " << vector_time1 << "\n";
+
     cout << "--------------- Finalizo con exito ----------------" << "\n";
 
 
@@ -393,7 +390,7 @@ double sasFunc() {
     info << "Costo de la solución previa: " << costPreviousSolution << "\n";
     info << "Costo de la mejor solución: " << costBestSolution << "\n";
     info << "Costo de la solución actual: " << costCurrentSolution << "\n";
-    info << "Tiempo de ejecución de SA: " << fixed << time_taken << setprecision(9) << "\n";
+    info << "Tiempo de ejecución de SA: " << time_taken << "\n";
     info << "distancia: " << meanDist(bestSolution,distMat) << "\n";
     info << "Segregación: " << S(bestSolution, alumnosSep, totalVuln) << "\n";
     info << "CostoCupo: " << costCupo(bestSolution,cupoArray) << "\n";
@@ -455,35 +452,46 @@ double sasFunc() {
 ///////////////////////////////////////////////////
 /// Calcula el costo
 ///////////////////////////////////////////////////
-double calCosto(int currentSolution[], double **distMat, const double ptr_alpha[], int alumnosSep[], int totalVuln, int cupoArray[]){
-    double var1 = meanDist(currentSolution,distMat)/max_dist;
+long double calCosto(int currentSolution[], long double **distMat, const long double ptr_alpha[], int alumnosSep[], int totalVuln, int cupoArray[]){
+    long double var1 = meanDist(currentSolution,distMat)/max_dist;
     //cout << "distancia: " << var1 << "\n";
-    double var2 = S(currentSolution, alumnosSep, totalVuln);
+    long double var2 = S(currentSolution, alumnosSep, totalVuln);
     //cout << "Segregación: " << var2 << "\n";
-    double var3 = costCupo(currentSolution,cupoArray);
+    long double var3 = costCupo(currentSolution,cupoArray);
     //cout << "CostoCupo: " << var3 << "\n";
-    return (double)((ptr_alpha[0]*var1)+(ptr_alpha[1]*var2)+(ptr_alpha[2]*var3));
+    return (long double)((ptr_alpha[0]*var1)+(ptr_alpha[1]*var2)+(ptr_alpha[2]*var3));
 }
 
 ///////////////////////////////////////////////////
 /// Distancia promedio que recorreran los estudiantes
 ///////////////////////////////////////////////////
-double meanDist(const int currentSolution[], double  **distMat){
-    double sumDist=0;
+long double meanDist(const int currentSolution[], long double  **distMat){
+    long double sumDist=0.0;
     for(int i=0;i<n_students;i++){
-        sumDist+=distMat[i][currentSolution[i]]; // distMat[estudiante][escuela]
+        sumDist+=round_n(distMat[i][currentSolution[i]]); // distMat[estudiante][escuela]
     }
-    double mean=sumDist/double(n_students);
+    //cout << "meanDist: " << sumDist << endl;
     //cout << "Numero de estudiantes: " << n_student << "  |  Suma de distancias:" << sumDist << "\n";
-    return mean;
+    return sumDist/n_students;
 }
+
+long double sumDist(const int currentSolution[], long double  **distMat){
+    long double sumDist=0.0;
+    for(int i=0;i<n_students;i++){
+        sumDist+=round_n(distMat[i][currentSolution[i]]); // distMat[estudiante][escuela]
+    }
+    //cout << "sumDist: " << sumDist << endl;
+    //cout << "Numero de estudiantes: " << n_student << "  |  Suma de distancias:" << sumDist << "\n";
+    return sumDist;
+}
+
 
 ///////////////////////////////////////////////////
 /// Calcula segregación por duncan
 ///////////////////////////////////////////////////
 
-double S(const int currentSolution[],const int alumnosSep[], int totalVuln){
-    double totalSesc = 0.0;
+long double S(const int currentSolution[],const int alumnosSep[], int totalVuln){
+    long double totalSesc = 0.0;
     int aluVulCol =0;
     int aluNoVulCol = 0;
     for(int n=0; n<n_colegios;n++){
@@ -497,18 +505,58 @@ double S(const int currentSolution[],const int alumnosSep[], int totalVuln){
         }
         if(aluNoVulCol>0){
             aluNoVulCol =aluNoVulCol - aluVulCol;
-            totalSesc+=((double)1/2)*fabs((aluVulCol/(double)totalVuln)-(aluNoVulCol/(double)(n_students-totalVuln)));
+            totalSesc+=round_n(fabs((aluVulCol/(long double)totalVuln)-(aluNoVulCol/(long double)(n_students-totalVuln))));
+        }
+    }
+    return totalSesc/2.0;
+}
+
+long double sumS(const int currentSolution[],const int alumnosSep[], int totalVuln){
+    long double totalSesc = 0.0;
+    int aluVulCol =0;
+    int aluNoVulCol = 0;
+    for(int n=0; n<n_colegios;n++){
+        aluVulCol = 0;
+        aluNoVulCol = 0;
+        for (int a = 0; a < n_students; a++){
+            if(currentSolution[a] == n){
+                aluNoVulCol++;
+                aluVulCol+=alumnosSep[a];
+            }
+        }
+        if(aluNoVulCol>0){
+            aluNoVulCol =aluNoVulCol - aluVulCol;
+            totalSesc+=round_n(fabs((aluVulCol/(long double)totalVuln)-(aluNoVulCol/(long double)(n_students-totalVuln))));
         }
     }
     return totalSesc;
 }
 
+
 ///////////////////////////////////////////////////
 /// Calcula el costo de tener los estudiantes en las escuelas
 ///////////////////////////////////////////////////
 
-double costCupo(const int currentSolution[],const int cupoArray[]){
-    double totalcostCupo = 0;
+long double costCupo(int currentSolution[],int cupoArray[]){
+    long double totalcostCupo = 0.0;
+    int totalAluCol = 0;
+    long double a = 0.0;
+    for(int j=0;j<n_colegios;j++){
+        totalAluCol = 0;
+        for(int i=0; i<n_students; i++){
+            if(currentSolution[i]==j){
+                totalAluCol++;
+            }
+        }
+        totalcostCupo+=round_n((long double)totalAluCol*fabs(((long double)cupoArray[j]-totalAluCol)/pow(((long double)cupoArray[j]/2),2)));
+    }
+    return totalcostCupo/n_colegios;
+}
+
+
+
+long double sumCostCupo(int currentSolution[],int cupoArray[]){
+    long double totalcostCupo = 0.0;
     int totalAluCol = 0;
     for(int j=0;j<n_colegios;j++){
         totalAluCol = 0;
@@ -517,11 +565,10 @@ double costCupo(const int currentSolution[],const int cupoArray[]){
                 totalAluCol++;
             }
         }
-        totalcostCupo+=totalAluCol*fabs((cupoArray[j]-totalAluCol)/pow(((double)cupoArray[j]/2),2));
+        totalcostCupo+= round_n((long double)totalAluCol*fabs(((long double)cupoArray[j]-totalAluCol)/pow(((long double)cupoArray[j]/2),2)));
     }
-    return (totalcostCupo/n_colegios);
+    return totalcostCupo;
 }
-
 ///////////////////////////////////////////////////
 /// Genera una nueva solución en donde asigna a un estudiante a una escuela
 /// aleatoriamente
@@ -579,7 +626,7 @@ void assignSchoolToArray(int previousSolution[], int bestSolution[], int current
 ///////////////////////////////////////////////////
 /// Crea una matriz de distancia donde x es el estudiante, y es la escuela
 ///////////////////////////////////////////////////
-void calcDist(Info_colegio *ptr_colegios, Info_alu *ptr_students, double **distMat){
+void calcDist(Info_colegio *ptr_colegios, Info_alu *ptr_students, long double **distMat){
     Info_colegio *ptr_aux = ptr_colegios;
     for(int x=0;x < n_students ;x++){
         for(int y=0; y < n_colegios; y++){
@@ -596,11 +643,11 @@ void calcDist(Info_colegio *ptr_colegios, Info_alu *ptr_students, double **distM
 /// newSolution_v2, tiene como entrada la información de los estado actual de la solución, y alcula de inmediato la
 /// distancia promedio, el costocupo y segregación total.
 ///////////////////////////////////////////////////
-double newSolution_v2(int n_students,int n_colegios,int totalVuln,int aluxcol[],int aluVulxCol[],int cupoArray[],double **distMat, int currentSolution[], const double ptr_alpha[]){
-    double sumDist=0;
-    double mean=0.0;
-    double totalcostCupo = 0.0;
-    double totalSesc = 0.0;
+long double newSolution_v2(int n_students,int n_colegios,int totalVuln,int aluxcol[],int aluVulxCol[],int cupoArray[],long double **distMat, int currentSolution[], const long double ptr_alpha[]){
+    long double sumDist=0;
+    long double mean=0.0;
+    long double totalcostCupo = 0.0;
+    long double totalSesc = 0.0;
     int aluVulCol, aluNoVulCol,totalAluCol;
     for(int i=0;i<n_students;i++){
         sumDist+=distMat[i][currentSolution[i]]; // distMat[estudiante][escuela]
@@ -610,18 +657,18 @@ double newSolution_v2(int n_students,int n_colegios,int totalVuln,int aluxcol[],
         aluVulCol = aluVulxCol[n];
         aluNoVulCol =totalAluCol - aluVulCol;
         // Calcula el costo cupo
-        totalcostCupo+=totalAluCol*fabs((cupoArray[n]-totalAluCol)/pow(((double)cupoArray[n]/2),2));
+        totalcostCupo+=totalAluCol*fabs((cupoArray[n]-totalAluCol)/pow(((long double)cupoArray[n]/2),2));
         // Calcula el total sesc
-        totalSesc+=((double)1/2)*fabs((aluVulCol/(double)totalVuln)-(aluNoVulCol/(double)(n_students-totalVuln)));
+        totalSesc+=((long double)1/2)*fabs((aluVulCol/(long double)totalVuln)-(aluNoVulCol/(long double)(n_students-totalVuln)));
     }
     totalcostCupo = totalcostCupo/n_colegios;
-    double var1 = (sumDist/double(n_students))/max_dist;
+    long double var1 = (sumDist/(double)n_students)/max_dist;
     //cout << var1 << "\n";
-    double var2 = totalSesc;
+    long double var2 = totalSesc;
     //cout << var2 << "\n";
-    double var3 = totalcostCupo;
+    long double var3 = totalcostCupo;
     //cout << var3 << "\n";
-    return (double)((ptr_alpha[0]*var1)+(ptr_alpha[1]*var2)+(ptr_alpha[2]*var3));
+    return (long double)((ptr_alpha[0]*var1)+(ptr_alpha[1]*var2)+(ptr_alpha[2]*var3));
 }
 
 void shuffle(int *values, const int max_change, uniform_int_distribution<int> distri) {
@@ -687,8 +734,8 @@ void getDataStudents(vector<Info_alu> &students, int &totalVuln)
 ////////////////////////////////////////////////
 ////// Obtiene la maxima distancia que un estudiante podria llegar a recorrer
 ///////////////////////////////////////////////////
-double getMaxDistance(double **distMat){
-    double max = 0;
+long double getMaxDistance(long double **distMat){
+    long double max = 0;
     for(int i=0;i<n_students;i++){
         for(int x=0;x<n_colegios;x++){
             if(distMat[i][x]>max){
@@ -702,14 +749,14 @@ double getMaxDistance(double **distMat){
 ///////////////////////////////////////////////////
 /// Calcula el valor de los alpha
 ///////////////////////////////////////////////////
-void normalizedAlpha(double alpha[3])
+void normalizedAlpha(long double alpha[3])
 {
-    double sumaAlpha = 0.0;
+    long double sumaAlpha = 0.0;
     for(int x=0; x<3; x++){
         sumaAlpha +=alpha[x];
     }
     for(int x=0; x<3; x++){
-        alpha[x]= alpha[x]/(double)sumaAlpha;
+        alpha[x]= alpha[x]/(long double)sumaAlpha;
     }
 }
 
@@ -734,6 +781,13 @@ void initializeArray(int *aluxcol, int *previousAluxCol, int *bestAluxCol, int *
     for(int x=0; x < n_students; x++) {
         alumnosSep[x] = students[x].sep;
     }
+}
+
+
+long double round_n(long double x)
+{
+    long double digits = pow(10.0, DECIMAL);
+    return trunc(x * digits) / digits;
 }
 
 

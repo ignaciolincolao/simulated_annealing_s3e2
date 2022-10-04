@@ -8,34 +8,34 @@
 
 using namespace std;
 
-bool temperatureTL7(double &temp,
+bool temperatureTL7(long double &temp,
     int &c_cooling_temperature,
     int &c_accepta,
     float len1,
     float len2,
     int n_colegios,
-    double coolingRate,
+    long double coolingRate,
     int count);
 
-bool temperatureTL8(double &temp,
+bool temperatureTL8(long double &temp,
     int &c_cooling_temperature,
     int &count_trials,
     float &len1,
     float len2,
-    double coolingRate);
+    long double coolingRate);
 
-bool temperatureTL9(double &temp,
+bool temperatureTL9(long double &temp,
     int &c_cooling_temperature,
     int &count_trials,
-    double &len3,
-    double &len4,
-    double coolingRate);
+    long double &len3,
+    long double &len4,
+    long double coolingRate);
 
-bool temperatureTL11(double &temp,
+bool temperatureTL11(long double &temp,
     int &c_cooling_temperature,
     int &count_trials,
-    double &len3,
-    double &len4,
-    double coolingRate);
+    long double &len3,
+    long double &len4,
+    long double coolingRate);
 
 #endif

@@ -2,7 +2,7 @@
 
 
 
-void coolingCS2(double &temp, double coolingRate)
+void coolingCS2(long double &temp,long double coolingRate)
 {
     temp=temp*(coolingRate);
 }

@@ -8,6 +8,6 @@
 
 using namespace std;
 
-void coolingCS2(double &temp, double coolingRate);
+void coolingCS2(long double &temp,long double coolingRate);
 
 #endif

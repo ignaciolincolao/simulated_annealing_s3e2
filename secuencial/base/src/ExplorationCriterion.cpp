@@ -1,15 +1,16 @@
 #include <ExplorationCriterion.hpp>
 
-double solutionNE1(int n_students,
+
+long double solutionNE1(int n_students,
         int n_colegios,
         int totalVuln,
         int *aluxcol,
         int *aluVulxCol,
         int *cupoArray,
-        double **distMat, 
+        long double **distMat, 
         int *currentSolution,
-        double costCurrentSolution,
-        const double *ptr_alpha,
+        long double costCurrentSolution,
+        const long double *ptr_alpha,
         int *shuffle_student,
         int *shuffle_colegios,
         int *alumnosSep)
@@ -40,21 +41,23 @@ double solutionNE1(int n_students,
     return newSolution_v2(n_students,n_colegios,totalVuln,aluxcol,aluVulxCol,cupoArray,distMat,currentSolution,ptr_alpha);
 }
 
-double solutionNE1_v2(int n_students,
+long double solutionNE1_v2(int n_students,
         int n_colegios,
         int totalVuln,
         int *aluxcol,
         int *aluVulxCol,
         int *cupoArray,
-        double **distMat, 
+        long double **distMat, 
         int *currentSolution,
-        double costCurrentSolution,
-        const double *ptr_alpha,
+        long double costCurrentSolution,
+        const long double *ptr_alpha,
         int *shuffle_student,
         int *shuffle_colegios,
-        int *alumnosSep)
+        int *alumnosSep,
+        long double *currentVars,
+        long double max_dist)
     {
-    int aluchange,colchange;
+    int aluchange,colchange, currentSchool, newSchool,oldSchool;
     shuffle(shuffle_student,1,dist);
     shuffle(shuffle_colegios,1,dist2);
     aluchange=shuffle_student[0];
@@ -66,39 +69,115 @@ double solutionNE1_v2(int n_students,
     else{
         colchange = shuffle_colegios[1];
     }
+
+    long double sumDist= 0.0;
+    long double totalSesc =0.0;
+    long double totalcostCupo =0.0;
+
+    sumDist= currentVars[0];
+    totalSesc = currentVars[1];
+    totalcostCupo = currentVars[2];
+
+    int aluVulCol, aluNoVulCol,totalAluCol;
+
+    currentSchool = currentSolution[aluchange];
+    newSchool = colchange;
+    
+    ////////////////////////////////////////////////////////////////
+    /////// Descuenta antes de mover
+    ////////////////////////////////////////////////////////////////
+    // Distancia
+
+    sumDist-=round_n(distMat[aluchange][currentSchool]);
+
+    // seg de la escuela actual
+    totalAluCol = aluxcol[currentSchool];
+    //cout << "Alumnos actual escuela "<< totalAluCol << " " << endl;
+    aluVulCol = aluVulxCol[currentSchool];
+    aluNoVulCol =totalAluCol - aluVulCol;
+    totalSesc-=round_n(fabs((aluVulCol/(long double)totalVuln)-(aluNoVulCol/(long double)(n_students-totalVuln))));
+
+    // costcupo escuela actual
+    
+    totalcostCupo-=round_n((long double)totalAluCol*fabs(((long double)cupoArray[currentSchool]-totalAluCol)/pow(((long double)cupoArray[currentSchool]/2),2)));
+
+
+    // seg de la escuela nueva
+    totalAluCol = aluxcol[newSchool];
+    //cout << "Alumnos nueva escuela "<< totalAluCol << " " << endl;
+    aluVulCol = aluVulxCol[newSchool];
+    aluNoVulCol =totalAluCol - aluVulCol;
+    totalSesc-=round_n(fabs((aluVulCol/(long double)totalVuln)-(aluNoVulCol/(long double)(n_students-totalVuln))));
+
+    // costcupo escuela nueva
+    totalcostCupo-=round_n((long double)totalAluCol*fabs(((long double)cupoArray[newSchool]-totalAluCol)/pow(((long double)cupoArray[newSchool]/2),2)));
+
     //ELimina el estudiante de la escuela actual
-    aluxcol[currentSolution[aluchange]]-=1;
-    aluVulxCol[currentSolution[aluchange]]-=alumnosSep[aluchange];
+    aluxcol[currentSchool]-=1;
+    aluVulxCol[currentSchool]-=alumnosSep[aluchange];
     //Asigna al estudiante a la nueva escuela
-    currentSolution[aluchange] = colchange;
-    aluxcol[colchange]+=1;
-    aluVulxCol[colchange]+=alumnosSep[aluchange];
+    currentSolution[aluchange] = newSchool;
+    aluxcol[newSchool]+=1;
+    aluVulxCol[newSchool]+=alumnosSep[aluchange];
 
+    ////////////////////////////////////////////////////////////////
+    ////// Calculó despues de mover
+    //////////////////////////////////////////////////////////////
+    sumDist+=round_n(distMat[aluchange][newSchool]);
+    // seg de la escuela actual
+    totalAluCol = aluxcol[currentSchool];
+    //cout << "movio Alumnos nueva escuela "<< totalAluCol << " " << endl;
+    aluVulCol = aluVulxCol[currentSchool];
+    aluNoVulCol =totalAluCol - aluVulCol;
+    totalSesc+=round_n(fabs((aluVulCol/(long double)totalVuln)-(aluNoVulCol/(long double)(n_students-totalVuln))));
 
-        // Obtiene el costo Actual
+    // costcupo escuela actual
+    totalcostCupo+=round_n((long double)totalAluCol*fabs(((long double)cupoArray[currentSchool]-totalAluCol)/pow(((long double)cupoArray[currentSchool]/2),2)));
 
-    return newSolution_v2(n_students,n_colegios,totalVuln,aluxcol,aluVulxCol,cupoArray,distMat,currentSolution,ptr_alpha);
+    // seg de la escuela antigua
+    totalAluCol = aluxcol[newSchool];
+    //cout << "mobio Alumnos antigua escuela "<< totalAluCol << " " << endl;
+    aluVulCol = aluVulxCol[newSchool];
+    aluNoVulCol =totalAluCol - aluVulCol;
+    totalSesc+=round_n(fabs((aluVulCol/(long double)totalVuln)-(aluNoVulCol/(long double)(n_students-totalVuln))));
+
+    // costcupo escuela antigua
+    totalcostCupo+=round_n(((long double)totalAluCol*fabs(((long double)cupoArray[newSchool]-totalAluCol)/pow(((long double)cupoArray[newSchool]/2),2))));
+    
+    currentVars[0] = sumDist;
+    currentVars[1] = totalSesc;
+    currentVars[2] = totalcostCupo;
+
+    //cout << fixed << setprecision(100) << endl;
+    long double var1 = (currentVars[0]/n_students);
+    var1= (var1/max_dist);
+    //cout << var1 << "\n";
+    long double var2 = (currentVars[1]/2.0);
+    //cout << var2 << "\n";
+    long double var3 = (currentVars[2] /n_colegios);
+
+    return ((long double)((ptr_alpha[0]*var1)+(ptr_alpha[1]*var2)+(ptr_alpha[2]*var3)));
 }
 
-double solutionNE3(int n_students,
+long double solutionNE3(int n_students,
         int n_colegios,
         int totalVuln,
         int *aluxcol,
         int *aluVulxCol,
         int *cupoArray,
-        double **distMat, 
+        long double **distMat, 
         int *currentSolution,
-        double costCurrentSolution,
-        const double *ptr_alpha,
+        long double costCurrentSolution,
+        const long double *ptr_alpha,
         int *shuffle_student,
         int *shuffle_colegios,
         int *alumnosSep)
     {
-    double *mSolution[n_block];
+    long double *mSolution[n_block];
     int *colchange[n_block];
     for (int x=0; x<n_block; x++){
         colchange[x] = (int*)malloc(n_thread * sizeof(int));
-        mSolution[x] = (double*)malloc(n_thread * sizeof(double));
+        mSolution[x] = (long double*)malloc(n_thread * sizeof(long double));
     }
 
     shuffle(shuffle_student,n_block,dist);
@@ -108,7 +187,7 @@ double solutionNE3(int n_students,
     int *c_aluVulxCol=(int *)malloc(sizeof(int)*n_colegios);
     int *c_currentSolution =(int *)malloc(sizeof(int)*n_students);
 
-    double minSolution = 0;
+    long double minSolution = 0;
 
     int cAlu = 0;
     int cCol = 0;
@@ -192,26 +271,26 @@ double solutionNE3(int n_students,
 
 
 
-double solutionNE4(int n_students,
+long double solutionNE4(int n_students,
         int n_colegios,
         int totalVuln,
         int *aluxcol,
         int *aluVulxCol,
         int *cupoArray,
-        double **distMat, 
+        long double **distMat, 
         int *currentSolution,
-        double costCurrentSolution,
-        const double *ptr_alpha,
+        long double costCurrentSolution,
+        const long double *ptr_alpha,
         int *shuffle_student,
         int *shuffle_colegios,
         int *alumnosSep)
     {
     bool foundBetter = false;
-    double *mSolution[n_block];
+    long double *mSolution[n_block];
     int *colchange[n_block];
     for (int x=0; x<n_block; x++){
         colchange[x] = (int*)malloc(n_thread * sizeof(int));
-        mSolution[x] = (double*)malloc(n_thread * sizeof(double));
+        mSolution[x] = (long double*)malloc(n_thread * sizeof(long double));
     }
 
     shuffle(shuffle_student,n_block,dist);
@@ -221,7 +300,7 @@ double solutionNE4(int n_students,
     int *c_aluVulxCol=(int *)malloc(sizeof(int)*n_colegios);
     int *c_currentSolution =(int *)malloc(sizeof(int)*n_students);
 
-    double minSolution = 0;
+    long double minSolution = 0;
 
     int cAlu = 0;
     int cCol = 0;

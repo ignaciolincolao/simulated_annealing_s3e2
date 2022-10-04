@@ -3,16 +3,16 @@
 /**
  * len1 =  length initial
  * len2 =  length const int
- * len3 =  length initial double
- * len4 =  length const double (less than 1)
+ * len3 =  length initial long double
+ * len4 =  length const long double (less than 1)
 **/
-bool temperatureTL7(double &temp,
+bool temperatureTL7(long double &temp,
     int &c_cooling_temperature,
     int &c_accepta,
     float len1,
     float len2,
     int n_colegios,
-    double coolingRate,
+    long double coolingRate,
     int count)
 {
     if(c_accepta>=len1*n_colegios){
@@ -31,12 +31,12 @@ bool temperatureTL7(double &temp,
 /**
  * Arithmetic 
 */
-bool temperatureTL8(double &temp,
+bool temperatureTL8(long double &temp,
     int &c_cooling_temperature,
     int &count_trials,
     float &len1,
     float len2,
-    double coolingRate)
+    long double coolingRate)
 {
     if(count_trials>=len1){
         len1 = len1+len2;
@@ -49,12 +49,12 @@ bool temperatureTL8(double &temp,
 /**
  * Geometric 
 */
-bool temperatureTL9(double &temp,
+bool temperatureTL9(long double &temp,
     int &c_cooling_temperature,
     int &count_trials,
-    double &len3,
-    double &len4,
-    double coolingRate)
+    long double &len3,
+    long double &len4,
+    long double coolingRate)
 {
     if(count_trials>=len3){
         len3 = len3/len4;
@@ -68,12 +68,12 @@ bool temperatureTL9(double &temp,
 /**
  * Exponential 
 */
-bool temperatureTL11(double &temp,
+bool temperatureTL11(long double &temp,
     int &c_cooling_temperature,
     int &count_trials,
-    double &len3,
-    double &len4,
-    double coolingRate)
+    long double &len3,
+    long double &len4,
+    long double coolingRate)
 {
     if(count_trials>=len3){
         len3 = pow(len3,1.0/len4);
