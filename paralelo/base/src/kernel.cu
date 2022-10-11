@@ -18,107 +18,136 @@ __global__ void newSolution_kernel(
     const double* __restrict__ d_distMat,
     const int* __restrict__ d_shuffle_students,
     const int* __restrict__ d_shuffle_colegios,
+    const double* __restrict__ d_currentVars,
     size_t pitch){
 
-/// Shared Memory
-extern __shared__ double sharedMem[];
-int* aluxcolblock = (int*)sharedMem;
-int* aluVulxColblock = (int*)&aluxcolblock[n_colegios];
-double* solutions =(double*)&aluVulxColblock[n_colegios];
-int* solutions_thread = (int*)&solutions[n_thread];
-/// Inicializa variables en 0
-int aluchange,
-        colchange,
-        i = 0,
-        x = 0,
-        aluVulCol= 0,
-        aluNoVulCol= 0,
-        totalAluCol= 0,
-        myID = threadIdx.x,
-        school_alu_change,
-        salto= n_thread;
+    /// Shared Memory
+    extern __shared__ double sharedMem[];
+    int* aluxcolblock = (int*)sharedMem;
+    int* aluVulxColblock = (int*)&aluxcolblock[n_colegios];
+    double* solutions =(double*)&aluVulxColblock[n_colegios];
+    int* solutions_thread = (int*)&solutions[n_thread];
+    /// Inicializa variables en 0
+    int aluchange,
+            colchange,
+            newSchool,
+            aluVulCol= 0,
+            aluNoVulCol= 0,
+            totalAluCol= 0,
+            myID = threadIdx.x,
+            currentSchool,
+            salto= n_thread,
+            myCurrentAluxCol = 0,
+            myCurrentAluVulxCol = 0,
+            myNewAluxCol = 0,
+            myNewAluVulxCol = 0;
 
-double  totalcostCupo= 0.0,
-        totalSesc= 0.0,
-        var1,
-        var2,
-        var3,
-        result= 0.0;
-/// Inicializa arrays
-aluchange = d_shuffle_students[blockIdx.x];
-colchange = d_shuffle_colegios[threadIdx.x];
-solutions_thread[threadIdx.x] = threadIdx.x;
+    double  totalcostCupo= 0.0,
+            totalSesc= 0.0,
+            var1,
+            var2,
+            var3,
+            sumDist = 0.0;
+    /// Inicializa arrays
+    aluchange = d_shuffle_students[blockIdx.x];
+    colchange = d_shuffle_colegios[threadIdx.x];
+    solutions_thread[threadIdx.x] = threadIdx.x;
+    currentSchool = d_currentSolution[aluchange];
+    newSchool = colchange;
+    sumDist= d_currentVars[0];
+    totalSesc = d_currentVars[1];
+    totalcostCupo = d_currentVars[2];
 
-/// Recopila la informacion que existe en memoria global
-/// a shared memory
-school_alu_change = d_currentSolution[aluchange];
-for (i = threadIdx.x; i< n_colegios; i=i+n_thread){
-    aluxcolblock[i] = d_aluxcol[i];
-    aluVulxColblock[i] = d_aluVulxCol[i];
-    if(i == school_alu_change){
-        aluxcolblock[school_alu_change]-=1;
-        aluVulxColblock[school_alu_change]-=d_alumnosSep[aluchange];
-    }
-}
-
-/// Calcula la distancia total
-for (x = 0 ; x < n_students ; x++) {
-    if (x != aluchange) {
-        result += d_distMat[x * pitch / sizeof(double) + d_currentSolution[x]];
-    }
-    else {
-        result += d_distMat[x * pitch / sizeof(double) + colchange];
-    }
-}
-__syncthreads();
-/// Calcula el costo cupo y la cantidad de segregación total
-for(int n=0; n<n_colegios; n++){
-    totalAluCol = aluxcolblock[n];
-    aluVulCol = aluVulxColblock[n];
-    if(n == colchange){
-        totalAluCol+=1;
-        aluVulCol+=d_alumnosSep[aluchange];
-    }
+    ////////////////////////////////////////////////////////////////
+    /////// Descuenta antes de mover
+    ////////////////////////////////////////////////////////////////
+    // Distancia
+    sumDist-=cu_round_n(d_distMat[aluchange * pitch / sizeof(double) + currentSchool]);
+    // seg de la escuela actual
+    totalAluCol = d_aluxcol[currentSchool];
+    //cout << "Alumnos actual escuela "<< totalAluCol << " " << endl;
+    aluVulCol = d_aluVulxCol[currentSchool];
     aluNoVulCol =totalAluCol - aluVulCol;
-    // Calcula el costo cupo
-    totalcostCupo+=totalAluCol*fabs((d_cupoArray[n]-totalAluCol)/pow(((double)d_cupoArray[n]/2),2));
-    // Calcula el total sesc
-    totalSesc+=((double)1/2)*fabs((aluVulCol/(double)totalVuln)-(aluNoVulCol/(double)(n_students-totalVuln)));
-}
+    totalSesc-=cu_round_n(fabs((aluVulCol/(double)totalVuln)-(aluNoVulCol/(double)(n_students-totalVuln))));
+    // costcupo escuela actual 
+    totalcostCupo-=cu_round_n((double)totalAluCol*fabs(((double)d_cupoArray[currentSchool]-totalAluCol)/pow(((double)d_cupoArray[currentSchool]/2),2)));
+    // seg de la escuela nueva
+    totalAluCol = d_aluxcol[newSchool];
+    //cout << "Alumnos nueva escuela "<< totalAluCol << " " << endl;
+    aluVulCol = d_aluVulxCol[newSchool];
+    aluNoVulCol =totalAluCol - aluVulCol;
+    totalSesc-=cu_round_n(fabs((aluVulCol/(double)totalVuln)-(aluNoVulCol/(double)(n_students-totalVuln))));
 
-var1 = d_alpha[0]*((result/(double)n_students)/(double)max_dist);
-var2 = d_alpha[1]*totalSesc;
-var3 = d_alpha[2]*(totalcostCupo/n_colegios);
-solutions[myID] = var1+var2+var3;
+    // costcupo escuela nueva
+    totalcostCupo-=cu_round_n((double)totalAluCol*fabs(((double)d_cupoArray[newSchool]-totalAluCol)/pow(((double)d_cupoArray[newSchool]/2),2)));
+    ////////////////////////////////////////////////////////////////
+    /////// Realiza Movimiento
+    ////////////////////////////////////////////////////////////////
+    //ELimina el estudiante de la escuela actual
+    myCurrentAluxCol = d_aluxcol[currentSchool]-1;
+    myCurrentAluVulxCol = d_aluVulxCol[currentSchool]-d_alumnosSep[aluchange];
+    //Asigna al estudiante a la nueva escuela
+    myNewAluxCol = d_aluxcol[newSchool]+1;
+    myNewAluVulxCol = d_aluVulxCol[newSchool]+d_alumnosSep[aluchange];
 
-__syncthreads();
-while(salto){
-    if(salto-(myID+1)>myID){
-        if(school_alu_change!=colchange && d_shuffle_colegios[salto-(myID+1)]!=school_alu_change){
-            if(solutions[myID]>solutions[salto-(myID+1)]){
-                solutions[myID]=solutions[salto-(myID+1)];
-                solutions_thread[myID]=solutions_thread[salto-(myID+1)];
-            }
-        }
-        else{
-            if(school_alu_change==colchange){
-                solutions[myID]=solutions[salto-(myID+1)];
-                solutions_thread[myID]=solutions_thread[salto-(myID+1)];
-            }
-        }
-    }
-    salto = (salto/2)+(salto&(2-1));
-    if(salto==1){
-        salto = 0;
-    }
+    ////////////////////////////////////////////////////////////////
+    ////// Calculó despues de mover
+    //////////////////////////////////////////////////////////////
+    sumDist+=cu_round_n(d_distMat[aluchange * pitch / sizeof(double) + newSchool]);
+    // seg de la escuela actual
+    totalAluCol = myCurrentAluxCol;
+    aluVulCol = myCurrentAluVulxCol;
+    aluNoVulCol =totalAluCol - aluVulCol;
+    totalSesc+=cu_round_n(fabs((aluVulCol/(double)totalVuln)-(aluNoVulCol/(double)(n_students-totalVuln))));
+    // costcupo escuela actual
+    totalcostCupo+=cu_round_n((double)totalAluCol*fabs(((double)d_cupoArray[currentSchool]-totalAluCol)/pow(((double)d_cupoArray[currentSchool]/2),2)));
+    
+    // seg de la escuela antigua
+    totalAluCol = myNewAluxCol;
+    aluVulCol = myNewAluVulxCol;
+    aluNoVulCol =totalAluCol - aluVulCol;
+    totalSesc+=cu_round_n(fabs((aluVulCol/(double)totalVuln)-(aluNoVulCol/(double)(n_students-totalVuln))));
+
+    // costcupo escuela antigua
+    totalcostCupo+=cu_round_n(((double)totalAluCol*fabs(((double)d_cupoArray[newSchool]-totalAluCol)/pow(((double)d_cupoArray[newSchool]/2),2))));
+
+
+    var1 = (sumDist/n_students);
+    var1= (var1/max_dist);
+    //cout << var1 << "\n";
+    var2 = (totalSesc/2.0);
+    //cout << var2 << "\n";
+    var3 = (totalcostCupo /n_colegios);
+    solutions[myID] =  (double)((d_alpha[0]*var1)+(d_alpha[1]*var2)+(d_alpha[2]*var3));
+
     __syncthreads();
-}
-if(myID==0)
-{
-    d_array_current_Solution[blockIdx.x] = solutions[myID];
-    d_array_current_Solution_thread[blockIdx.x] = solutions_thread[myID];
+    while(salto){
+        if(salto-(myID+1)>myID){
+            if(currentSchool!=colchange && d_shuffle_colegios[salto-(myID+1)]!=currentSchool){
+                if(solutions[myID]>solutions[salto-(myID+1)]){
+                    solutions[myID]=solutions[salto-(myID+1)];
+                    solutions_thread[myID]=solutions_thread[salto-(myID+1)];
+                }
+            }
+            else{
+                if(currentSchool==colchange){
+                    solutions[myID]=solutions[salto-(myID+1)];
+                    solutions_thread[myID]=solutions_thread[salto-(myID+1)];
+                }
+            }
+        }
+        salto = (salto/2)+(salto&(2-1));
+        if(salto==1){
+            salto = 0;
+        }
+        __syncthreads();
+    }
+    if(myID==0)
+    {
+        d_array_current_Solution[blockIdx.x] = solutions[myID];
+        d_array_current_Solution_thread[blockIdx.x] = solutions_thread[myID];
 
-}
+    }
 }
 
 __global__ void reduce_block_kernel(
@@ -127,36 +156,207 @@ __global__ void reduce_block_kernel(
     int *d_array_current_Solution_block,
     const int n_block){
 
-extern __shared__ double sharedMem[];
-double* solutions =(double*)sharedMem;
-int* solutions_block = (int*)&solutions[n_block];
-int* solutions_thread = (int*)&solutions_block[n_block];
+    extern __shared__ double sharedMem[];
+    double* solutions =(double*)sharedMem;
+    int* solutions_block = (int*)&solutions[n_block];
+    int* solutions_thread = (int*)&solutions_block[n_block];
 
-int myID = threadIdx.x;
-int salto= n_block;
-solutions[myID] = d_array_current_Solution[myID];
-solutions_thread[myID] = d_array_current_Solution_thread[myID];
-solutions_block[myID]= myID;
-__syncthreads();
-while(salto){
-    if(salto-(myID+1)>myID){
-        if(solutions[myID]>solutions[salto-(myID+1)]){
-            solutions[myID]=solutions[salto-(myID+1)];
-            solutions_thread[myID]=solutions_thread[salto-(myID+1)];
-            solutions_block[myID]=solutions_block[salto-(myID+1)];
-        }
-    }
-    salto = (salto/2)+(salto&(2-1));
-    if(salto==1){
-        salto = 0;
-    }
+    int myID = threadIdx.x;
+    int salto= n_block;
+    solutions[myID] = d_array_current_Solution[myID];
+    solutions_thread[myID] = d_array_current_Solution_thread[myID];
+    solutions_block[myID]= myID;
     __syncthreads();
-}
-if(myID==0)
-{
-    d_array_current_Solution[myID] = solutions[myID];
-    d_array_current_Solution_thread[myID]= solutions_thread[myID];
-    d_array_current_Solution_block[myID] = solutions_block[myID];
-}
+    while(salto){
+        if(salto-(myID+1)>myID){
+            if(solutions[myID]>solutions[salto-(myID+1)]){
+                solutions[myID]=solutions[salto-(myID+1)];
+                solutions_thread[myID]=solutions_thread[salto-(myID+1)];
+                solutions_block[myID]=solutions_block[salto-(myID+1)];
+            }
+        }
+        salto = (salto/2)+(salto&(2-1));
+        if(salto==1){
+            salto = 0;
+        }
+        __syncthreads();
+    }
+    if(myID==0)
+    {
+        d_array_current_Solution[myID] = solutions[myID];
+        d_array_current_Solution_thread[myID]= solutions_thread[myID];
+        d_array_current_Solution_block[myID] = solutions_block[myID];
+    }
 }
 
+__global__ void calculateSolution(
+    double *d_array_current_Solution,
+    int *d_array_current_Solution_thread,
+    int *d_array_current_Solution_block,
+    const int* __restrict__ d_shuffle_students,
+    const int* __restrict__ d_shuffle_colegios,
+    const int n_students,
+    const int n_colegios,
+    const int n_thread,
+    const double max_dist,
+    const int* __restrict__ d_alumnosSep,
+    int totalVuln,
+    int* d_aluxcol,
+    int* d_aluVulxCol,
+    int* d_currentSolution,
+    const double* __restrict__ d_distMat,
+    size_t pitch,
+    double *d_currentVars,
+    double *d_costCurrentSolution){
+
+    int aluchange,
+    colchange,
+    newSchool,
+    aluVulCol= 0,
+    aluNoVulCol= 0,
+    totalAluCol= 0,
+    currentSchool;
+
+    double  totalcostCupo= 0.0,
+            totalSesc= 0.0,
+            var1,
+            var2,
+            var3,
+            sumDist = 0.0;
+    /// Inicializa arrays
+
+    aluchange = d_shuffle_students[d_array_current_Solution_block[0]];
+    colchange = d_shuffle_colegios[d_array_current_Solution_thread[0]];
+    currentSchool = d_currentSolution[aluchange];
+    newSchool = colchange;
+    
+    
+    sumDist= d_currentVars[0];
+    totalSesc = d_currentVars[1];
+    totalcostCupo = d_currentVars[2];
+
+
+    ////////////////////////////////////////////////////////////////
+    /////// Descuenta antes de mover
+    ////////////////////////////////////////////////////////////////
+    // Distancia
+    sumDist-=cu_round_n(d_distMat[aluchange * pitch / sizeof(double) + currentSchool]);
+
+    // seg de la escuela actual
+    totalAluCol = d_aluxcol[currentSchool];
+    //cout << "Alumnos actual escuela "<< totalAluCol << " " << endl;
+    aluVulCol = d_aluVulxCol[currentSchool];
+    aluNoVulCol =totalAluCol - aluVulCol;
+    totalSesc-=cu_round_n(fabs((aluVulCol/(double)totalVuln)-(aluNoVulCol/(double)(n_students-totalVuln))));
+    // costcupo escuela actual 
+
+    totalcostCupo-=cu_round_n((double)totalAluCol*fabs(((double)d_cupoArray[currentSchool]-totalAluCol)/pow(((double)d_cupoArray[currentSchool]/2),2)));
+    // seg de la escuela nueva
+    totalAluCol = d_aluxcol[newSchool];
+    //cout << "Alumnos nueva escuela "<< totalAluCol << " " << endl;
+    aluVulCol = d_aluVulxCol[newSchool];
+    aluNoVulCol =totalAluCol - aluVulCol;
+    
+    totalSesc-=cu_round_n(fabs((aluVulCol/(double)totalVuln)-(aluNoVulCol/(double)(n_students-totalVuln))));
+
+    // costcupo escuela nueva
+
+    totalcostCupo-=cu_round_n((double)totalAluCol*fabs(((double)d_cupoArray[newSchool]-totalAluCol)/pow(((double)d_cupoArray[newSchool]/2),2)));
+    
+    ////////////////////////////////////////////////////////////////
+    /////// Realiza Movimiento
+    ////////////////////////////////////////////////////////////////
+    //ELimina el estudiante de la escuela actual
+    d_aluxcol[currentSchool]-=1;
+    d_aluVulxCol[currentSchool]-=d_alumnosSep[aluchange];
+    //Asigna al estudiante a la nueva escuela
+    d_currentSolution[aluchange] = newSchool;
+    d_aluxcol[newSchool]+=1;
+    d_aluVulxCol[newSchool]+=d_alumnosSep[aluchange];
+
+    ////////////////////////////////////////////////////////////////
+    ////// Calculó despues de mover
+    //////////////////////////////////////////////////////////////
+    sumDist+=cu_round_n(d_distMat[aluchange * pitch / sizeof(double) + newSchool]);
+    // seg de la escuela actual
+    totalAluCol = d_aluxcol[currentSchool];
+    aluVulCol = d_aluVulxCol[currentSchool];
+    aluNoVulCol =totalAluCol - aluVulCol;
+    totalSesc+=cu_round_n(fabs((aluVulCol/(double)totalVuln)-(aluNoVulCol/(double)(n_students-totalVuln))));
+    // costcupo escuela actual
+
+    totalcostCupo+=cu_round_n((double)totalAluCol*fabs(((double)d_cupoArray[currentSchool]-totalAluCol)/pow(((double)d_cupoArray[currentSchool]/2),2)));
+
+    // seg de la escuela antigua
+    totalAluCol = d_aluxcol[newSchool];
+
+    aluVulCol = d_aluVulxCol[newSchool];
+    aluNoVulCol =totalAluCol - aluVulCol;
+    totalSesc+=cu_round_n(fabs((aluVulCol/(double)totalVuln)-(aluNoVulCol/(double)(n_students-totalVuln))));
+
+    // costcupo escuela antigua
+
+    totalcostCupo+=cu_round_n(((double)totalAluCol*fabs(((double)d_cupoArray[newSchool]-totalAluCol)/pow(((double)d_cupoArray[newSchool]/2),2))));
+
+    d_currentVars[0] = sumDist;
+    d_currentVars[1] = totalSesc;
+    d_currentVars[2] = totalcostCupo;
+
+    var1 = (sumDist/n_students);
+    var1= (var1/max_dist);
+    //cout << var1 << "\n";
+    var2 = (totalSesc/2.0);
+    //cout << var2 << "\n";
+    var3 = (totalcostCupo /n_colegios);
+    d_costCurrentSolution[0] =  (double)((d_alpha[0]*var1)+(d_alpha[1]*var2)+(d_alpha[2]*var3));
+    d_array_current_Solution[0] = d_costCurrentSolution[0];
+    if(d_array_current_Solution[0] != d_costCurrentSolution[0]){
+        printf("ERRORRRRRRRRRRRR no son iguales!!!!!!!!!!!!!!!!!!\n");
+        printf("%lf\n",d_array_current_Solution[0]);
+        printf("%lf\n",d_costCurrentSolution[0]);
+
+    }
+}
+
+
+__global__ void copyMemSolution(
+    int *solution,
+    int *new_solution,
+    int N){
+    int index = threadIdx.x + blockIdx.x * blockDim.x;
+    int stride = blockDim.x * gridDim.x;
+    for(int i = index; i < N; i += stride){
+        solution[i] = new_solution[i];
+    }
+}
+__global__ void copyMemCol(
+    int *col,
+    int *new_col,
+    int N){
+    int index = threadIdx.x + blockIdx.x * blockDim.x;
+    int stride = blockDim.x * gridDim.x;
+    for(int i = index; i < N; i += stride){
+        col[i] = new_col[i];
+    }
+}
+__global__ void copyVars(
+    double *var,
+    double *new_var){
+
+    var[threadIdx.x] = new_var[threadIdx.x];
+}
+
+__global__ void copyCost(
+    double *costCurrentSolution,
+    double *new_costCurrentSolution
+    ){
+
+        costCurrentSolution[0] = new_costCurrentSolution[0];
+
+    }
+
+__device__ double cu_round_n(double x)
+{
+    double digits = pow(10.0, 16);
+    return trunc(x * digits) / digits;
+}

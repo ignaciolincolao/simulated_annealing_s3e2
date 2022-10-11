@@ -24,6 +24,7 @@ __global__ void newSolution_kernel(
     const double* __restrict__ d_distMat,
     const int* __restrict__ d_shuffle_students,
     const int* __restrict__ d_shuffle_colegios,
+    const double* __restrict__ d_currentVars,
     size_t pitch);
 
 __global__ void reduce_block_kernel(
@@ -32,6 +33,44 @@ __global__ void reduce_block_kernel(
     int *d_array_current_Solution_block,
     const int n_block);
 
+__global__ void calculateSolution(
+    double *d_array_current_Solution,
+    int *d_array_current_Solution_thread,
+    int *d_array_current_Solution_block,
+    const int* __restrict__ d_shuffle_students,
+    const int* __restrict__ d_shuffle_colegios,
+    const int n_students,
+    const int n_colegios,
+    const int n_thread,
+    const double max_dist,
+    const int* __restrict__ d_alumnosSep,
+    int totalVuln,
+    int* d_aluxcol,
+    int* d_aluVulxCol,
+    int* d_currentSolution,
+    const double* __restrict__ d_distMat,
+    size_t pitch,
+    double *d_currentVars,
+    double *d_costCurrentSolution);
 
 
+__global__ void copyMemSolution(
+    int *solution,
+    int *new_solution,
+    int N);
+
+__global__ void copyMemCol(
+    int *col,
+    int *new_col,
+    int N);
+__global__ void copyVars(
+    double *var,
+    double *new_var);
+__global__ void copyCost(
+    double *costCurrentSolution,
+    double *new_costCurrentSolution
+    );
+__device__ double cu_round_n(
+    double x
+    );
 #endif
