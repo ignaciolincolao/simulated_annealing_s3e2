@@ -16,7 +16,7 @@ file(GLOB all_SRCS
     "${PROJECT_SOURCE_DIR}/src/*.c"
     "${PROJECT_SOURCE_DIR}/src/*.cu"
 )
-
+set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} $ENV{CUDA_NVCC_FLAGS} -lineinfo --default-stream per-thread")
 add_executable(paralelo ${all_SRCS} alumnos_utm.txt colegios_utm.txt)
 
 set_target_properties(paralelo PROPERTIES LINKER_LANGUAGE CXX)

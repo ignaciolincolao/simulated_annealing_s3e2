@@ -421,7 +421,7 @@ double sasFunc() {
         copyMemCol<<<numberOfBlocks,threadsPerBlock,0,streams[1]>>>(d_aluxcol, d_previousAluxcol,n_colegios);
         copyMemCol<<<numberOfBlocks,threadsPerBlock,0,streams[2]>>>(d_aluVulxCol, d_previousAluVulxCol,n_colegios);
         copyVars<<<1,3,0,streams[3]>>>(d_currentVars, d_previousVars);
-        for (int i = 0; i < NUM_STREAMS; ++i) { cudaStreamSynchronize(streams[i]); }
+        //for (int i = 0; i < NUM_STREAMS; ++i) { cudaStreamSynchronize(streams[i]); }
         cudaDeviceSynchronize();
 
         /*
@@ -557,7 +557,7 @@ double sasFunc() {
             copyVars<<<1,3,0,streams[5]>>>(d_bestVars, d_currentVars);
             copyCost<<<1,1,0,streams[6]>>>(d_costBestSolution,d_costCurrentSolution);
             copyCost<<<1,1,0,streams[7]>>>(d_costPreviousSolution,d_costCurrentSolution);
-            for (int i = 0; i < NUM_STREAMS; ++i) { cudaStreamSynchronize(streams[i]); }
+            //for (int i = 0; i < NUM_STREAMS; ++i) { cudaStreamSynchronize(streams[i]); }
             cudaDeviceSynchronize();
             /*
             memcpy(bestSolution,currentSolution,sizeof(int)*n_students);
@@ -570,7 +570,7 @@ double sasFunc() {
             
             costBestSolution=costCurrentSolution;
             costPreviousSolution=costCurrentSolution;
-            cout << costBestSolution << endl;
+            //cout << costBestSolution << endl;
             /*
             vector_costCurrentSolution.push_back(costCurrentSolution);
             vector_meanDist.push_back(meanDist(currentSolution,distMat));
@@ -588,11 +588,11 @@ double sasFunc() {
             if(metropolisAC1(costPreviousSolution,costCurrentSolution)==1){
 
                 copyMemSolution<<<numberOfBlocks,threadsPerBlock,0,streams[0]>>>(d_previousSolution, d_currentSolution,n_students);
-                copyMemCol<<<numberOfBlocks,threadsPerBlock,0,streams[0]>>>(d_previousAluxcol, d_aluxcol,n_colegios);
-                copyMemCol<<<numberOfBlocks,threadsPerBlock,0,streams[0]>>>(d_previousAluVulxCol, d_aluVulxCol,n_colegios);
-                copyVars<<<1,3,0,streams[0]>>>(d_previousVars, d_currentVars);
-                copyCost<<<1,1,0,streams[0]>>>(d_costPreviousSolution,d_costCurrentSolution);
-                for (int i = 0; i < NUM_STREAMS; ++i) { cudaStreamSynchronize(streams[i]); }
+                copyMemCol<<<numberOfBlocks,threadsPerBlock,0,streams[1]>>>(d_previousAluxcol, d_aluxcol,n_colegios);
+                copyMemCol<<<numberOfBlocks,threadsPerBlock,0,streams[2]>>>(d_previousAluVulxCol, d_aluVulxCol,n_colegios);
+                copyVars<<<1,3,0,streams[3]>>>(d_previousVars, d_currentVars);
+                copyCost<<<1,1,0,streams[4]>>>(d_costPreviousSolution,d_costCurrentSolution);
+                //for (int i = 0; i < NUM_STREAMS; ++i) { cudaStreamSynchronize(streams[i]); }
                 cudaDeviceSynchronize();
 
                 /*
