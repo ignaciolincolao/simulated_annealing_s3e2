@@ -1,0 +1,1 @@
+nsys profile --stats=true -o parelelo-report-5 paralelo 
