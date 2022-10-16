@@ -512,8 +512,8 @@ double sasFunc() {
 
         cudaMemcpy(&costCurrentSolution,&d_array_current_Solution[0], sizeof(double),cudaMemcpyDeviceToHost);
         
-        cudaMemcpy(&selectThread,&d_array_current_Solution_thread[0], sizeof(int),cudaMemcpyDeviceToHost);
-        cudaMemcpy(&selectBlock,d_array_current_Solution_block, sizeof(int),cudaMemcpyDeviceToHost);
+        //cudaMemcpy(&selectThread,&d_array_current_Solution_thread[0], sizeof(int),cudaMemcpyDeviceToHost);
+        //cudaMemcpy(&selectBlock,d_array_current_Solution_block, sizeof(int),cudaMemcpyDeviceToHost);
         
         cudaDeviceSynchronize();
         cudaEventRecord(stop_cuda,0);
@@ -649,7 +649,8 @@ double sasFunc() {
         count_trials++;
         count++;
     }
-
+    cudaMemcpy(bestSolution, d_bestSolution, n_students * sizeof(int), cudaMemcpyDeviceToHost);
+    cudaMemcpy(previousSolution, d_previousSolution, n_students * sizeof(int), cudaMemcpyDeviceToHost);
     ///////////////////////////////////////////////////
     /// Obtiene el tiempo de ejecución
     ///////////////////////////////////////////////////
