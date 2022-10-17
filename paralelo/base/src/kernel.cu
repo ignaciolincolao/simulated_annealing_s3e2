@@ -55,6 +55,7 @@ __global__ void newSolution_kernel(
     sumDist= d_currentVars[0];
     totalSesc = d_currentVars[1];
     totalcostCupo = d_currentVars[2];
+    solutions[myID] = 9999.9;
 
     ////////////////////////////////////////////////////////////////
     /////// Descuenta antes de mover
@@ -199,7 +200,6 @@ __global__ void reduce_block_kernel_2(
 
     int myID = threadIdx.x;
     int salto= n_block;
-    int block = myID;
     d_array_current_Solution_block[myID] = myID;
     while(salto){
         if(salto-(myID+1)>myID){
@@ -384,7 +384,7 @@ __global__ void copyCost(
 
     }
 
-__device__ double cu_round_n(double x)
+inline __device__ double cu_round_n(double x)
 {
     double digits = pow(10.0, 16);
     return trunc(x * digits) / digits;

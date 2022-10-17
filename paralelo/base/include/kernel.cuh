@@ -76,7 +76,5 @@ __global__ void copyCost(
     double *costCurrentSolution,
     double *new_costCurrentSolution
     );
-__device__ double cu_round_n(
-    double x
-    );
+inline __device__ double cu_round_n(double x);
 #endif
