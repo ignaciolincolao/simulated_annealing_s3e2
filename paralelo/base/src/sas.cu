@@ -314,7 +314,7 @@ double sasFunc() {
     cudaMalloc((void **) &d_bestVars, 3 * sizeof(double));
     cudaMalloc((void **) &d_previousVars, 3 * sizeof(double));
     cudaMalloc((void **) &d_array_current_Solution_thread, n_block * sizeof(int));
-    cudaMalloc((void **) &d_array_current_Solution_block, sizeof(int));
+    cudaMalloc((void **) &d_array_current_Solution_block, n_block * sizeof(int));
     cudaMalloc((void **) &d_shuffle_colegios, n_thread * sizeof(int));
     cudaMalloc((void **) &d_shuffle_students, n_block * sizeof(int));
     cudaMalloc((void **) &d_aluxcol,n_colegios * sizeof(int));
@@ -342,7 +342,22 @@ double sasFunc() {
 
 
 
+    ////////////////////////////////////////////////////
+    /////// Stream 
+    ///////////////////////////////////////////////////
+    int deviceId;
+    int numberOfSMs;
+    cudaGetDevice(&deviceId);
+    cudaDeviceGetAttribute(&numberOfSMs, cudaDevAttrMultiProcessorCount, deviceId); // Calcula el numero de SMstream 
 
+    int threadsPerBlock = 256;
+    int numberOfBlocks = 32 * numberOfSMs;
+
+    int NUM_STREAMS = 10;
+    cudaStream_t streams[NUM_STREAMS];
+    for (int i = 0; i < NUM_STREAMS; ++i) { cudaStreamCreate(&streams[i]); }
+
+   
 
     ///////////////////////////////////////////////////
     /// Valores que nunca van a cambiar
@@ -392,29 +407,19 @@ double sasFunc() {
     ///////////////////////////////////////////////////
 
 
-    cudaMemcpy(d_currentSolution, currentSolution, n_students * sizeof(int), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_previousSolution, currentSolution, n_students * sizeof(int), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_bestSolution, currentSolution, n_students * sizeof(int), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_aluxcol, aluxcol, n_colegios * sizeof(int), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_previousAluxcol, aluxcol, n_colegios * sizeof(int), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_aluVulxCol, aluVulxCol, n_colegios * sizeof(int), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_previousAluVulxCol, aluVulxCol, n_colegios * sizeof(int), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_currentVars, currentVars, 3 * sizeof(double), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_previousVars, currentVars, 3 * sizeof(double), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_bestVars, currentVars, 3 * sizeof(double), cudaMemcpyHostToDevice);
+    cudaMemcpyAsync(d_currentSolution, currentSolution, n_students * sizeof(int), cudaMemcpyHostToDevice,streams[0]);
+    cudaMemcpyAsync(d_previousSolution, currentSolution, n_students * sizeof(int), cudaMemcpyHostToDevice,streams[1]);
+    cudaMemcpyAsync(d_bestSolution, currentSolution, n_students * sizeof(int), cudaMemcpyHostToDevice,streams[2]);
+    cudaMemcpyAsync(d_aluxcol, aluxcol, n_colegios * sizeof(int), cudaMemcpyHostToDevice,streams[3]);
+    cudaMemcpyAsync(d_previousAluxcol, aluxcol, n_colegios * sizeof(int), cudaMemcpyHostToDevice,streams[4]);
+    cudaMemcpyAsync(d_aluVulxCol, aluVulxCol, n_colegios * sizeof(int), cudaMemcpyHostToDevice,streams[5]);
+    cudaMemcpyAsync(d_previousAluVulxCol, aluVulxCol, n_colegios * sizeof(int), cudaMemcpyHostToDevice,streams[6]);
+    cudaMemcpyAsync(d_currentVars, currentVars, 3 * sizeof(double), cudaMemcpyHostToDevice,streams[7]);
+    cudaMemcpyAsync(d_previousVars, currentVars, 3 * sizeof(double), cudaMemcpyHostToDevice,streams[8]);
+    cudaMemcpyAsync(d_bestVars, currentVars, 3 * sizeof(double), cudaMemcpyHostToDevice,streams[9]);
 
-    int deviceId;
-    int numberOfSMs;
-    cudaGetDevice(&deviceId);
-    cudaDeviceGetAttribute(&numberOfSMs, cudaDevAttrMultiProcessorCount, deviceId); // Calcula el numero de SMstream 
 
-    int threadsPerBlock = 256;
-    int numberOfBlocks = 32 * numberOfSMs;
 
-    int NUM_STREAMS = 8;
-    cudaStream_t streams[NUM_STREAMS];
-    for (int i = 0; i < NUM_STREAMS; ++i) { cudaStreamCreate(&streams[i]); }
-    cout << numberOfBlocks << ' ' << threadsPerBlock << endl;
     while(temp > min_temp){
 
         copyMemSolution<<<numberOfBlocks,threadsPerBlock,0,streams[0]>>>(d_currentSolution, d_previousSolution,n_students);
@@ -437,7 +442,6 @@ double sasFunc() {
 
         shuffle(shuffle_student,n_block,dist);
         shuffle(shuffle_colegios,n_thread,dist2);
-
         ///////////////////////////////////////////////////
         /// Actualiza la memoria en CUDA
         ///////////////////////////////////////////////////
@@ -454,17 +458,15 @@ double sasFunc() {
         ///////////////////////////////////////////////////
 
         
-        cudaMemcpy(d_shuffle_students, shuffle_student, n_block * sizeof(int), cudaMemcpyHostToDevice);
-        cudaMemcpy(d_shuffle_colegios, shuffle_colegios, n_thread * sizeof(int), cudaMemcpyHostToDevice);
-
+        cudaMemcpyAsync(d_shuffle_students, shuffle_student, n_block * sizeof(int), cudaMemcpyHostToDevice,streams[0]);
+        cudaMemcpyAsync(d_shuffle_colegios, shuffle_colegios, n_thread * sizeof(int), cudaMemcpyHostToDevice,streams[1]);
         cudaDeviceSynchronize();
 
         ///////////////////////////////////////////////////
         ///  Ejecuta los kernel
         //////////////////////////////////////////////////
-        cudaEventRecord(start_cuda,0);
         newSolution_kernel<<<n_block,n_thread,
-                n_colegios* sizeof(int) + n_colegios* sizeof(int) + n_thread* sizeof(double)+ n_thread* sizeof(int)>>>(
+                n_thread* sizeof(double)+ n_thread* sizeof(int)>>>(
                         d_array_current_Solution,
                                 d_array_current_Solution_thread,
                                 n_students,
@@ -482,14 +484,23 @@ double sasFunc() {
                                 d_currentVars,
                                 pitch);
         cudaDeviceSynchronize();
-
+        /*
         reduce_block_kernel<<<1,n_block,
-                n_block* sizeof(double)+ n_block* sizeof(int)+ n_block* sizeof(int)>>>(d_array_current_Solution,
+        n_block* sizeof(double)+ n_block* sizeof(int)+ n_block* sizeof(int)>>>(d_array_current_Solution,
+                d_array_current_Solution_thread,
+                d_array_current_Solution_block,
+                n_block);
+        cudaDeviceSynchronize();
+        */
+        
+        reduce_block_kernel_2<<<1,n_block>>>(
+                        d_array_current_Solution,
                         d_array_current_Solution_thread,
                         d_array_current_Solution_block,
                         n_block);
         cudaDeviceSynchronize();
-
+        
+        //cout << endl;
         calculateSolution<<<1,1>>>(d_array_current_Solution,
                     d_array_current_Solution_thread,
                     d_array_current_Solution_block,
@@ -512,14 +523,10 @@ double sasFunc() {
 
         cudaMemcpy(&costCurrentSolution,&d_array_current_Solution[0], sizeof(double),cudaMemcpyDeviceToHost);
         
-        //cudaMemcpy(&selectThread,&d_array_current_Solution_thread[0], sizeof(int),cudaMemcpyDeviceToHost);
-        //cudaMemcpy(&selectBlock,d_array_current_Solution_block, sizeof(int),cudaMemcpyDeviceToHost);
+        cudaMemcpy(&selectThread,&d_array_current_Solution_thread[0], sizeof(int),cudaMemcpyDeviceToHost);
+        cudaMemcpy(&selectBlock,d_array_current_Solution_block, sizeof(int),cudaMemcpyDeviceToHost);
         
         cudaDeviceSynchronize();
-        cudaEventRecord(stop_cuda,0);
-        cudaEventSynchronize(stop_cuda);
-        cudaEventElapsedTime(&elapsedTime,start_cuda,stop_cuda);
-        timeCuda = timeCuda+elapsedTime;
         ///////////////////////////////////////////////////
         ///  Actualizo datos basicos
         ///////////////////////////////////////////////////
@@ -536,7 +543,10 @@ double sasFunc() {
         ///////////////////////////////////////////////////
         /// Salida en caso de error
         ///////////////////////////////////////////////////
-
+        //std::cout << costCurrentSolution << "\n";
+        //std::cout << selectThread << "\n";
+        //std::cout << selectBlock << "\n";
+        
         if(costCurrentSolution<0.00 || isnan(costCurrentSolution)){
             std::cout << shuffle_colegios[selectThread] << "\n";
             std::cout << shuffle_student[selectBlock] << "\n";
@@ -546,6 +556,7 @@ double sasFunc() {
             std::cout << costCurrentSolution;
             exit(1);
         }
+        
         
         if(costCurrentSolution < costBestSolution){
             
@@ -649,8 +660,8 @@ double sasFunc() {
         count_trials++;
         count++;
     }
-    cudaMemcpy(bestSolution, d_bestSolution, n_students * sizeof(int), cudaMemcpyDeviceToHost);
-    cudaMemcpy(previousSolution, d_previousSolution, n_students * sizeof(int), cudaMemcpyDeviceToHost);
+    cudaMemcpyAsync(bestSolution, d_bestSolution, n_students * sizeof(int), cudaMemcpyDeviceToHost,streams[0]);
+    cudaMemcpyAsync(previousSolution, d_previousSolution, n_students * sizeof(int), cudaMemcpyDeviceToHost,streams[1]);
     ///////////////////////////////////////////////////
     /// Obtiene el tiempo de ejecución
     ///////////////////////////////////////////////////

@@ -16,7 +16,7 @@ file(GLOB all_SRCS
     "${PROJECT_SOURCE_DIR}/src/*.c"
     "${PROJECT_SOURCE_DIR}/src/*.cu"
 )
-set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} $ENV{CUDA_NVCC_FLAGS} -lineinfo --default-stream per-thread")
+
 add_executable(paralelo ${all_SRCS} alumnos_utm.txt colegios_utm.txt)
 
 set_target_properties(paralelo PROPERTIES LINKER_LANGUAGE CXX)
@@ -30,4 +30,10 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/data/colegios_utm.txt
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
+set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} $ENV{CUDA_NVCC_FLAGS} -lineinfo --default-stream per-thread")
+
+# Gprof 
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pg")
+SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pg")
+SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -pg")
 include(CPack)

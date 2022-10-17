@@ -33,6 +33,12 @@ __global__ void reduce_block_kernel(
     int *d_array_current_Solution_block,
     const int n_block);
 
+__global__ void reduce_block_kernel_2(
+    double *d_array_current_Solution,
+    int *d_array_current_Solution_thread,
+    int *d_array_current_Solution_block,
+    const int n_block);
+
 __global__ void calculateSolution(
     double *d_array_current_Solution,
     int *d_array_current_Solution_thread,
