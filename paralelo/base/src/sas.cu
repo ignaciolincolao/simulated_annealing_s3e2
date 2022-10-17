@@ -112,12 +112,19 @@ double sasFunc() {
     
     int count=0;
 
+    cudaMallocHost((void**)&previousSolution, sizeof(int)*n_students);
+    cudaMallocHost((void**)&bestSolution, sizeof(int)*n_students);
+    cudaMallocHost((void**)&currentSolution, sizeof(int)*n_students);
+    cudaMallocHost((void**)&cupoArray, sizeof(int)*n_colegios);
+    cudaMallocHost((void**)&alumnosSep, sizeof(int)*n_students);
+    /*
     previousSolution = (int *)malloc(sizeof(int)*n_students);
     bestSolution=(int *)malloc(sizeof(int)*n_students);
     currentSolution=(int *)malloc(sizeof(int)*n_students);
-    distMat=(double **)malloc(sizeof(double)*n_students);
     cupoArray=(int *)malloc(sizeof(int)*n_colegios);
     alumnosSep = (int *)malloc( sizeof(int)*n_students);
+    */
+    distMat=(double **)malloc(sizeof(double)*n_students);
     for(x=0; x < n_students; x++) {
         distMat[ x ]=(double *)malloc(sizeof(double)*n_colegios);
     }
@@ -179,8 +186,10 @@ double sasFunc() {
     ///////////////////////////////////////////////////
     /// Genera arreglos que contendran valores del 0 hasta n_students y n_colegios
     ///////////////////////////////////////////////////
-    int *shuffle_student = (int *)malloc(sizeof(int)*n_students);
-    int *shuffle_colegios = (int *)malloc(sizeof(int)*n_colegios);
+
+    int *shuffle_student, *shuffle_colegios;
+    cudaMallocHost((void**)&shuffle_student, sizeof(int)*n_students);
+    cudaMallocHost((void**)&shuffle_colegios, sizeof(int)*n_colegios);
     for (int i = 0; i < n_students; i++) {
         shuffle_student[i] = i;
     }
@@ -255,9 +264,12 @@ double sasFunc() {
     ////////////////////////////////////////////////////////////////////////
 
     double costCurrentSolutionV2 = costCurrentSolution;
-    double *currentVars = (double *)malloc(3 * sizeof(double));
-    double *previousVars = (double *)malloc(3 * sizeof(double));
-    double *bestVars = (double *)malloc(3 * sizeof(double));
+    double *currentVars;
+    cudaMallocHost( (void**)&currentVars,3 * sizeof(double));
+    double *previousVars;
+    cudaMallocHost( (void**)&previousVars,3 * sizeof(double)); 
+    double *bestVars;
+    cudaMallocHost( (void**)&bestVars,3 * sizeof(double)); 
 
     currentVars[0] = sumDist(currentSolution,distMat);
     currentVars[1] = sumS(currentSolution, alumnosSep, totalVuln);
@@ -327,7 +339,8 @@ double sasFunc() {
     cudaMalloc((void **) &d_alumnosSep, n_students * sizeof(int)); // arreglo que contiene la id de cada usuario vulnerable
 
 
-    double *matrestest = (double *) malloc(sizeof(double) * n_students * n_colegios);
+    double *matrestest;
+    cudaMallocHost( (void**)&matrestest,sizeof(double) * n_students * n_colegios); 
     double *array_costCurrentSolution = (double *) malloc(sizeof(double) * n_block * n_thread);
     for (x = 0; x < n_students; x++) {
         for (z = 0; z < n_colegios; z++) {
@@ -383,7 +396,6 @@ double sasFunc() {
                  n_students,
                  cudaMemcpyHostToDevice);
 
-    
 
     ///////////////////////////////////////////////////
     /// Inicializa las distribuciónes
@@ -419,6 +431,10 @@ double sasFunc() {
     cudaMemcpyAsync(d_bestVars, currentVars, 3 * sizeof(double), cudaMemcpyHostToDevice,streams[9]);
 
 
+    ///////////////////////////// Incorporar para acceder mas rapido al costCurrentSolution
+    //int deviceId;
+    //cudaGetDevice(&deviceId);                                         // The ID of the currently active GPU device.
+    //cudaMemPrefetchAsync(pointerToSomeUMData, size, deviceId); 
 
     while(temp > min_temp){
 
@@ -484,21 +500,14 @@ double sasFunc() {
                                 d_currentVars,
                                 pitch);
         cudaDeviceSynchronize();
-        /*
+        
         reduce_block_kernel<<<1,n_block,
         n_block* sizeof(double)+ n_block* sizeof(int)+ n_block* sizeof(int)>>>(d_array_current_Solution,
                 d_array_current_Solution_thread,
                 d_array_current_Solution_block,
                 n_block);
         cudaDeviceSynchronize();
-        */
-        
-        reduce_block_kernel_2<<<1,n_block>>>(
-                        d_array_current_Solution,
-                        d_array_current_Solution_thread,
-                        d_array_current_Solution_block,
-                        n_block);
-        cudaDeviceSynchronize();
+
         
         //cout << endl;
         calculateSolution<<<1,1>>>(d_array_current_Solution,

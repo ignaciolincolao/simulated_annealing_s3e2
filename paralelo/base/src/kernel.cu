@@ -119,6 +119,7 @@ __global__ void newSolution_kernel(
     solutions[myID] =  (double)((d_alpha[0]*var1)+(d_alpha[1]*var2)+(d_alpha[2]*var3));
 
     __syncthreads();
+
     while(salto){
         if(salto-(myID+1)>myID){
             if(currentSchool!=colchange && d_shuffle_colegios[salto-(myID+1)]!=currentSchool){
@@ -145,6 +146,7 @@ __global__ void newSolution_kernel(
         d_array_current_Solution[blockIdx.x] = solutions[myID];
         d_array_current_Solution_thread[blockIdx.x] = solutions_thread[myID];
     }
+
     
 }
 
