@@ -35,9 +35,9 @@ double min_temp = 0.00000009; // Minima temperatura que puede llegar
 double max_temp = 0;
 double k_reheating = 0.98;
 int n_reheating = 29853; // Variable ligada a cuanto debe esperar para iniciar recalentamiento
-int seed = 16551;
+int seed = 12315;
 float len1 =1;// 0.00000009; // Minima temperatura que puede llegar
-float len2 = 2;
+float len2 =2;
 double len3 = 1.0;
 double len4 = 0.99;
 double e_const=0.01;
@@ -63,7 +63,7 @@ string prefijo_save;
 
 int selectThread=0,
     selectBlock = 0,
-    n_block = 32, // Numero de estudiantes simultaneos
+    n_block = 512, // Numero de estudiantes simultaneos
     n_thread = 32; // Numero de escuelas simultaneos
 
 

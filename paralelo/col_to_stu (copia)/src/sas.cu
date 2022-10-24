@@ -1,5 +1,6 @@
 
-#include <sas.hpp>
+#include <sas.cuh>
+#include <kernel.cuh>
 #include <ExplorationCriterion.hpp>
 #include <AcceptanceCriterion.hpp>
 #include <TemperatureLength.hpp>
@@ -9,7 +10,24 @@
 #include <limits>
 
 #define DECIMAL 16
-typedef std::numeric_limits< long double > dbl;
+
+#include <assert.h>
+#define gpuErrchk(ans) { gpuAssert((ans), __FILE__, __LINE__); }
+inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=true)
+{
+   if (code != cudaSuccess) 
+   {
+      fprintf(stderr,"GPUassert: %s %s %d\n", cudaGetErrorString(code), file, line);
+      if (abort) exit(code);
+   }
+}
+///////////////////////////////////////////////////
+/// Variables constantes CUDA
+///////////////////////////////////////////////////
+
+
+
+typedef std::numeric_limits< double > dbl;
 
 ///////////////////////////////////////////////////
 /// Variables globales.
@@ -18,7 +36,7 @@ typedef std::numeric_limits< long double > dbl;
 
 
 
-long double sasFunc() {
+double sasFunc() {
     int x=0,z=0;
     int totalVuln=0;
     cout.precision(dbl::max_digits10);
@@ -82,26 +100,33 @@ long double sasFunc() {
     int *previousSolution= nullptr;
     int *bestSolution= nullptr;
     int *currentSolution=nullptr;
-    long double **distMat=nullptr;
+    double **distMat=nullptr;
     int *cupoArray=nullptr;
     int *alumnosSep=nullptr;
 
     
-    long double  costBestSolution,
+    double  costBestSolution,
         costPreviousSolution,
         costCurrentSolution,
         *ptr_alpha = &alpha[0];
     
     int count=0;
 
+    cudaMallocHost((void**)&previousSolution, sizeof(int)*n_students);
+    cudaMallocHost((void**)&bestSolution, sizeof(int)*n_students);
+    cudaMallocHost((void**)&currentSolution, sizeof(int)*n_students);
+    cudaMallocHost((void**)&cupoArray, sizeof(int)*n_colegios);
+    cudaMallocHost((void**)&alumnosSep, sizeof(int)*n_students);
+    /*
     previousSolution = (int *)malloc(sizeof(int)*n_students);
     bestSolution=(int *)malloc(sizeof(int)*n_students);
     currentSolution=(int *)malloc(sizeof(int)*n_students);
-    distMat=(long double **)malloc(sizeof(long double)*n_students);
     cupoArray=(int *)malloc(sizeof(int)*n_colegios);
     alumnosSep = (int *)malloc( sizeof(int)*n_students);
+    */
+    distMat=(double **)malloc(sizeof(double)*n_students);
     for(x=0; x < n_students; x++) {
-        distMat[ x ]=(long double *)malloc(sizeof(long double)*n_colegios);
+        distMat[ x ]=(double *)malloc(sizeof(double)*n_colegios);
     }
 
     ///////////////////////////////////////////////////
@@ -161,8 +186,10 @@ long double sasFunc() {
     ///////////////////////////////////////////////////
     /// Genera arreglos que contendran valores del 0 hasta n_students y n_colegios
     ///////////////////////////////////////////////////
-    int *shuffle_student = (int *)malloc(sizeof(int)*n_students);
-    int *shuffle_colegios = (int *)malloc(sizeof(int)*n_colegios);
+
+    int *shuffle_student, *shuffle_colegios;
+    cudaMallocHost((void**)&shuffle_student, sizeof(int)*n_students);
+    cudaMallocHost((void**)&shuffle_colegios, sizeof(int)*n_colegios);
     for (int i = 0; i < n_students; i++) {
         shuffle_student[i] = i;
     }
@@ -197,12 +224,24 @@ long double sasFunc() {
     ///////////////////////////////////////////////////
 
 
-    vector<long double> vector_costCurrentSolution;
-    vector<long double> vector_meanDist;
-    vector<long double> vector_segregation;
-    vector<long double> vector_costoCupo;
-    vector<long double> vector_temp;
+    vector<double> vector_costCurrentSolution;
+    vector<double> vector_meanDist;
+    vector<double> vector_segregation;
+    vector<double> vector_costoCupo;
+    vector<double> vector_temp;
     vector<int> vector_count;
+
+
+    std::vector<double> vector_historyCostSolution;
+    std::vector<double> vector_historyTemp;
+    std::vector<double> vector_historymeanDist;
+    std::vector<double> vector_historymeanDistNorm;
+    std::vector<double> vector_historySegregation;
+    std::vector<double> vector_historycostoCupo;
+    std::vector<bool> vector_historyAcceptSolution;
+    std::vector<int> vector_historyAsign;
+    std::vector<std::tuple <int,int>> vector_historyMove;
+
 
     
     int count_rechaso=0;
@@ -211,23 +250,26 @@ long double sasFunc() {
     int c_cooling_temperature = 0;
     int valmaxheating=n_colegios;
     int count_reheating = 0;
-    long double bestTemp = 0;
-    long double k_reheating_init = k_reheating;
-    long double temp_init = temp;
+    double bestTemp = 0;
+    double k_reheating_init = k_reheating;
+    double temp_init = temp;
     int count_trials = 0;
     float len1_init = len1;
     float len2_init = len2;
-    long double len3_init = len3;
-    long double len4_init = len4;
+    double len3_init = len3;
+    double len4_init = len4;
 
     ////////////////////////////////////////////////////////////////////////
     // VARIABLES DE PRUEBA
     ////////////////////////////////////////////////////////////////////////
 
-    long double costCurrentSolutionV2 = costCurrentSolution;
-    long double *currentVars = (long double *)malloc(3 * sizeof(long double));
-    long double *previousVars = (long double *)malloc(3 * sizeof(long double));
-    long double *bestVars = (long double *)malloc(3 * sizeof(long double));
+    double costCurrentSolutionV2 = costCurrentSolution;
+    double *currentVars;
+    cudaMallocHost( (void**)&currentVars,3 * sizeof(double));
+    double *previousVars;
+    cudaMallocHost( (void**)&previousVars,3 * sizeof(double)); 
+    double *bestVars;
+    cudaMallocHost( (void**)&bestVars,3 * sizeof(double)); 
 
     currentVars[0] = sumDist(currentSolution,distMat);
     currentVars[1] = sumS(currentSolution, alumnosSep, totalVuln);
@@ -235,63 +277,341 @@ long double sasFunc() {
     previousVars[0] = currentVars[0];
     previousVars[1] = currentVars[1];
     previousVars[2] = currentVars[2];
-
-
+    double var1,var2,var3;
+    cout << costBestSolution << endl;
+    var1 = (currentVars[0]/n_students);
+    var1= (var1/max_dist);
+    //cout << var1 << "\n";
+    var2 = (currentVars[1]/2.0);
+    //cout << var2 << "\n";
+    var3 = (currentVars[2] /n_colegios);
+    costBestSolution = (double)((ptr_alpha[0]*var1)+(ptr_alpha[1]*var2)+(ptr_alpha[2]*var3));
+    cout << costBestSolution << endl;
+    costPreviousSolution = costBestSolution;
+    costCurrentSolution = costBestSolution;
     auto start_compare = chrono::high_resolution_clock::now();
     auto end_compare = chrono::high_resolution_clock::now();
-    long double time_taken_v1 = chrono::duration_cast<chrono::nanoseconds>(end_compare - start_compare).count();
-    long double time_taken_v2;
-    long double vector_time1 =0;
-    long double vector_time2=0;
-    
-    while(temp > min_temp){
+    double time_taken_v1 = chrono::duration_cast<chrono::nanoseconds>(end_compare - start_compare).count();
+    double time_taken_v2;
+    double vector_time1 =0;
+    double vector_time2=0;
 
+    /////////////////////////////////////////////////////////////////////////
+    // VARIABLES PARA CUDA
+    ////////////////////////////////////////////////////////////////////////
+
+    double *d_distMat; /// clon de matriz de distancia
+    int *d_currentSolution, *d_bestSolution, *d_previousSolution;
+    int *d_alumnosSep; // Array que contendra a los estudiantes vulnerables
+    ///////////////
+    double *d_array_current_Solution,
+        *d_array_current_Solution_dis,
+        *d_array_current_Solution_seg,
+        *d_array_current_Solution_cup;
+    int *d_array_current_Solution_alu;
+    int *d_array_current_Solution_col;
+
+    ///////////////
+    int *d_aluxcol,*d_previousAluxcol;
+    int *d_aluVulxCol,*d_previousAluVulxCol;
+    int *d_shuffle_students;
+    int *d_shuffle_colegios;
+    double *d_currentVars, *d_bestVars, *d_previousVars;
+    double *d_costPreviousSolution, *d_costBestSolution, *d_costCurrentSolution;
+
+
+    int space_solution = n_block *n_thread;
+
+    cudaMalloc((void **) &d_array_current_Solution, space_solution * sizeof(double));
+    cudaMalloc((void **) &d_array_current_Solution_dis, space_solution * sizeof(double));
+    cudaMalloc((void **) &d_array_current_Solution_seg, space_solution * sizeof(double));
+    cudaMalloc((void **) &d_array_current_Solution_cup, space_solution * sizeof(double));
+    cudaMalloc((void **) &d_array_current_Solution_alu, space_solution * sizeof(int)); 
+    cudaMalloc((void **) &d_array_current_Solution_col, space_solution * sizeof(int));
+
+    
+    cudaMalloc((void **) &d_costCurrentSolution, 1 * sizeof(double));
+    cudaMalloc((void **) &d_costBestSolution, 1 * sizeof(double));
+    cudaMalloc((void **) &d_costPreviousSolution, 1 * sizeof(double));
+    cudaMalloc((void **) &d_currentVars, 3 * sizeof(double));
+    cudaMalloc((void **) &d_bestVars, 3 * sizeof(double));
+    cudaMalloc((void **) &d_previousVars, 3 * sizeof(double));
+
+    cudaMalloc((void **) &d_shuffle_colegios, n_colegios * sizeof(int));
+    cudaMalloc((void **) &d_shuffle_students, n_students * sizeof(int));
+    cudaMalloc((void **) &d_aluxcol,n_colegios * sizeof(int));
+    cudaMalloc((void **) &d_previousAluxcol,n_colegios * sizeof(int));
+    cudaMalloc((void **) &d_aluVulxCol,n_colegios * sizeof(int));
+    cudaMalloc((void **) &d_previousAluVulxCol,n_colegios * sizeof(int));
+    cudaMalloc((void **) &d_currentSolution, n_students * sizeof(int));  // Solución actual
+    cudaMalloc((void **) &d_bestSolution, n_students * sizeof(int));
+    cudaMalloc((void **) &d_previousSolution, n_students * sizeof(int));
+    cudaMalloc((void **) &d_alumnosSep, n_students * sizeof(int)); // arreglo que contiene la id de cada usuario vulnerable
+
+
+    double *matrestest;
+    cudaMallocHost( (void**)&matrestest,sizeof(double) * n_students * n_colegios); 
+    double *array_costCurrentSolution = (double *) malloc(sizeof(double) * n_block * n_thread);
+    for (x = 0; x < n_students; x++) {
+        for (z = 0; z < n_colegios; z++) {
+            matrestest[n_colegios * x + z] = distMat[x][z];
+        }
+    }
+    for (x = 0; x < n_block; x++){
+        for (z = 0; z < n_thread; z++){
+            array_costCurrentSolution[n_thread * x + z] = 0.0;
+        }
+    }
+
+
+
+    ////////////////////////////////////////////////////
+    /////// Stream 
+    ///////////////////////////////////////////////////
+    int deviceId;
+    int numberOfSMs;
+    cudaGetDevice(&deviceId);
+    cudaDeviceGetAttribute(&numberOfSMs, cudaDevAttrMultiProcessorCount, deviceId); // Calcula el numero de SMstream 
+
+    int threadsPerBlock = 256;
+    int numberOfBlocks = 16 * numberOfSMs;
+
+    int NUM_STREAMS = 10;
+    cudaStream_t streams[NUM_STREAMS];
+    for (int i = 0; i < NUM_STREAMS; ++i) { cudaStreamCreate(&streams[i]); }
+
+   
+
+    ///////////////////////////////////////////////////
+    /// Valores que nunca van a cambiar
+    //////////////////////////////////////////////////////
+
+
+
+
+    size_t pitch;
+    cudaMallocPitch(&d_distMat,
+                    &pitch,
+                    n_colegios * sizeof(double),
+                    n_students); // Reserva memoria para la matriz de distancia
+
+    gpuErrchk( cudaMemcpyAsync(d_alumnosSep, alumnosSep, n_students * sizeof(int), cudaMemcpyHostToDevice,streams[0]));
+    gpuErrchk( cudaMemcpyToSymbolAsync( d_cupoArray, cupoArray,  n_colegios * sizeof(int),0,cudaMemcpyHostToDevice,streams[1]));
+    gpuErrchk( cudaMemcpyToSymbolAsync( d_alpha, alpha,  3 * sizeof(double),0,cudaMemcpyHostToDevice,streams[2]));
+    size_t h_pitchBytes = n_colegios * sizeof(double);
+    cudaMemcpy2DAsync(d_distMat,
+                 pitch,
+                 matrestest,
+                 h_pitchBytes,
+                 n_colegios * sizeof(double),
+                 n_students,
+                 cudaMemcpyHostToDevice,
+                 streams[3]);
+
+
+    ///////////////////////////////////////////////////
+    /// Inicializa las distribuciónes
+    ///////////////////////////////////////////////////
+
+    dist = std::uniform_int_distribution<int>(0, n_students-1);
+    dist2 = std::uniform_int_distribution<int>(0, n_colegios-1);
+
+    ///////////////////////////////////////////////////
+    /// Contador de tiempo de ejecución en cuda
+    ///////////////////////////////////////////////////
+
+    cudaEvent_t start_cuda;
+    cudaEvent_t stop_cuda;
+    cudaEventCreate(&start_cuda);
+    cudaEventCreate(&stop_cuda);
+    float elapsedTime;
+    double timeCuda = 0.0;
+    ///////////////////////////////////////////////////
+    /// Inicio el contador de tiempo antes de iniciar el algortimo
+    ///////////////////////////////////////////////////
+
+
+    cudaMemcpyAsync(d_currentSolution, currentSolution, n_students * sizeof(int), cudaMemcpyHostToDevice,streams[2]);
+    cudaMemcpyAsync(d_previousSolution, currentSolution, n_students * sizeof(int), cudaMemcpyHostToDevice,streams[3]);
+    cudaMemcpyAsync(d_bestSolution, currentSolution, n_students * sizeof(int), cudaMemcpyHostToDevice,streams[4]);
+    cudaMemcpyAsync(d_aluxcol, aluxcol, n_colegios * sizeof(int), cudaMemcpyHostToDevice,streams[5]);
+    cudaMemcpyAsync(d_previousAluxcol, aluxcol, n_colegios * sizeof(int), cudaMemcpyHostToDevice,streams[6]);
+    cudaMemcpyAsync(d_aluVulxCol, aluVulxCol, n_colegios * sizeof(int), cudaMemcpyHostToDevice,streams[7]);
+    cudaMemcpyAsync(d_previousAluVulxCol, aluVulxCol, n_colegios * sizeof(int), cudaMemcpyHostToDevice,streams[8]);
+    cudaMemcpyAsync(d_currentVars, currentVars, 3 * sizeof(double), cudaMemcpyHostToDevice,streams[9]);
+    cudaMemcpyAsync(d_previousVars, currentVars, 3 * sizeof(double), cudaMemcpyHostToDevice,streams[0]);
+    cudaMemcpyAsync(d_bestVars, currentVars, 3 * sizeof(double), cudaMemcpyHostToDevice,streams[1]);
+
+
+    ///////////////////////////// Incorporar para acceder mas rapido al costCurrentSolution
+    //int deviceId;
+    //cudaGetDevice(&deviceId);                                         // The ID of the currently active GPU device.
+    //cudaMemPrefetchAsync(pointerToSomeUMData, size, deviceId); 
+
+    while(temp > min_temp){
+        cudaMemcpyAsync(d_currentSolution, d_previousSolution, n_students * sizeof(int), cudaMemcpyDeviceToDevice ,streams[0]);
+        cudaMemcpyAsync(d_aluxcol, d_previousAluxcol, n_colegios * sizeof(int), cudaMemcpyDeviceToDevice,streams[1]);
+        cudaMemcpyAsync(d_aluVulxCol, d_previousAluVulxCol, n_colegios * sizeof(int), cudaMemcpyDeviceToDevice,streams[2]);
+        cudaMemcpyAsync(d_currentVars, d_previousVars, 3 * sizeof(double), cudaMemcpyDeviceToDevice,streams[3]);
+        //for (int i = 0; i < NUM_STREAMS; ++i) { cudaStreamSynchronize(streams[i]); }
+
+        /*
         memcpy(currentSolution,previousSolution,sizeof(int)*n_students);
         memcpy(aluxcol,previousAluxCol,sizeof(int)*n_colegios);
         memcpy(aluVulxCol,previousAluVulxCol,sizeof(int)*n_colegios);
-        memcpy(currentVars,previousVars,sizeof(long double)*3);
-        ////////////////////////////////
+        memcpy(currentVars,previousVars,sizeof(double)*3);
+        */
 
         ///////////////////////////////////////////////////
         ///  Selecciona aleatoria mente a los alumnos
         ///////////////////////////////////////////////////
-        
-        start_compare = chrono::high_resolution_clock::now();
-        costCurrentSolution = solutionNE1_v2(n_students,n_colegios,totalVuln,aluxcol,aluVulxCol,cupoArray,distMat,currentSolution,costCurrentSolution,ptr_alpha,shuffle_student,shuffle_colegios,alumnosSep,currentVars, max_dist);
-        end_compare = chrono::high_resolution_clock::now();
-        time_taken_v1 = chrono::duration_cast<chrono::nanoseconds>(end_compare - start_compare).count();
-        time_taken_v1 *= 1e-9;
-        vector_time1+=time_taken_v1;
-        
-        
-        // Verifica si el costo actual es mejor que la mejor solución
-        // en el caso que el costo actual es menor a la mejor solución, acepta la solución y los
-        // guarda en el estado como mejor solución
+
+        shuffle(shuffle_student,n_students,dist);
+        shuffle(shuffle_colegios,n_colegios,dist2);
+        ///////////////////////////////////////////////////
+        /// Actualiza la memoria en CUDA
+        ///////////////////////////////////////////////////
+        /*
+        cudaMemcpy(d_currentSolution, currentSolution, n_students * sizeof(int), cudaMemcpyHostToDevice);
+        cudaMemcpy(d_aluxcol, aluxcol, n_colegios * sizeof(int), cudaMemcpyHostToDevice);
+        cudaMemcpy(d_aluVulxCol, aluVulxCol, n_colegios * sizeof(int), cudaMemcpyHostToDevice);
+        */
 
 
-        cout << costCurrentSolution << endl;
 
+        ///////////////////////////////////////////////////
+        ///  Envia datos a GPU
+        ///////////////////////////////////////////////////
+
+        
+        cudaMemcpyAsync(d_shuffle_students, shuffle_student, n_students* sizeof(int), cudaMemcpyHostToDevice,streams[0]);
+        cudaMemcpyAsync(d_shuffle_colegios, shuffle_colegios, n_colegios * sizeof(int), cudaMemcpyHostToDevice,streams[1]);
+        cudaDeviceSynchronize();
+
+        ///////////////////////////////////////////////////
+        ///  Ejecuta los kernel
+        //////////////////////////////////////////////////
+        //cout << n_block << endl;
+        newSolution_kernel<<<n_block,n_thread>>>(
+                        d_array_current_Solution,
+                        d_array_current_Solution_cup,
+                        d_array_current_Solution_seg,
+                        d_array_current_Solution_dis,
+                        d_array_current_Solution_alu,
+                        d_array_current_Solution_col,
+                        n_students,
+                        n_colegios,
+                        space_solution,
+                        n_thread,
+                        max_dist,
+                        d_alumnosSep,
+                        totalVuln,
+                        d_aluxcol,
+                        d_aluVulxCol,
+                        d_currentSolution,
+                        d_distMat,
+                        d_shuffle_students,
+                        d_shuffle_colegios,
+                        d_currentVars,
+                        pitch);
+        reduce_block_kernel<<<n_block,n_thread>>>(
+            d_array_current_Solution,
+            d_array_current_Solution_cup,
+            d_array_current_Solution_seg,
+            d_array_current_Solution_dis,
+            d_array_current_Solution_alu,
+            d_array_current_Solution_col,
+            space_solution,
+            d_alumnosSep,
+            d_aluxcol,
+            d_aluVulxCol,
+            d_currentSolution,
+            d_currentVars,
+            d_costCurrentSolution);
+
+        //cout << endl;
+        /*
+        calculateSolution<<<1,1>>>(d_array_current_Solution,
+                    d_array_current_Solution_alu,
+                    d_array_current_Solution_col,
+                    n_students,
+                    n_colegios,
+                    n_thread,
+                    max_dist,
+                    d_alumnosSep,
+                    totalVuln,
+                    d_aluxcol,
+                    d_aluVulxCol,
+                    d_currentSolution,
+                    d_distMat,
+                    pitch,
+                    d_currentVars,
+                    d_costCurrentSolution);
+                    */
+        cudaMemcpy(&costCurrentSolution,&d_array_current_Solution[0], sizeof(double),cudaMemcpyDeviceToHost);
+        //cudaMemcpyAsync(&selectThread,&d_array_current_Solution_alu[0], sizeof(int),cudaMemcpyDeviceToHost,streams[1]);
+        //cudaMemcpyAsync(&selectBlock,d_array_current_Solution_col, sizeof(int),cudaMemcpyDeviceToHost,streams[2]);
+        
+        cudaDeviceSynchronize();
+        //cout << costCurrentSolution << endl;
+        ///////////////////////////////////////////////////
+        ///  Actualizo datos basicos
+        ///////////////////////////////////////////////////
+    
+        /*
+        vector_historyAsign.push_back(currentSolution[shuffle_student[selectBlock]]);           
+        aluxcol[currentSolution[shuffle_student[selectBlock]]]-=1; ///
+        aluVulxCol[currentSolution[shuffle_student[selectBlock]]]-=alumnosSep[shuffle_student[selectBlock]]; ///
+        aluxcol[shuffle_colegios[selectThread]]+=1; ///
+        aluVulxCol[shuffle_colegios[selectThread]]+=alumnosSep[shuffle_student[selectBlock]]; ///
+        currentSolution[shuffle_student[selectBlock]] = shuffle_colegios[selectThread]; ///
+        */
+
+        ///////////////////////////////////////////////////
+        /// Salida en caso de error
+        ///////////////////////////////////////////////////
+        //std::cout << costCurrentSolution << "\n";
+        //std::cout << selectThread << "\n";
+        //std::cout << selectBlock << "\n";
+        
+        if(costCurrentSolution<0.00 || isnan(costCurrentSolution)){
+            std::cout << shuffle_colegios[selectThread] << "\n";
+            std::cout << shuffle_student[selectBlock] << "\n";
+            std::cout << "distancia: " << meanDist(currentSolution,distMat) << "\n";
+            std::cout << "Segregación: " << S(currentSolution,alumnosSep, totalVuln) << "\n";
+            std::cout << "CostoCupo: " << costCupo(currentSolution,cupoArray) << "\n";
+            std::cout << costCurrentSolution;
+            exit(1);
+        }
+        
+        //cout << costCurrentSolution << endl;
         if(costCurrentSolution < costBestSolution){
+            cudaMemcpyAsync(d_previousSolution, d_currentSolution, n_students * sizeof(int), cudaMemcpyDeviceToDevice ,streams[0]);
+            cudaMemcpyAsync(d_bestSolution, d_currentSolution, n_students * sizeof(int), cudaMemcpyDeviceToDevice ,streams[1]);
 
-            memcpy(bestSolution,currentSolution,sizeof(int)*n_students);
-            memcpy(previousSolution,currentSolution,sizeof(int)*n_students);
-            memcpy(previousAluxCol,aluxcol,sizeof(int)*n_colegios);
-            memcpy(previousAluVulxCol,aluVulxCol,sizeof(int)*n_colegios);
-            memcpy(previousVars,currentVars,sizeof(long double)*3);
-            memcpy(bestVars,currentVars,sizeof(long double)*3);
+            cudaMemcpyAsync(d_previousAluxcol, d_aluxcol, n_colegios * sizeof(int), cudaMemcpyDeviceToDevice,streams[2]);
 
+            cudaMemcpyAsync(d_previousAluVulxCol, d_aluVulxCol, n_colegios * sizeof(int), cudaMemcpyDeviceToDevice,streams[3]);
+
+            cudaMemcpyAsync(d_previousVars, d_currentVars, 3 * sizeof(double), cudaMemcpyDeviceToDevice,streams[4]);
+            cudaMemcpyAsync(d_bestVars, d_currentVars, 3 * sizeof(double), cudaMemcpyDeviceToDevice,streams[5]);
+
+
+            cudaMemcpyAsync(d_costBestSolution,d_costCurrentSolution, sizeof(double),cudaMemcpyDeviceToDevice,streams[6]);
+            cudaMemcpyAsync(d_costPreviousSolution,d_costCurrentSolution, sizeof(double),cudaMemcpyDeviceToDevice,streams[7]);
+            cudaDeviceSynchronize();
 
             costBestSolution=costCurrentSolution;
             costPreviousSolution=costCurrentSolution;
-
-            
+            //cout << costBestSolution << endl;
+            /*
             vector_costCurrentSolution.push_back(costCurrentSolution);
             vector_meanDist.push_back(meanDist(currentSolution,distMat));
             vector_segregation.push_back(S(currentSolution, alumnosSep, totalVuln));
             vector_costoCupo.push_back(costCupo(currentSolution,cupoArray));
             vector_temp.push_back(temp);
             vector_count.push_back(count);
-
+            */
             c_accepta++;
             count_rechaso=0;
         }
@@ -299,10 +619,14 @@ long double sasFunc() {
         // a la función acepta
         else{
             if(metropolisAC1(costPreviousSolution,costCurrentSolution)==1){
-                memcpy(previousSolution,currentSolution,sizeof(int)*n_students);
-                memcpy(previousAluxCol,aluxcol,sizeof(int)*n_colegios);
-                memcpy(previousAluVulxCol,aluVulxCol,sizeof(int)*n_colegios);
-                memcpy(previousVars,currentVars,sizeof(long double)*3);
+                cudaMemcpyAsync(d_previousSolution, d_currentSolution, n_students * sizeof(int), cudaMemcpyDeviceToDevice ,streams[0]);
+                cudaMemcpyAsync(d_previousAluxcol, d_aluxcol, n_colegios * sizeof(int), cudaMemcpyDeviceToDevice,streams[1]);
+                cudaMemcpyAsync(d_previousAluVulxCol, d_aluVulxCol, n_colegios * sizeof(int), cudaMemcpyDeviceToDevice,streams[2]);
+
+                cudaMemcpyAsync(d_previousVars, d_currentVars, 3 * sizeof(double), cudaMemcpyDeviceToDevice,streams[3]);
+                cudaMemcpyAsync(d_costPreviousSolution,d_costCurrentSolution, sizeof(double),cudaMemcpyDeviceToDevice,streams[4]);
+
+                cudaDeviceSynchronize();
 
                 costPreviousSolution=costCurrentSolution;
 
@@ -311,6 +635,7 @@ long double sasFunc() {
             }
             else{
                 count_rechaso++;
+                
             }
         }
 
@@ -325,16 +650,41 @@ long double sasFunc() {
         //reheatingTR12(temp, k_reheating, n_reheating, count);
         //reheatingTR13(temp, k_reheating, n_reheating, c_cooling_temperature);
         //reheatingTR14(temp, k_reheating, k_reheating_init, n_reheating, count_rechaso, e_const);
+        
+        
+        
+        ///////////////////////////////////////////////////
+        /// History
+        ///////////////////////////////////////////////////
+        /*
+        vector_historyCostSolution.push_back(costCurrentSolution);
+        vector_historyTemp.push_back(temp);
+        vector_historymeanDist.push_back(meanDist(currentSolution,distMat));
+        vector_historymeanDistNorm.push_back(meanDist(currentSolution,distMat)/max_dist);
+        vector_historySegregation.push_back(S(currentSolution, alumnosSep, totalVuln));
+        vector_historycostoCupo.push_back(costCupo(currentSolution,cupoArray));
+        if(count_rechaso==0){
+            vector_historyAcceptSolution.push_back(1);
+        }
+        else{
+            vector_historyAcceptSolution.push_back(0);
+        }
+        vector_historyMove.push_back(std::tuple<int,int>(shuffle_colegios[selectThread],shuffle_student[selectBlock]));     
+        */
+        
+        
+        
         count_trials++;
         count++;
-
     }
-
+    cudaMemcpyAsync(bestSolution, d_bestSolution, n_students * sizeof(int), cudaMemcpyDeviceToHost,streams[0]);
+    cudaMemcpyAsync(previousSolution, d_previousSolution, n_students * sizeof(int), cudaMemcpyDeviceToHost,streams[1]);
+    cudaDeviceSynchronize();
     ///////////////////////////////////////////////////
     /// Obtiene el tiempo de ejecución
     ///////////////////////////////////////////////////
     auto end = chrono::high_resolution_clock::now();
-    long double time_taken = chrono::duration_cast<chrono::nanoseconds>(end - start).count();
+    double time_taken = chrono::duration_cast<chrono::nanoseconds>(end - start).count();
     time_taken *= 1e-9;
 
     for(x=0;x<n_students;x++){
@@ -441,6 +791,19 @@ long double sasFunc() {
     cout << " Archivos Guardado" << "\n";
 
 
+
+    for (int i = 0; i < NUM_STREAMS; ++i) { cudaStreamDestroy(streams[i]); }
+    cudaFree(d_currentSolution);
+    cudaFree(d_alumnosSep);
+    cudaFree(d_distMat);
+    cudaFree(d_cupoArray);
+    cudaFree(d_array_current_Solution);
+    cudaFree(d_array_current_Solution_alu);
+    cudaFree(d_array_current_Solution_col);
+    cudaFree(d_alpha);
+    cudaEventDestroy(start_cuda);
+    cudaEventDestroy(stop_cuda);
+
     return (costBestSolution);
 
 }
@@ -452,36 +815,36 @@ long double sasFunc() {
 ///////////////////////////////////////////////////
 /// Calcula el costo
 ///////////////////////////////////////////////////
-long double calCosto(int currentSolution[], long double **distMat, const long double ptr_alpha[], int alumnosSep[], int totalVuln, int cupoArray[]){
-    long double var1 = meanDist(currentSolution,distMat)/max_dist;
+double calCosto(int currentSolution[], double **distMat, const double ptr_alpha[], int alumnosSep[], int totalVuln, int cupoArray[]){
+    double var1 = meanDist(currentSolution,distMat)/max_dist;
     //cout << "distancia: " << var1 << "\n";
-    long double var2 = S(currentSolution, alumnosSep, totalVuln);
+    double var2 = S(currentSolution, alumnosSep, totalVuln);
     //cout << "Segregación: " << var2 << "\n";
-    long double var3 = costCupo(currentSolution,cupoArray);
+    double var3 = costCupo(currentSolution,cupoArray);
     //cout << "CostoCupo: " << var3 << "\n";
-    return (long double)((ptr_alpha[0]*var1)+(ptr_alpha[1]*var2)+(ptr_alpha[2]*var3));
+    return (double)((ptr_alpha[0]*var1)+(ptr_alpha[1]*var2)+(ptr_alpha[2]*var3));
 }
 
 ///////////////////////////////////////////////////
 /// Distancia promedio que recorreran los estudiantes
 ///////////////////////////////////////////////////
-long double meanDist(const int currentSolution[], long double  **distMat){
-    long double sumDist=0.0;
+double meanDist(const int currentSolution[], double  **distMat){
+    double sumDist=0.0;
     for(int i=0;i<n_students;i++){
         sumDist+=round_n(distMat[i][currentSolution[i]]); // distMat[estudiante][escuela]
     }
     //cout << "meanDist: " << sumDist << endl;
-    //cout << "Numero de estudiantes: " << n_student << "  |  Suma de distancias:" << sumDist << "\n";
+    //cout << "Numero de estudiantes: " << n_students << "  |  Suma de distancias:" << sumDist << "\n";
     return sumDist/n_students;
 }
 
-long double sumDist(const int currentSolution[], long double  **distMat){
-    long double sumDist=0.0;
+double sumDist(const int currentSolution[], double  **distMat){
+    double sumDist=0.0;
     for(int i=0;i<n_students;i++){
         sumDist+=round_n(distMat[i][currentSolution[i]]); // distMat[estudiante][escuela]
     }
     //cout << "sumDist: " << sumDist << endl;
-    //cout << "Numero de estudiantes: " << n_student << "  |  Suma de distancias:" << sumDist << "\n";
+    //cout << "Numero de estudiantes: " << n_students << "  |  Suma de distancias:" << sumDist << "\n";
     return sumDist;
 }
 
@@ -490,8 +853,8 @@ long double sumDist(const int currentSolution[], long double  **distMat){
 /// Calcula segregación por duncan
 ///////////////////////////////////////////////////
 
-long double S(const int currentSolution[],const int alumnosSep[], int totalVuln){
-    long double totalSesc = 0.0;
+double S(const int currentSolution[],const int alumnosSep[], int totalVuln){
+    double totalSesc = 0.0;
     int aluVulCol =0;
     int aluNoVulCol = 0;
     for(int n=0; n<n_colegios;n++){
@@ -505,14 +868,14 @@ long double S(const int currentSolution[],const int alumnosSep[], int totalVuln)
         }
         if(aluNoVulCol>0){
             aluNoVulCol =aluNoVulCol - aluVulCol;
-            totalSesc+=round_n(fabs((aluVulCol/(long double)totalVuln)-(aluNoVulCol/(long double)(n_students-totalVuln))));
+            totalSesc+=round_n(fabs((aluVulCol/(double)totalVuln)-(aluNoVulCol/(double)(n_students-totalVuln))));
         }
     }
     return totalSesc/2.0;
 }
 
-long double sumS(const int currentSolution[],const int alumnosSep[], int totalVuln){
-    long double totalSesc = 0.0;
+double sumS(const int currentSolution[],const int alumnosSep[], int totalVuln){
+    double totalSesc = 0.0;
     int aluVulCol =0;
     int aluNoVulCol = 0;
     for(int n=0; n<n_colegios;n++){
@@ -526,7 +889,7 @@ long double sumS(const int currentSolution[],const int alumnosSep[], int totalVu
         }
         if(aluNoVulCol>0){
             aluNoVulCol =aluNoVulCol - aluVulCol;
-            totalSesc+=round_n(fabs((aluVulCol/(long double)totalVuln)-(aluNoVulCol/(long double)(n_students-totalVuln))));
+            totalSesc+=round_n(fabs((aluVulCol/(double)totalVuln)-(aluNoVulCol/(double)(n_students-totalVuln))));
         }
     }
     return totalSesc;
@@ -537,10 +900,10 @@ long double sumS(const int currentSolution[],const int alumnosSep[], int totalVu
 /// Calcula el costo de tener los estudiantes en las escuelas
 ///////////////////////////////////////////////////
 
-long double costCupo(int currentSolution[],int cupoArray[]){
-    long double totalcostCupo = 0.0;
+double costCupo(int currentSolution[],int cupoArray[]){
+    double totalcostCupo = 0.0;
     int totalAluCol = 0;
-    long double a = 0.0;
+    double a = 0.0;
     for(int j=0;j<n_colegios;j++){
         totalAluCol = 0;
         for(int i=0; i<n_students; i++){
@@ -548,15 +911,15 @@ long double costCupo(int currentSolution[],int cupoArray[]){
                 totalAluCol++;
             }
         }
-        totalcostCupo+=round_n((long double)totalAluCol*fabs(((long double)cupoArray[j]-totalAluCol)/pow(((long double)cupoArray[j]/2),2)));
+        totalcostCupo+=round_n((double)totalAluCol*fabs(((double)cupoArray[j]-totalAluCol)/pow(((double)cupoArray[j]/2),2)));
     }
     return totalcostCupo/n_colegios;
 }
 
 
 
-long double sumCostCupo(int currentSolution[],int cupoArray[]){
-    long double totalcostCupo = 0.0;
+double sumCostCupo(int currentSolution[],int cupoArray[]){
+    double totalcostCupo = 0.0;
     int totalAluCol = 0;
     for(int j=0;j<n_colegios;j++){
         totalAluCol = 0;
@@ -565,7 +928,7 @@ long double sumCostCupo(int currentSolution[],int cupoArray[]){
                 totalAluCol++;
             }
         }
-        totalcostCupo+= round_n((long double)totalAluCol*fabs(((long double)cupoArray[j]-totalAluCol)/pow(((long double)cupoArray[j]/2),2)));
+        totalcostCupo+= round_n((double)totalAluCol*fabs(((double)cupoArray[j]-totalAluCol)/pow(((double)cupoArray[j]/2),2)));
     }
     return totalcostCupo;
 }
@@ -626,7 +989,7 @@ void assignSchoolToArray(int previousSolution[], int bestSolution[], int current
 ///////////////////////////////////////////////////
 /// Crea una matriz de distancia donde x es el estudiante, y es la escuela
 ///////////////////////////////////////////////////
-void calcDist(Info_colegio *ptr_colegios, Info_alu *ptr_students, long double **distMat){
+void calcDist(Info_colegio *ptr_colegios, Info_alu *ptr_students, double **distMat){
     Info_colegio *ptr_aux = ptr_colegios;
     for(int x=0;x < n_students ;x++){
         for(int y=0; y < n_colegios; y++){
@@ -643,11 +1006,11 @@ void calcDist(Info_colegio *ptr_colegios, Info_alu *ptr_students, long double **
 /// newSolution_v2, tiene como entrada la información de los estado actual de la solución, y alcula de inmediato la
 /// distancia promedio, el costocupo y segregación total.
 ///////////////////////////////////////////////////
-long double newSolution_v2(int n_students,int n_colegios,int totalVuln,int aluxcol[],int aluVulxCol[],int cupoArray[],long double **distMat, int currentSolution[], const long double ptr_alpha[]){
-    long double sumDist=0;
-    long double mean=0.0;
-    long double totalcostCupo = 0.0;
-    long double totalSesc = 0.0;
+double newSolution_v2(int n_students,int n_colegios,int totalVuln,int aluxcol[],int aluVulxCol[],int cupoArray[],double **distMat, int currentSolution[], const double ptr_alpha[]){
+    double sumDist=0;
+    double mean=0.0;
+    double totalcostCupo = 0.0;
+    double totalSesc = 0.0;
     int aluVulCol, aluNoVulCol,totalAluCol;
     for(int i=0;i<n_students;i++){
         sumDist+=distMat[i][currentSolution[i]]; // distMat[estudiante][escuela]
@@ -657,18 +1020,18 @@ long double newSolution_v2(int n_students,int n_colegios,int totalVuln,int aluxc
         aluVulCol = aluVulxCol[n];
         aluNoVulCol =totalAluCol - aluVulCol;
         // Calcula el costo cupo
-        totalcostCupo+=totalAluCol*fabs((cupoArray[n]-totalAluCol)/pow(((long double)cupoArray[n]/2),2));
+        totalcostCupo+=totalAluCol*fabs((cupoArray[n]-totalAluCol)/pow(((double)cupoArray[n]/2),2));
         // Calcula el total sesc
-        totalSesc+=((long double)1/2)*fabs((aluVulCol/(long double)totalVuln)-(aluNoVulCol/(long double)(n_students-totalVuln)));
+        totalSesc+=((double)1/2)*fabs((aluVulCol/(double)totalVuln)-(aluNoVulCol/(double)(n_students-totalVuln)));
     }
     totalcostCupo = totalcostCupo/n_colegios;
-    long double var1 = (sumDist/(double)n_students)/max_dist;
+    double var1 = (sumDist/(double)n_students)/max_dist;
     //cout << var1 << "\n";
-    long double var2 = totalSesc;
+    double var2 = totalSesc;
     //cout << var2 << "\n";
-    long double var3 = totalcostCupo;
+    double var3 = totalcostCupo;
     //cout << var3 << "\n";
-    return (long double)((ptr_alpha[0]*var1)+(ptr_alpha[1]*var2)+(ptr_alpha[2]*var3));
+    return (double)((ptr_alpha[0]*var1)+(ptr_alpha[1]*var2)+(ptr_alpha[2]*var3));
 }
 
 void shuffle(int *values, const int max_change, uniform_int_distribution<int> distri) {
@@ -734,8 +1097,8 @@ void getDataStudents(vector<Info_alu> &students, int &totalVuln)
 ////////////////////////////////////////////////
 ////// Obtiene la maxima distancia que un estudiante podria llegar a recorrer
 ///////////////////////////////////////////////////
-long double getMaxDistance(long double **distMat){
-    long double max = 0;
+double getMaxDistance(double **distMat){
+    double max = 0;
     for(int i=0;i<n_students;i++){
         for(int x=0;x<n_colegios;x++){
             if(distMat[i][x]>max){
@@ -749,14 +1112,14 @@ long double getMaxDistance(long double **distMat){
 ///////////////////////////////////////////////////
 /// Calcula el valor de los alpha
 ///////////////////////////////////////////////////
-void normalizedAlpha(long double alpha[3])
+void normalizedAlpha(double alpha[3])
 {
-    long double sumaAlpha = 0.0;
+    double sumaAlpha = 0.0;
     for(int x=0; x<3; x++){
         sumaAlpha +=alpha[x];
     }
     for(int x=0; x<3; x++){
-        alpha[x]= alpha[x]/(long double)sumaAlpha;
+        alpha[x]= alpha[x]/(double)sumaAlpha;
     }
 }
 
@@ -784,9 +1147,9 @@ void initializeArray(int *aluxcol, int *previousAluxCol, int *bestAluxCol, int *
 }
 
 
-long double round_n(long double x)
+double round_n(double x)
 {
-    long double digits = pow(10.0, DECIMAL);
+    double digits = pow(10.0, DECIMAL);
     return trunc(x * digits) / digits;
 }
 
