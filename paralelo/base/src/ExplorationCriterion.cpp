@@ -173,8 +173,9 @@ double solutionNE3(int n_students,
         int *shuffle_colegios,
         int *alumnosSep)
     {
-    double *mSolution[n_block];
-    int *colchange[n_block];
+
+    double **mSolution = (double**)malloc(n_block * sizeof(double));
+    int **colchange = (int**)malloc(n_block * sizeof(int));
     for (int x=0; x<n_block; x++){
         colchange[x] = (int*)malloc(n_thread * sizeof(int));
         mSolution[x] = (double*)malloc(n_thread * sizeof(double));
@@ -191,7 +192,7 @@ double solutionNE3(int n_students,
 
     int cAlu = 0;
     int cCol = 0;
-    int aluchange[n_block];
+    int *aluchange = (int*)malloc(n_block * sizeof(int));
     int bestAluchange;
     int bestColchange;
 
@@ -260,6 +261,7 @@ double solutionNE3(int n_students,
     free(c_aluxcol);
     free(c_aluVulxCol);
     free(c_currentSolution);
+    free(aluchange);
 
     
     return minSolution;
@@ -286,8 +288,8 @@ double solutionNE4(int n_students,
         int *alumnosSep)
     {
     bool foundBetter = false;
-    double *mSolution[n_block];
-    int *colchange[n_block];
+    double** mSolution = (double**)malloc(n_block * sizeof(double));
+    int** colchange = (int**)malloc(n_block * sizeof(int));
     for (int x=0; x<n_block; x++){
         colchange[x] = (int*)malloc(n_thread * sizeof(int));
         mSolution[x] = (double*)malloc(n_thread * sizeof(double));
@@ -304,7 +306,7 @@ double solutionNE4(int n_students,
 
     int cAlu = 0;
     int cCol = 0;
-    int aluchange[n_block];
+    int *aluchange = (int*)malloc(n_block * sizeof(int));
     int bestAluchange;
     int bestColchange;
 
@@ -381,6 +383,7 @@ double solutionNE4(int n_students,
     free(c_aluxcol);
     free(c_aluVulxCol);
     free(c_currentSolution);
+    free(aluchange);
 
     
     return minSolution;

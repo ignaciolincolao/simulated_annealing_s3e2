@@ -1,7 +1,17 @@
 cmake_minimum_required(VERSION 3.0.0)
-set(CMAKE_CUDA_COMPILER /usr/local/cuda/bin/nvcc)
-project(paralelo LANGUAGES CUDA CXX)
+if (WIN32)
+    find_package(CUDAToolkit)
+    set(CMAKE_CUDA_ARCHITECTURES 52 60 61 75 86)
 
+endif (WIN32)
+if (UNIX)
+    set(CMAKE_CUDA_COMPILER /usr/local/cuda/bin/nvcc)
+endif (UNIX)
+
+
+
+
+project(paralelo LANGUAGES CUDA CXX)
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -17,7 +27,7 @@ file(GLOB all_SRCS
     "${PROJECT_SOURCE_DIR}/src/*.cu"
 )
 
-add_executable(paralelo ${all_SRCS} alumnos_utm.txt colegios_utm.txt)
+add_executable(paralelo ${all_SRCS}  alumnos_utm.txt colegios_utm.txt)
 
 set_target_properties(paralelo PROPERTIES LINKER_LANGUAGE CXX)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/data/alumnos_utm.txt

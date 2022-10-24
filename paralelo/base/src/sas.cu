@@ -6,7 +6,7 @@
 #include <TemperatureLength.hpp>
 #include <ReheatingMethods.hpp>
 #include <CoolingScheme.hpp>
-
+#include <tuple>
 #include <limits>
 
 #define DECIMAL 16
@@ -90,12 +90,19 @@ double sasFunc() {
     ///////////////////////////////////////////////////
     /// Inicializa Variables y arreglos
     ///////////////////////////////////////////////////
+    int *aluVulxCol, 
+        *aluxcol,
+        *previousAluxCol,
+        *previousAluVulxCol,
+        *bestAluxCol,
+        *bestAluVulxCol;
+    aluVulxCol = (int *)malloc(sizeof(int)*n_colegios);
+    aluxcol = (int *)malloc(sizeof(int)*n_colegios);
+    previousAluxCol = (int *)malloc(sizeof(int)*n_colegios);
+    previousAluVulxCol = (int *)malloc(sizeof(int)*n_colegios);
+    bestAluxCol = (int *)malloc(sizeof(int)*n_colegios);
+    bestAluVulxCol = (int *)malloc(sizeof(int)*n_colegios);
 
-    int aluVulxCol[n_colegios], aluxcol[n_colegios];
-    int previousAluxCol[n_colegios];
-    int previousAluVulxCol[n_colegios];
-    int bestAluxCol[n_colegios];
-    int bestAluVulxCol[n_colegios];
 
     int *previousSolution= nullptr;
     int *bestSolution= nullptr;
@@ -240,7 +247,7 @@ double sasFunc() {
     std::vector<double> vector_historycostoCupo;
     std::vector<bool> vector_historyAcceptSolution;
     std::vector<int> vector_historyAsign;
-    std::vector<std::tuple <int,int>> vector_historyMove;
+    std::vector<tuple<int,int>> vector_historyMove;
 
 
     
@@ -367,7 +374,8 @@ double sasFunc() {
     int numberOfBlocks = 32 * numberOfSMs;
 
     int NUM_STREAMS = 10;
-    cudaStream_t streams[NUM_STREAMS];
+    cudaStream_t *streams;
+    streams = (cudaStream_t *)malloc(sizeof(cudaStream_t)*NUM_STREAMS);
     for (int i = 0; i < NUM_STREAMS; ++i) { cudaStreamCreate(&streams[i]); }
 
    
