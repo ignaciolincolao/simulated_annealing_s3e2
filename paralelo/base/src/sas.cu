@@ -674,6 +674,7 @@ double sasFunc() {
     }
     cudaMemcpyAsync(bestSolution, d_bestSolution, n_students * sizeof(int), cudaMemcpyDeviceToHost,streams[0]);
     cudaMemcpyAsync(previousSolution, d_previousSolution, n_students * sizeof(int), cudaMemcpyDeviceToHost,streams[1]);
+    cudaDeviceSynchronize();
     ///////////////////////////////////////////////////
     /// Obtiene el tiempo de ejecución
     ///////////////////////////////////////////////////
