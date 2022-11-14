@@ -119,6 +119,7 @@ __global__ void newSolution_kernel(
     var3 = (totalcostCupo /n_colegios);
     solutions[myID] =  (double)((d_alpha[0]*var1)+(d_alpha[1]*var2)+(d_alpha[2]*var3));
 
+    
     __syncthreads();
 
     while(salto){
@@ -142,12 +143,13 @@ __global__ void newSolution_kernel(
         }
         __syncthreads();
     }
+    
     if(myID==0)
     {
         d_array_current_Solution[blockIdx.x] = solutions[myID];
         d_array_current_Solution_thread[blockIdx.x] = solutions_thread[myID];
     }
-
+    
     
 }
 

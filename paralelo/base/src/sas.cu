@@ -445,7 +445,7 @@ double sasFunc() {
     //int deviceId;
     //cudaGetDevice(&deviceId);                                         // The ID of the currently active GPU device.
     //cudaMemPrefetchAsync(pointerToSomeUMData, size, deviceId); 
-
+    int calcsum = n_thread * sizeof(double) + n_thread * sizeof(int);
     while(temp > min_temp){
 
         copyMemSolution<<<numberOfBlocks,threadsPerBlock,0,streams[0]>>>(d_currentSolution, d_previousSolution,n_students);
@@ -490,8 +490,9 @@ double sasFunc() {
         ///////////////////////////////////////////////////
         ///  Ejecuta los kernel
         //////////////////////////////////////////////////
+
         newSolution_kernel<<<n_block,n_thread,
-                n_thread* sizeof(double)+ n_thread* sizeof(int)>>>(
+                calcsum>>>(
                         d_array_current_Solution,
                                 d_array_current_Solution_thread,
                                 n_students,
@@ -791,11 +792,11 @@ double sasFunc() {
     cudaFree(d_currentSolution);
     cudaFree(d_alumnosSep);
     cudaFree(d_distMat);
-    cudaFree(d_cupoArray);
+    //cudaFree(d_cupoArray);
     cudaFree(d_array_current_Solution);
     cudaFree(d_array_current_Solution_thread);
     cudaFree(d_array_current_Solution_block);
-    cudaFree(d_alpha);
+    //cudaFree(d_alpha);
     cudaEventDestroy(start_cuda);
     cudaEventDestroy(stop_cuda);
 
