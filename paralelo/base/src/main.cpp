@@ -63,17 +63,25 @@ string prefijo_save;
 
 int selectThread=0,
     selectBlock = 0,
-    n_block = 256, // Numero de estudiantes simultaneos
+    n_block = 1024, // Numero de estudiantes simultaneos
     n_thread = 1; // Numero de escuelas simultaneos
 
 
 
 int main(int argc, char *argv[]) {
+
+    #if _MSC_VER
     time_t hora_actual;
     struct tm time_info;
     time(&hora_actual);
     localtime_s(&time_info,&hora_actual);
     const tm* tim = &time_info;
+    #else
+    time_t hora_actual;
+	hora_actual = time(NULL);
+	tm *tim = localtime(&hora_actual);
+    #endif
+    
     strftime(timestr, sizeof(timestr), "%Y-%m-%d T:%H-%M", tim);
     prefijo_save = string(timestr);
     if (argc>1) {
