@@ -63,17 +63,18 @@ string prefijo_save;
 
 int selectThread=0,
     selectBlock = 0,
-    n_block = 32, // Numero de estudiantes simultaneos
-    n_thread = 32; // Numero de escuelas simultaneos
+    n_block = 256, // Numero de estudiantes simultaneos
+    n_thread = 1; // Numero de escuelas simultaneos
 
 
 
 int main(int argc, char *argv[]) {
     time_t hora_actual;
-    struct tm * time_info;
+    struct tm time_info;
     time(&hora_actual);
-    time_info = localtime(&hora_actual);
-    strftime(timestr, sizeof(timestr), "%Y-%m-%d T:%H-%M", time_info);
+    localtime_s(&time_info,&hora_actual);
+    const tm* tim = &time_info;
+    strftime(timestr, sizeof(timestr), "%Y-%m-%d T:%H-%M", tim);
     prefijo_save = string(timestr);
     if (argc>1) {
         // Config init
@@ -111,6 +112,7 @@ int main(int argc, char *argv[]) {
     mt.seed(seed);
     
     double a = sasFunc();
+    cout << "Resultado de sasFunc(): " << a << endl;
     return (EXIT_SUCCESS);
 
 }
