@@ -315,7 +315,8 @@ double sasFunc() {
     double *d_currentVars, *d_bestVars, *d_previousVars;
     double *d_costPreviousSolution, *d_costBestSolution, *d_costCurrentSolution;
 
-
+    int max_changes_students = min(n_thread*n_block, n_students);
+    int max_changes_school = min(n_block, n_colegios);
 
 
     cudaMalloc((void **) &d_array_current_Solution, n_block * sizeof(double));
@@ -327,8 +328,8 @@ double sasFunc() {
     cudaMalloc((void **) &d_previousVars, 3 * sizeof(double));
     cudaMalloc((void **) &d_array_current_Solution_alu, n_block * sizeof(int)); 
     cudaMalloc((void **) &d_array_current_Solution_col, n_block * sizeof(int));
-    cudaMalloc((void **) &d_shuffle_colegios, n_block * sizeof(int));
-    cudaMalloc((void **) &d_shuffle_students, n_thread*n_block * sizeof(int));
+    cudaMalloc((void **) &d_shuffle_colegios, max_changes_school  * sizeof(int));
+    cudaMalloc((void **) &d_shuffle_students, max_changes_students * sizeof(int));
     cudaMalloc((void **) &d_aluxcol,n_colegios * sizeof(int));
     cudaMalloc((void **) &d_previousAluxcol,n_colegios * sizeof(int));
     cudaMalloc((void **) &d_aluVulxCol,n_colegios * sizeof(int));
@@ -457,8 +458,8 @@ double sasFunc() {
         ///  Selecciona aleatoria mente a los alumnos
         ///////////////////////////////////////////////////
 
-        shuffle(shuffle_student,n_thread*n_block,dist);
-        shuffle(shuffle_colegios,n_block,dist2);
+        shuffle(shuffle_student,max_changes_students,dist);
+        shuffle(shuffle_colegios,max_changes_school,dist2);
         ///////////////////////////////////////////////////
         /// Actualiza la memoria en CUDA
         ///////////////////////////////////////////////////
@@ -475,8 +476,8 @@ double sasFunc() {
         ///////////////////////////////////////////////////
 
         
-        cudaMemcpyAsync(d_shuffle_students, shuffle_student, n_block*n_thread* sizeof(int), cudaMemcpyHostToDevice,streams[0]);
-        cudaMemcpyAsync(d_shuffle_colegios, shuffle_colegios, n_block * sizeof(int), cudaMemcpyHostToDevice,streams[1]);
+        cudaMemcpyAsync(d_shuffle_students, shuffle_student, max_changes_students* sizeof(int), cudaMemcpyHostToDevice,streams[0]);
+        cudaMemcpyAsync(d_shuffle_colegios, shuffle_colegios, max_changes_school * sizeof(int), cudaMemcpyHostToDevice,streams[1]);
         cudaDeviceSynchronize();
 
         ///////////////////////////////////////////////////

@@ -50,11 +50,11 @@ __global__ void newSolution_kernel(
             sumDist = 0.0;
     /// Inicializa arrays
     int tid = blockIdx.x * blockDim.x + threadIdx.x;
-    aluchange = d_shuffle_students[tid]; 
+    aluchange = d_shuffle_students[tid%n_students]; 
     //aluchange = d_shuffle_students[threadIdx.x]; 
-    colchange = d_shuffle_colegios[blockIdx.x];
+    colchange = d_shuffle_colegios[blockIdx.x%n_colegios];
     currentSchool = d_currentSolution[aluchange];
-    //printf("%d|%d\n",colchange,currentSchool);
+    //printf("%d|%d|%d|%d\n",colchange,currentSchool,aluchange,tid%n_students);
 
     solutions[myID] = 9999.9;
     solutions_col[threadIdx.x] = colchange;
@@ -125,7 +125,7 @@ __global__ void newSolution_kernel(
     var3 = (totalcostCupo /n_colegios);
     solutions[myID] =  (double)((d_alpha[0]*var1)+(d_alpha[1]*var2)+(d_alpha[2]*var3));
     __syncthreads();
-    //printf("%.10lf ",solutions[myID]);
+    //printf("%.10lf %d\n",solutions[myID],blockIdx.x);
     while(salto>1){
         if(salto-(myID+1)>myID){
             //printf("%d | %d\n",salto-(myID+1),myID);
@@ -145,6 +145,7 @@ __global__ void newSolution_kernel(
         d_array_current_Solution[blockIdx.x] = solutions[0];
         d_array_current_Solution_alu[blockIdx.x] = solutions_alu[0];
         d_array_current_Solution_col[blockIdx.x] = solutions_col[0];
+        //printf("%d \t %.20lf | %d %d \n",blockIdx.x,d_array_current_Solution[0],d_array_current_Solution_alu[0],d_array_current_Solution_col[0]);
     }
 
     
@@ -185,9 +186,9 @@ __global__ void reduce_block_kernel(
     if(myID==0)
     {
         //printf("\n %.10lf\n ",solutions[myID]);
-        d_array_current_Solution[blockIdx.x] = solutions[0];
-        d_array_current_Solution_alu[blockIdx.x] = solutions_alu[0];
-        d_array_current_Solution_col[blockIdx.x] = solutions_col[0];
+        d_array_current_Solution[0] = solutions[0];
+        d_array_current_Solution_alu[0] = solutions_alu[0];
+        d_array_current_Solution_col[0] = solutions_col[0];
         //printf("%d \t %.20lf | %d %d \n",blockIdx.x,solutions[0],solutions_alu[0],solutions_col[0]);
     }
 }

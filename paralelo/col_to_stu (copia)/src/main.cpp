@@ -63,8 +63,8 @@ string prefijo_save;
 
 int selectThread=0,
     selectBlock = 0,
-    n_block = 512, // Numero de estudiantes simultaneos
-    n_thread = 32; // Numero de escuelas simultaneos
+    n_block = 86, // Numero de estudiantes simultaneos
+    n_thread = 1; // Numero de escuelas simultaneos
 
 
 
