@@ -124,18 +124,20 @@ __global__ void newSolution_kernel(
 
     while(salto){
         if(salto-(myID+1)>myID){
-            if(currentSchool!=colchange && d_shuffle_colegios[salto-(myID+1)]!=currentSchool){
+            //if(currentSchool!=colchange && d_shuffle_colegios[salto-(myID+1)]!=currentSchool){
                 if(solutions[myID]>solutions[salto-(myID+1)]){
                     solutions[myID]=solutions[salto-(myID+1)];
                     solutions_thread[myID]=solutions_thread[salto-(myID+1)];
                 }
-            }
+            //}
+            /*
             else{
                 if(currentSchool==colchange){
                     solutions[myID]=solutions[salto-(myID+1)];
                     solutions_thread[myID]=solutions_thread[salto-(myID+1)];
                 }
             }
+            */
         }
         salto = (salto/2)+(salto&(2-1));
         if(salto==1){

@@ -361,9 +361,10 @@ double sasFunc() {
     ///////////////////////////////////////////////////
     int deviceId;
     int numberOfSMs;
+    cudaDeviceProp deviceProp;
     cudaGetDevice(&deviceId);
     cudaDeviceGetAttribute(&numberOfSMs, cudaDevAttrMultiProcessorCount, deviceId); // Calcula el numero de SMstream 
-
+    cudaGetDeviceProperties(&deviceProp, 0);
     int threadsPerBlock = 256;
     int numberOfBlocks = 32 * numberOfSMs;
 
@@ -530,10 +531,11 @@ double sasFunc() {
         //cudaMemcpyAsync(&selectBlock,d_array_current_Solution_col, sizeof(int),cudaMemcpyDeviceToHost,streams[2]);
         
         cudaDeviceSynchronize();
+        //exit(0);
         ///////////////////////////////////////////////////
         ///  Actualizo datos basicos
         ///////////////////////////////////////////////////
-        //exit(0);
+    
         /*
         vector_historyAsign.push_back(currentSolution[shuffle_student[selectBlock]]);           
         aluxcol[currentSolution[shuffle_student[selectBlock]]]-=1; ///
