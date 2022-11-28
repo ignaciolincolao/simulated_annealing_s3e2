@@ -27,8 +27,8 @@ __global__ void newSolution_kernel(
     /// Shared Memory
     extern __shared__ double sharedMem[];
     double* solutions =(double*)sharedMem;
-    int* solutions_col = (int*)&solutions[n_thread];
-    int* solutions_alu =  (int*)&solutions_col[n_thread];
+    int* solutions_col = (int*)&solutions[blockDim.x/32+1];
+    int* solutions_alu =  (int*)&solutions_col[blockDim.x/32+1];
     /// Inicializa variables en 0
     int aluchange,
             colchange,
@@ -57,9 +57,6 @@ __global__ void newSolution_kernel(
     currentSchool = d_currentSolution[aluchange];
     //printf("%d|%d|%d|%d\n",colchange,currentSchool,aluchange,tid%n_students);
 
-    solutions[myID] = 9999.9;
-    solutions_col[threadIdx.x] = colchange;
-    solutions_alu[threadIdx.x] = aluchange;
     double cost_solution = 9999.9;
     int col_solution = colchange;
     int alu_solution = aluchange;
@@ -129,9 +126,8 @@ __global__ void newSolution_kernel(
     var2 = (totalSesc/2.0);
     //cout << var2 << "\n";
     var3 = (totalcostCupo /n_colegios);
-    solutions[myID] =  (double)((d_alpha[0]*var1)+(d_alpha[1]*var2)+(d_alpha[2]*var3));
+    cost_solution =  (double)((d_alpha[0]*var1)+(d_alpha[1]*var2)+(d_alpha[2]*var3));
     //printf("%.16lf %d %d\n",solutions[myID], colchange,aluchange);
-    cost_solution = solutions[myID];
     __syncthreads();
 
     int warpID = threadIdx.x / 32;
@@ -181,44 +177,21 @@ __global__ void newSolution_kernel(
         }
        
     }
-    /*
-    //printf("%.10lf %d\n",solutions[myID],blockIdx.x);
-    while(salto>1){
-        if(salto-(myID+1)>myID){
-            //printf("%d | %d\n",salto-(myID+1),myID);
-            if(solutions[salto-(myID+1)]<solutions[myID]){
-                
-                solutions[myID]=solutions[salto-(myID+1)];
-                solutions_col[myID] = solutions_col[salto-(myID+1)];
-                solutions_alu[myID] = solutions_alu[salto-(myID+1)];
-            }
-        }
-        salto = (salto/2)+(salto&(2-1));
-        __syncthreads();
-    }
-    if(myID==0)
-    {
-        //printf(" | %.10lf ",solutions[myID]);
-        d_array_current_Solution[blockIdx.x] = solutions[0];
-        d_array_current_Solution_alu[blockIdx.x] = solutions_alu[0];
-        d_array_current_Solution_col[blockIdx.x] = solutions_col[0];
-        //printf("%d \t %.20lf | %d %d \n",blockIdx.x,d_array_current_Solution[0],d_array_current_Solution_alu[0],d_array_current_Solution_col[0]);
-    }
-    */
+
     
 }
 
 __global__ void reduce_block_kernel(
     double *d_array_current_Solution,
     int *d_array_current_Solution_alu,
-    int *d_array_current_Solution_col,
-    const int n_block){
+    int *d_array_current_Solution_col){
 
     extern __shared__ double sharedMem[];
     double* solutions =(double*)sharedMem;
-    int* solutions_col = (int*)&solutions[n_block];
-    int* solutions_alu =  (int*)&solutions_col[n_block];
+    int* solutions_col = (int*)&solutions[blockDim.x/32+1];
+    int* solutions_alu =  (int*)&solutions_col[blockDim.x/32+1];
     int myID = threadIdx.x;
+    int end = blockDim.x-1;
 
 
     double cost_solution = d_array_current_Solution[myID];
@@ -227,6 +200,15 @@ __global__ void reduce_block_kernel(
     int warpID = threadIdx.x / 32;
     int lane = threadIdx.x % 32;
     #define FULL_MASK 0xffffffff
+    
+    if(myID==0){
+        if(d_array_current_Solution[end] < cost_solution){
+            cost_solution = d_array_current_Solution[end];
+            col_solution = d_array_current_Solution_col[end];
+            alu_solution = d_array_current_Solution_alu[end];
+        }
+    }
+
 
 
 
@@ -247,6 +229,7 @@ __global__ void reduce_block_kernel(
         solutions_col[warpID] = col_solution;
         solutions_alu[warpID] = alu_solution;
     }
+    
 
 
     __syncthreads();

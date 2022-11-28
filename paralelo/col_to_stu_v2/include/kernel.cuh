@@ -31,8 +31,7 @@ __global__ void newSolution_kernel(
 __global__ void reduce_block_kernel(
     double *d_array_current_Solution,
     int *d_array_current_Solution_alu,
-    int *d_array_current_Solution_col,
-    const int n_block);
+    int *d_array_current_Solution_col);
 
 __global__ void calculateSolution(
     double *d_array_current_Solution,

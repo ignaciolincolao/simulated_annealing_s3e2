@@ -367,8 +367,8 @@ double sasFunc() {
     cudaGetDeviceProperties(&deviceProp, 0);
     int threadsPerBlock = 256;
     int numberOfBlocks = 32 * numberOfSMs;
-
     int NUM_STREAMS = 10;
+    int nWarp = deviceProp.warpSize;
     cudaStream_t streams[NUM_STREAMS];
     for (int i = 0; i < NUM_STREAMS; ++i) { cudaStreamCreate(&streams[i]); }
 
@@ -484,8 +484,9 @@ double sasFunc() {
         ///////////////////////////////////////////////////
         ///  Ejecuta los kernel
         //////////////////////////////////////////////////
+        //cout << (n_block/nWarp+1) << endl;
         newSolution_kernel<<<n_block,n_thread,
-                n_thread* sizeof(double)+ n_thread* sizeof(int) + n_thread* sizeof(int)>>>(
+        (n_thread/nWarp+1) * sizeof(double)+ (n_thread/nWarp+1)* sizeof(int) + (n_thread/nWarp+1)* sizeof(int)>>>(
                         d_array_current_Solution,
                                 d_array_current_Solution_alu,
                                 d_array_current_Solution_col,
@@ -504,10 +505,9 @@ double sasFunc() {
                                 d_currentVars,
                                 pitch);
         reduce_block_kernel<<<1,n_block,
-        n_block* sizeof(double)+ n_block* sizeof(int)+ n_block* sizeof(int)>>>(d_array_current_Solution,
+        (n_block/nWarp+1)* sizeof(double)+ (n_block/nWarp+1)* sizeof(int)+ (n_block/nWarp+1)* sizeof(int)>>>(d_array_current_Solution,
                 d_array_current_Solution_alu,
-                d_array_current_Solution_col,
-                n_block);
+                d_array_current_Solution_col);
 
         //cout << endl;
         calculateSolution<<<1,1>>>(d_array_current_Solution,
