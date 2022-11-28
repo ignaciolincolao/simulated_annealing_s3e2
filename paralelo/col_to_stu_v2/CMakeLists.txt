@@ -45,6 +45,9 @@ set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
 #set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} $ENV{CUDA_NVCC_FLAGS} -lineinfo --default-stream per-thread -ftz=true -prec-div=false -prec-sqrt=false")
 target_compile_options(paralelo PRIVATE $<$<COMPILE_LANGUAGE:CUDA>: -lineinfo --default-stream per-thread 
             --expt-relaxed-constexpr
+            -maxrregcount=64
+            -Xptxas 
+            -dlcm=cg
             -ftz=true 
             -prec-div=false 
             -prec-sqrt=false>) 

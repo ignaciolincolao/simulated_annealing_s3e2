@@ -51,7 +51,7 @@ __global__ void newSolution_kernel(
     double cost_solution;
     int col_solution = newSchool;
     int alu_solution = aluchange;
-
+    
     sumDist= d_currentVars[0];
     totalSesc = d_currentVars[1];
     totalcostCupo = d_currentVars[2];
@@ -59,6 +59,7 @@ __global__ void newSolution_kernel(
     /////// Descuenta antes de mover
     ////////////////////////////////////////////////////////////////
     // Distancia
+
     sumDist-=cu_round_n(d_distMat[aluchange * pitch / sizeof(double) + currentSchool]);
     // seg de la escuela actual
     totalAluCol = d_aluxcol[currentSchool];
@@ -86,8 +87,9 @@ __global__ void newSolution_kernel(
     //////////////////////////////////////////////////////////////
     sumDist+=cu_round_n(d_distMat[aluchange * pitch / sizeof(double) + newSchool]);
     // seg de la escuela actual
-    totalAluCol = d_aluxcol[currentSchool]-1;
-    aluVulCol = d_aluVulxCol[currentSchool]-d_alumnosSep[aluchange];
+    totalAluCol=d_aluxcol[currentSchool]-1;
+    aluVulCol= d_aluVulxCol[currentSchool];
+    aluVulCol-=d_alumnosSep[aluchange];
     aluNoVulCol =totalAluCol - aluVulCol;
     totalSesc+=cu_round_n(fabs((aluVulCol/(double)d_totalVuln)-(aluNoVulCol/(double)(d_n_students-d_totalVuln))));
     // costcupo escuela actual
@@ -95,7 +97,8 @@ __global__ void newSolution_kernel(
     
     // seg de la escuela antigua
     totalAluCol = d_aluxcol[newSchool]+1;
-    aluVulCol = d_aluVulxCol[newSchool]+d_alumnosSep[aluchange];
+    aluVulCol = d_aluVulxCol[newSchool];
+    aluVulCol+=d_alumnosSep[aluchange];
     aluNoVulCol =totalAluCol - aluVulCol;
     totalSesc+=cu_round_n(fabs((aluVulCol/(double)d_totalVuln)-(aluNoVulCol/(double)(d_n_students-d_totalVuln))));
 
