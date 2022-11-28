@@ -1,5 +1,17 @@
 cmake_minimum_required(VERSION 3.0.0)
-set(CMAKE_CUDA_COMPILER /usr/local/cuda/bin/nvcc)
+
+cmake_minimum_required(VERSION 3.0.0)
+if (WIN32)
+    find_package(CUDAToolkit)
+    set(CMAKE_CUDA_ARCHITECTURES 52 60 61 75 86)
+
+endif (WIN32)
+if (UNIX)
+    set(CMAKE_CUDA_COMPILER /usr/local/cuda/bin/nvcc)
+    set(CMAKE_CUDA_ARCHITECTURES 52 60 61 75 86)
+endif (UNIX)
+
+
 project(paralelo LANGUAGES CUDA CXX)
 
 set(CMAKE_CXX_STANDARD 14)
@@ -30,7 +42,12 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/data/colegios_utm.txt
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
-set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} $ENV{CUDA_NVCC_FLAGS} -lineinfo --default-stream per-thread")
+#set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} $ENV{CUDA_NVCC_FLAGS} -lineinfo --default-stream per-thread -ftz=true -prec-div=false -prec-sqrt=false")
+target_compile_options(paralelo PRIVATE $<$<COMPILE_LANGUAGE:CUDA>: -lineinfo --default-stream per-thread 
+            --expt-relaxed-constexpr
+            -ftz=true 
+            -prec-div=false 
+            -prec-sqrt=false>) 
 
 # Gprof 
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pg")

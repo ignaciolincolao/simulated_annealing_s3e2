@@ -303,6 +303,7 @@ double sasFunc() {
     double *d_distMat; /// clon de matriz de distancia
     int *d_currentSolution, *d_bestSolution, *d_previousSolution;
     int *d_alumnosSep; // Array que contendra a los estudiantes vulnerables
+    int *d_cupoArray;
     ///////////////
     double *d_array_current_Solution;
     int *d_array_current_Solution_alu;
@@ -317,6 +318,7 @@ double sasFunc() {
 
     int max_changes_students = min(n_thread*n_block, n_students);
     int max_changes_school = min(n_block, n_colegios);
+
 
 
     cudaMalloc((void **) &d_array_current_Solution, n_block * sizeof(double));
@@ -338,6 +340,7 @@ double sasFunc() {
     cudaMalloc((void **) &d_bestSolution, n_students * sizeof(int));
     cudaMalloc((void **) &d_previousSolution, n_students * sizeof(int));
     cudaMalloc((void **) &d_alumnosSep, n_students * sizeof(int)); // arreglo que contiene la id de cada usuario vulnerable
+    cudaMalloc((void **) &d_cupoArray, n_colegios * sizeof(int));
 
 
     double *matrestest;
@@ -387,9 +390,16 @@ double sasFunc() {
                     n_colegios * sizeof(double),
                     n_students); // Reserva memoria para la matriz de distancia
 
-    gpuErrchk( cudaMemcpyAsync(d_alumnosSep, alumnosSep, n_students * sizeof(int), cudaMemcpyHostToDevice,streams[0]));
-    gpuErrchk( cudaMemcpyToSymbolAsync( d_cupoArray, cupoArray,  n_colegios * sizeof(int),0,cudaMemcpyHostToDevice,streams[1]));
+
     gpuErrchk( cudaMemcpyToSymbolAsync( d_alpha, alpha,  3 * sizeof(double),0,cudaMemcpyHostToDevice,streams[2]));
+    
+
+    gpuErrchk( cudaMemcpyToSymbolAsync( d_n_students, &n_students, sizeof(int),0,cudaMemcpyHostToDevice,streams[3]));
+    gpuErrchk( cudaMemcpyToSymbolAsync( d_n_colegios, &n_colegios, sizeof(int),0,cudaMemcpyHostToDevice,streams[4]));
+    gpuErrchk( cudaMemcpyToSymbolAsync( d_max_dist, &max_dist, sizeof(double),0,cudaMemcpyHostToDevice,streams[5]));
+    gpuErrchk( cudaMemcpyToSymbolAsync( d_totalVuln, &totalVuln, sizeof(int),0,cudaMemcpyHostToDevice,streams[6]));
+
+
     size_t h_pitchBytes = n_colegios * sizeof(double);
     cudaMemcpy2DAsync(d_distMat,
                  pitch,
@@ -433,7 +443,8 @@ double sasFunc() {
     cudaMemcpyAsync(d_currentVars, currentVars, 3 * sizeof(double), cudaMemcpyHostToDevice,streams[9]);
     cudaMemcpyAsync(d_previousVars, currentVars, 3 * sizeof(double), cudaMemcpyHostToDevice,streams[0]);
     cudaMemcpyAsync(d_bestVars, currentVars, 3 * sizeof(double), cudaMemcpyHostToDevice,streams[1]);
-
+    cudaMemcpyAsync(d_alumnosSep, alumnosSep, n_students * sizeof(int), cudaMemcpyHostToDevice,streams[2]);
+    cudaMemcpyAsync(d_cupoArray, cupoArray, n_colegios * sizeof(int), cudaMemcpyHostToDevice,streams[3]);
 
     ///////////////////////////// Incorporar para acceder mas rapido al costCurrentSolution
     //int deviceId;
@@ -490,12 +501,8 @@ double sasFunc() {
                         d_array_current_Solution,
                                 d_array_current_Solution_alu,
                                 d_array_current_Solution_col,
-                                n_students,
-                                n_colegios,
-                                n_thread,
-                                max_dist,
+                                d_cupoArray,
                                 d_alumnosSep,
-                                totalVuln,
                                 d_aluxcol,
                                 d_aluVulxCol,
                                 d_currentSolution,
@@ -513,12 +520,8 @@ double sasFunc() {
         calculateSolution<<<1,1>>>(d_array_current_Solution,
                     d_array_current_Solution_alu,
                     d_array_current_Solution_col,
-                    n_students,
-                    n_colegios,
-                    n_thread,
-                    max_dist,
+                    d_cupoArray,
                     d_alumnosSep,
-                    totalVuln,
                     d_aluxcol,
                     d_aluVulxCol,
                     d_currentSolution,
@@ -789,6 +792,7 @@ double sasFunc() {
     cudaFree(d_array_current_Solution_alu);
     cudaFree(d_array_current_Solution_col);
     cudaFree(d_alpha);
+
     cudaEventDestroy(start_cuda);
     cudaEventDestroy(stop_cuda);
 
