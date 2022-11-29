@@ -532,8 +532,34 @@ double sasFunc() {
         cudaMemcpy(&costCurrentSolution,&d_array_current_Solution[0], sizeof(double),cudaMemcpyDeviceToHost);
         //cudaMemcpyAsync(&selectThread,&d_array_current_Solution_alu[0], sizeof(int),cudaMemcpyDeviceToHost,streams[1]);
         //cudaMemcpyAsync(&selectBlock,d_array_current_Solution_col, sizeof(int),cudaMemcpyDeviceToHost,streams[2]);
-        
         cudaDeviceSynchronize();
+
+        if(costCurrentSolution > costBestSolution){
+            if(metropolisAC1(costPreviousSolution,costCurrentSolution)==1){
+            reduce_block_max<<<1,n_block,
+            (n_block/nWarp+1)* sizeof(double)+ (n_block/nWarp+1)* sizeof(int)+ (n_block/nWarp+1)* sizeof(int)>>>(d_array_current_Solution,
+            d_array_current_Solution_alu,
+            d_array_current_Solution_col);
+            calculateSolution<<<1,1>>>(d_array_current_Solution,
+                d_array_current_Solution_alu,
+                d_array_current_Solution_col,
+                d_cupoArray,
+                d_alumnosSep,
+                d_aluxcol,
+                d_aluVulxCol,
+                d_currentSolution,
+                d_distMat,
+                pitch,
+                d_currentVars,
+                d_costCurrentSolution);
+            cudaMemcpy(&costCurrentSolution,&d_array_current_Solution[0], sizeof(double),cudaMemcpyDeviceToHost);
+            //cudaMemcpyAsync(&selectThread,&d_array_current_Solution_alu[0], sizeof(int),cudaMemcpyDeviceToHost,streams[1]);
+            //cudaMemcpyAsync(&selectBlock,d_array_current_Solution_col, sizeof(int),cudaMemcpyDeviceToHost,streams[2]);
+            cudaDeviceSynchronize();
+            }
+        }
+        
+
         //exit(0);
         ///////////////////////////////////////////////////
         ///  Actualizo datos basicos
@@ -589,15 +615,15 @@ double sasFunc() {
             
             costBestSolution=costCurrentSolution;
             costPreviousSolution=costCurrentSolution;
-            //cout << costBestSolution << endl;
-            /*
+            cout << costBestSolution << "| |" << temp << "| |" << count<< endl;
+            
             vector_costCurrentSolution.push_back(costCurrentSolution);
             vector_meanDist.push_back(meanDist(currentSolution,distMat));
             vector_segregation.push_back(S(currentSolution, alumnosSep, totalVuln));
             vector_costoCupo.push_back(costCupo(currentSolution,cupoArray));
             vector_temp.push_back(temp);
             vector_count.push_back(count);
-            */
+            
             c_accepta++;
             count_rechaso=0;
         }
@@ -638,7 +664,7 @@ double sasFunc() {
             coolingCS2(temp,coolingRate);
         }
 
-        //reheatingTR11(temp, k_reheating, n_reheating, count_rechaso);
+        reheatingTR11(temp, k_reheating, n_reheating, count_rechaso);
         //reheatingTR12(temp, k_reheating, n_reheating, count);
         //reheatingTR13(temp, k_reheating, n_reheating, c_cooling_temperature);
         //reheatingTR14(temp, k_reheating, k_reheating_init, n_reheating, count_rechaso, e_const);
@@ -648,7 +674,7 @@ double sasFunc() {
         ///////////////////////////////////////////////////
         /// History
         ///////////////////////////////////////////////////
-        /*
+        
         vector_historyCostSolution.push_back(costCurrentSolution);
         vector_historyTemp.push_back(temp);
         vector_historymeanDist.push_back(meanDist(currentSolution,distMat));
@@ -662,7 +688,7 @@ double sasFunc() {
             vector_historyAcceptSolution.push_back(0);
         }
         vector_historyMove.push_back(std::tuple<int,int>(shuffle_colegios[selectThread],shuffle_student[selectBlock]));     
-        */
+        
         
         
         

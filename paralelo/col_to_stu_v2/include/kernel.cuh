@@ -33,6 +33,11 @@ __global__ void reduce_block_kernel(
     int *d_array_current_Solution_alu,
     int *d_array_current_Solution_col);
 
+__global__ void reduce_block_max(
+    double *d_array_current_Solution,
+    int *d_array_current_Solution_alu,
+    int *d_array_current_Solution_col);
+
 __global__ void calculateSolution(
     double *d_array_current_Solution,
     int *d_array_current_Solution_alu,

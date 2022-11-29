@@ -14,6 +14,7 @@ void reheatingTR11(double &temp,
 {
     if(count_rechaso >= n_reheating){
         temp= temp/k_reheating;
+        cout << "reheating" << temp << endl;
     }
 }
 
