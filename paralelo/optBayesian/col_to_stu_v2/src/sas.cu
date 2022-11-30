@@ -6,7 +6,7 @@
 #include <TemperatureLength.hpp>
 #include <ReheatingMethods.hpp>
 #include <CoolingScheme.hpp>
-
+#include <tuple>
 #include <limits>
 
 #define DECIMAL 16
@@ -32,40 +32,110 @@ typedef std::numeric_limits< double > dbl;
 ///////////////////////////////////////////////////
 /// Variables globales.
 ///////////////////////////////////////////////////
+double alpha1 = 15; // Alpha de distancia valor 1 < alpha1
+double alpha2 = 30; // Alpha de segregación valor 1 < alpha2
+double alpha3 = 25; // Alpha de costocupo valor 1 < alpha3
+//double coolingRate = 0.98; // Tasa de enfriamiento valores entre 0 < coolingRate < 1
+double temp = 10000000000.0; // Temperatura inicial
+string name_exp= "base";
+string ruta_save = "../save/"; // Ruta para guardar los archivos
+double alpha[3]={alpha1,alpha2,alpha3}; // Valores del alpha con orden Distancia, Segregación, Costo Cupo
+random_device rd;
+mt19937 mt(rd());
+uniform_int_distribution<int> dist(0,0);
+uniform_int_distribution<int> dist2(0,0);
+uniform_real_distribution<double> dist_accepta(0.0, 1.0);
+double max_dist=0.0;
+double min_dist=0.0;
+double init_dist=0.0;
+int n_students, n_colegios;
+int selectThread=0,
+selectBlock = 0,
+n_block = 64, // Numero de estudiantes simultaneos
+n_thread = 512; // Numero de escuelas simultaneos
 
-
-
-
-double sasFunc() {
+std::tuple<double, int> sasFunc(float len1, 
+    float len2, 
+    double coolingRate, 
+    double k_reheating, 
+    double n_reheating, 
+    int n_thr, 
+    int n_blo) {
     int x=0,z=0;
     int totalVuln=0;
     cout.precision(dbl::max_digits10);
+
+    n_block = n_blo;
+    n_thread = n_thr;
+
+
+
+    ///////////////////////////////////////////////////
+    /// Parametros de configuración Default
+    ///////////////////////////////////////////////////
+
+
+
+
+    double min_temp = 0.00000009; // Minima temperatura que puede llegar
+    double max_temp = 0;
+
+    //double k_reheating = 0.97;
+    //int n_reheating = 100; // Variable ligada a cuanto debe esperar para iniciar recalentamiento
+
+    int seed = 12315;
+    //float len1 =1;// 0.00000009; // Minima temperatura que puede llegar
+    //float len2 =2;
+    double len3 = 1.0;
+    double len4 = 0.99;
+    double e_const=0.01;
+    double Th = 1.1;
+
+
+
+
+    ////////////////////////////////
+    // VARIABLES GLOBALES PARA CUDA
+    ////////////////////////////////
+        /*
+    int selectThread=0,
+        selectBlock = 0,
+        n_block = 64, // Numero de estudiantes simultaneos
+        n_thread = 512; // Numero de escuelas simultaneos
+*/
+
     //cout << fixed << setprecision(70) << endl;
     //srand(time(NULL));
     ///////////////////////////////////////////////////
     /// Genera archivo de almacenamiento de datos
     ///////////////////////////////////////////////////
 
+    
     /*
     * Prepara archivos para guardar los datos
     */
-    
+    /*
     ofstream info;
     string infotxt = ruta_save + prefijo_save +"-info.txt"; 
     info.open(infotxt);
+    */
     /*
     * 
     */
+    /*
     ofstream info_test;
     string nameinfo_test = ruta_save + prefijo_save+"-info-test.txt"; 
     info_test.open(nameinfo_test);
+    */
     /*
     * Genera los archivos que contienen información de los estados de estudiantes y escuelas durante
     * la ejecución del algoritmo
     */
+    /*
     ofstream info_graficos;
     string name_info_graficos = ruta_save + prefijo_save +"-info-graficos.txt";
     info_graficos.open(name_info_graficos);
+    */
 
     ///////////////////////////////////////////////////
     /// Datos colegios
@@ -155,7 +225,7 @@ double sasFunc() {
     costPreviousSolution=costBestSolution;
     costCurrentSolution=costBestSolution;
     
-    
+    /*
     cout << "--------------- Primeros datos -------------" << "\n";
     cout << "Primer costo de solución: " << costBestSolution << "\n";
     cout << "Primer distancia: " << meanDist(currentSolution,distMat) << "\n";
@@ -167,12 +237,12 @@ double sasFunc() {
     info      << "Primer distancia: " << meanDist(currentSolution,distMat) << "\n";
     info      << "Primer Segregación: " << S(currentSolution, alumnosSep, totalVuln) << "\n";
     info      << "Primer CostoCupo: " << costCupo(currentSolution,cupoArray) << "\n";
-
+    */
 
     ///////////////////////////////////////////////////
     /// Generación de archivos que almacenan información de los graficos
     ///////////////////////////////////////////////////
-
+    /*
     info_graficos << setprecision(13);
     info_graficos << count << "," 
                 << meanDist(currentSolution,distMat)/max_dist << "," // Distancia promedio recorrida por los estudiantes normalizada
@@ -181,7 +251,7 @@ double sasFunc() {
                 << costCupo(currentSolution,cupoArray) << "," // Costo cupo de las escuelas
                 << costCurrentSolution << "," // Solución actual
                 << temp << setprecision(13) << "\n"; // Temperatura actual
-
+    */
     count++;
     ///////////////////////////////////////////////////
     /// Genera arreglos que contendran valores del 0 hasta n_students y n_colegios
@@ -199,7 +269,7 @@ double sasFunc() {
     ///////////////////////////////////////////////////
     /// Posicion estudiantes
     ///////////////////////////////////////////////////
-
+    /*
     ofstream info_graficos_bestSolution;
     string name_info_graficos_bestSolution = ruta_save + prefijo_save +"-info-graficos_bestSolution.txt"; // concatenar
     info_graficos_bestSolution.open(name_info_graficos_bestSolution);
@@ -207,7 +277,7 @@ double sasFunc() {
         info_graficos_bestSolution << currentSolution[x] << ",";
     }
     info_graficos_bestSolution << "\n";
-
+    */
     ///////////////////////////////////////////////////
     /// Genera distribuciones para seleccionar un estudiante y una escuela al azar
     ///////////////////////////////////////////////////
@@ -218,12 +288,12 @@ double sasFunc() {
     ///////////////////////////////////////////////////
     /// Inicio el contador de tiempo antes de iniciar el algortimo
     ///////////////////////////////////////////////////
-    auto start = chrono::high_resolution_clock::now();
+    
     ///////////////////////////////////////////////////
     /// Comienza a ejecutarse el algoritmo de SA
     ///////////////////////////////////////////////////
 
-
+    /*
     vector<double> vector_costCurrentSolution;
     vector<double> vector_meanDist;
     vector<double> vector_segregation;
@@ -241,7 +311,7 @@ double sasFunc() {
     std::vector<bool> vector_historyAcceptSolution;
     std::vector<int> vector_historyAsign;
     std::vector<std::tuple <int,int>> vector_historyMove;
-
+    */
 
     
     int count_rechaso=0;
@@ -249,7 +319,6 @@ double sasFunc() {
     int c_accepta = 0;
     int c_cooling_temperature = 0;
     int valmaxheating=n_colegios;
-    int count_reheating = 0;
     double bestTemp = 0;
     double k_reheating_init = k_reheating;
     double temp_init = temp;
@@ -278,7 +347,7 @@ double sasFunc() {
     previousVars[1] = currentVars[1];
     previousVars[2] = currentVars[2];
     double var1,var2,var3;
-    cout << costBestSolution << endl;
+    //cout << costBestSolution << endl;
     var1 = (currentVars[0]/n_students);
     var1= (var1/max_dist);
     //cout << var1 << "\n";
@@ -286,7 +355,7 @@ double sasFunc() {
     //cout << var2 << "\n";
     var3 = (currentVars[2] /n_colegios);
     costBestSolution = (double)((ptr_alpha[0]*var1)+(ptr_alpha[1]*var2)+(ptr_alpha[2]*var3));
-    cout << costBestSolution << endl;
+    //cout << costBestSolution << endl;
     costPreviousSolution = costBestSolution;
     costCurrentSolution = costBestSolution;
     auto start_compare = chrono::high_resolution_clock::now();
@@ -445,13 +514,17 @@ double sasFunc() {
     cudaMemcpyAsync(d_bestVars, currentVars, 3 * sizeof(double), cudaMemcpyHostToDevice,streams[1]);
     cudaMemcpyAsync(d_alumnosSep, alumnosSep, n_students * sizeof(int), cudaMemcpyHostToDevice,streams[2]);
     cudaMemcpyAsync(d_cupoArray, cupoArray, n_colegios * sizeof(int), cudaMemcpyHostToDevice,streams[3]);
-
+    
     ///////////////////////////// Incorporar para acceder mas rapido al costCurrentSolution
     //int deviceId;
     //cudaGetDevice(&deviceId);                                         // The ID of the currently active GPU device.
     //cudaMemPrefetchAsync(pointerToSomeUMData, size, deviceId); 
-
-    while(temp > min_temp){
+    double limit_time = 360.0;
+    double current_time = 0.0;
+    int count_reheating = 0;
+    auto start = chrono::high_resolution_clock::now(); 
+    temp = 10000000000.0;   
+    while(temp > min_temp && count_reheating<100 && current_time < limit_time){
 
         copyMemSolution<<<numberOfBlocks,threadsPerBlock,0,streams[0]>>>(d_currentSolution, d_previousSolution,n_students);
         copyMemCol<<<numberOfBlocks,threadsPerBlock,0,streams[1]>>>(d_aluxcol, d_previousAluxcol,n_colegios);
@@ -534,6 +607,7 @@ double sasFunc() {
         //cudaMemcpyAsync(&selectBlock,d_array_current_Solution_col, sizeof(int),cudaMemcpyDeviceToHost,streams[2]);
         cudaDeviceSynchronize();
 
+        /*
         if(costCurrentSolution > costBestSolution){
             if(metropolisAC1(costPreviousSolution,costCurrentSolution)==1){
             reduce_block_max<<<1,n_block,
@@ -558,6 +632,7 @@ double sasFunc() {
             cudaDeviceSynchronize();
             }
         }
+        */
         
 
         //exit(0);
@@ -582,12 +657,19 @@ double sasFunc() {
         //std::cout << selectBlock << "\n";
         
         if(costCurrentSolution<0.00 || isnan(costCurrentSolution)){
-            std::cout << shuffle_colegios[selectThread] << "\n";
-            std::cout << shuffle_student[selectBlock] << "\n";
+            std:: cout << "iteration: " << count << endl;
+            std:: cout << "temp: " << temp << endl;
+            std:: cout << "n_thread: " << n_thread << endl;
+            std:: cout << "n_block: " << n_block << endl;
+            std:: cout << "len1: " << len1 << endl;
+            std:: cout << "len2: " << len2 << endl;
+            std:: cout << "coolingRate: " << coolingRate << endl;
+            std:: cout << "k_reheating: " << k_reheating << endl;
+            std:: cout << "n_reheating: " << n_reheating << endl;
             std::cout << "distancia: " << meanDist(currentSolution,distMat) << "\n";
             std::cout << "Segregación: " << S(currentSolution,alumnosSep, totalVuln) << "\n";
             std::cout << "CostoCupo: " << costCupo(currentSolution,cupoArray) << "\n";
-            std::cout << costCurrentSolution;
+            std::cout << costCurrentSolution <<endl;
             exit(1);
         }
         
@@ -602,31 +684,15 @@ double sasFunc() {
             copyVars<<<1,3,0,streams[5]>>>(d_bestVars, d_currentVars);
             copyCost<<<1,1,0,streams[6]>>>(d_costBestSolution,d_costCurrentSolution);
             copyCost<<<1,1,0,streams[7]>>>(d_costPreviousSolution,d_costCurrentSolution);
-            //for (int i = 0; i < NUM_STREAMS; ++i) { cudaStreamSynchronize(streams[i]); }
             cudaDeviceSynchronize();
-            /*
-            memcpy(bestSolution,currentSolution,sizeof(int)*n_students);
-            memcpy(previousSolution,currentSolution,sizeof(int)*n_students);
-            memcpy(previousAluxCol,aluxcol,sizeof(int)*n_colegios);
-            memcpy(previousAluVulxCol,aluVulxCol,sizeof(int)*n_colegios);
-            memcpy(previousVars,currentVars,sizeof(double)*3);
-            memcpy(bestVars,currentVars,sizeof(double)*3);
-            */
-            
             costBestSolution=costCurrentSolution;
             costPreviousSolution=costCurrentSolution;
-            cout << costBestSolution << "| |" << temp << "| |" << count<< endl;
-            
-            vector_costCurrentSolution.push_back(costCurrentSolution);
-            vector_meanDist.push_back(meanDist(currentSolution,distMat));
-            vector_segregation.push_back(S(currentSolution, alumnosSep, totalVuln));
-            vector_costoCupo.push_back(costCupo(currentSolution,cupoArray));
-            vector_temp.push_back(temp);
-            vector_count.push_back(count);
-            
             c_accepta++;
             count_rechaso=0;
         }
+
+
+
         // En el caso que el la solución actual sea mas alta intenta aceptar una peor solución en base
         // a la función acepta
         else{
@@ -664,7 +730,7 @@ double sasFunc() {
             coolingCS2(temp,coolingRate);
         }
 
-        reheatingTR11(temp, k_reheating, n_reheating, count_rechaso);
+        reheatingTR11(temp,count_reheating, k_reheating, n_reheating, count_rechaso);
         //reheatingTR12(temp, k_reheating, n_reheating, count);
         //reheatingTR13(temp, k_reheating, n_reheating, c_cooling_temperature);
         //reheatingTR14(temp, k_reheating, k_reheating_init, n_reheating, count_rechaso, e_const);
@@ -674,13 +740,14 @@ double sasFunc() {
         ///////////////////////////////////////////////////
         /// History
         ///////////////////////////////////////////////////
-        
+        /*
         vector_historyCostSolution.push_back(costCurrentSolution);
         vector_historyTemp.push_back(temp);
         vector_historymeanDist.push_back(meanDist(currentSolution,distMat));
         vector_historymeanDistNorm.push_back(meanDist(currentSolution,distMat)/max_dist);
         vector_historySegregation.push_back(S(currentSolution, alumnosSep, totalVuln));
         vector_historycostoCupo.push_back(costCupo(currentSolution,cupoArray));
+        
         if(count_rechaso==0){
             vector_historyAcceptSolution.push_back(1);
         }
@@ -688,22 +755,26 @@ double sasFunc() {
             vector_historyAcceptSolution.push_back(0);
         }
         vector_historyMove.push_back(std::tuple<int,int>(shuffle_colegios[selectThread],shuffle_student[selectBlock]));     
-        
+        */
         
         
         
         count_trials++;
         count++;
+        current_time = chrono::duration_cast<chrono::nanoseconds>(chrono::high_resolution_clock::now() - start).count();
+        current_time *= 1e-9;
+        //cout << current_time << endl;
     }
     cudaMemcpyAsync(bestSolution, d_bestSolution, n_students * sizeof(int), cudaMemcpyDeviceToHost,streams[0]);
     cudaMemcpyAsync(previousSolution, d_previousSolution, n_students * sizeof(int), cudaMemcpyDeviceToHost,streams[1]);
+    cudaDeviceSynchronize();
     ///////////////////////////////////////////////////
     /// Obtiene el tiempo de ejecución
     ///////////////////////////////////////////////////
     auto end = chrono::high_resolution_clock::now();
     double time_taken = chrono::duration_cast<chrono::nanoseconds>(end - start).count();
     time_taken *= 1e-9;
-
+    /*
     for(x=0;x<n_students;x++){
         info_graficos_bestSolution << bestSolution[x] << ",";
     }
@@ -718,6 +789,7 @@ double sasFunc() {
                     << vector_costCurrentSolution.at(x) << "," 
                     << fixed << vector_temp.at(x) << setprecision(13) << "\n";
     }
+    */
 
 
 
@@ -725,6 +797,7 @@ double sasFunc() {
     ///////////////////////////////////////////////////
     /// Almacenamiento de datos
     ///////////////////////////////////////////////////
+    /*
     cout.precision(dbl::max_digits10);
     cout << "--------------- Resultado Final ----------------" << "\n";
     cout << "Numero de Ciclos " << count << "\n";
@@ -807,7 +880,7 @@ double sasFunc() {
     cout << ".\n";
     cout << " Archivos Guardado" << "\n";
 
-
+    */
 
     for (int i = 0; i < NUM_STREAMS; ++i) { cudaStreamDestroy(streams[i]); }
     cudaFree(d_currentSolution);
@@ -821,8 +894,15 @@ double sasFunc() {
 
     cudaEventDestroy(start_cuda);
     cudaEventDestroy(stop_cuda);
+    
+    for(x=0; x < n_students; x++) {
+        free(distMat[x]);
+    }
+    free(distMat);
+    free(array_costCurrentSolution);
 
-    return (costBestSolution);
+
+    return std::make_tuple(costBestSolution,count);
 
 }
 

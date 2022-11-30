@@ -22,6 +22,8 @@ include_directories(
         ${PROJECT_SOURCE_DIR}/include
 )
 enable_testing()
+INCLUDE_DIRECTORIES(/usr/local/include/bayesopt)
+link_directories(/usr/local/lib)
 
 file(GLOB all_SRCS
     "${PROJECT_SOURCE_DIR}/src/*.cpp"
@@ -40,6 +42,7 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/data/colegios_utm.txt
 
     set_property(TARGET paralelo PROPERTY CUDA_SEPARABLE_COMPILATION ON)
 
+TARGET_LINK_LIBRARIES(paralelo bayesopt nlopt)
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
 #set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} $ENV{CUDA_NVCC_FLAGS} -lineinfo --default-stream per-thread -ftz=true -prec-div=false -prec-sqrt=false")

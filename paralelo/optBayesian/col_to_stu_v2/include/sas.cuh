@@ -43,7 +43,8 @@ struct Info_alu{
     double longitude = 0.0;
 };
 
-extern int n_students, n_colegios;
+/*
+
 extern float len1, len2;
 extern double len3, len4;
 extern double e_const, Th;
@@ -68,17 +69,24 @@ extern double min_dist;
 extern double init_dist;
 
 extern char timestr[20];
-extern int n_block;
-extern int n_thread;
+
 extern int selectThread;
 extern int selectBlock;
 extern string prefijo_save;
 extern string name_exp;
-
+*/
+extern int n_block;
+extern int n_thread;
 ///////////////////////////////////////////////////
 /// Funciones generales
 ///////////////////////////////////////////////////
-double sasFunc();
+std::tuple<double, int> sasFunc(float len1, 
+    float len2, 
+    double coolingRate, 
+    double k_reheating, 
+    double n_reheating, 
+    int n_thread, 
+    int n_block);
 double calCosto(int currentSolution[], double **distMat, const double ptr_alpha[], int alumnosSep[], int totalVuln, int cupoArray[]);
 double meanDist(const int currentSolution[], double  **distMat);
 double sumDist(const int currentSolution[], double  **distMat);

@@ -7,14 +7,16 @@
  * TR11 Realiza un recalentamiento despues de no aceptar cualquier nueva solución en los ultimos k movimientos dado
 **/
 
-void reheatingTR11(double &temp, 
+void reheatingTR11(double &temp,
+    int &count_reheating,
     double k_reheating,
     int n_reheating,
     int count_rechaso)
 {
     if(count_rechaso >= n_reheating){
         temp= temp/k_reheating;
-        cout << "reheating" << temp << endl;
+        count_reheating++;
+        //cout << "reheating" << temp << endl;
     }
 }
 

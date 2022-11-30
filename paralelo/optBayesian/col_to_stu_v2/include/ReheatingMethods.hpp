@@ -9,6 +9,7 @@ using namespace std;
 
 
 void reheatingTR11(double &temp, 
+    int &count_reheating,
     double k_reheating,
     int n_reheating,
     int count_rechaso);
