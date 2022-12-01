@@ -36,7 +36,7 @@ double alpha1 = 15; // Alpha de distancia valor 1 < alpha1
 double alpha2 = 30; // Alpha de segregación valor 1 < alpha2
 double alpha3 = 25; // Alpha de costocupo valor 1 < alpha3
 //double coolingRate = 0.98; // Tasa de enfriamiento valores entre 0 < coolingRate < 1
-double temp = 10000000000.0; // Temperatura inicial
+double temp = 100000.0; // Temperatura inicial
 string name_exp= "base";
 string ruta_save = "../save/"; // Ruta para guardar los archivos
 double alpha[3]={alpha1,alpha2,alpha3}; // Valores del alpha con orden Distancia, Segregación, Costo Cupo
@@ -64,11 +64,26 @@ std::tuple<double, int> sasFunc(float len1,
     int x=0,z=0;
     int totalVuln=0;
     cout.precision(dbl::max_digits10);
+    int deviceId;
+    int numberOfSMs;
+    cudaDeviceProp deviceProp;
+    cudaGetDevice(&deviceId);
+    cudaDeviceGetAttribute(&numberOfSMs, cudaDevAttrMultiProcessorCount, deviceId); // Calcula el numero de SMstream 
+    cudaGetDeviceProperties(&deviceProp, 0);
+    int threadsPerBlock = 256;
+    int numberOfBlocks = 32 * numberOfSMs;
+    cudaError_t errSync  = cudaGetLastError();
+    cudaError_t errAsync = cudaDeviceSynchronize();
+    if (errSync != cudaSuccess) 
+      printf("Sync incio kernel error: %s\n", cudaGetErrorString(errSync));
+    if (errAsync != cudaSuccess)
+      printf("Async inicio kernel error: %s\n", cudaGetErrorString(errAsync));
 
     n_block = n_blo;
     n_thread = n_thr;
-
-
+    alpha1 = 15; 
+    alpha2 = 30;
+    alpha3 = 25;
 
     ///////////////////////////////////////////////////
     /// Parametros de configuración Default
@@ -90,7 +105,11 @@ std::tuple<double, int> sasFunc(float len1,
     double len4 = 0.99;
     double e_const=0.01;
     double Th = 1.1;
-
+    max_temp= pow(10,300);
+    alpha[0]=alpha1;
+    alpha[1]=alpha2;
+    alpha[2]=alpha3;
+    mt.seed(seed);
 
 
 
@@ -161,11 +180,11 @@ std::tuple<double, int> sasFunc(float len1,
     /// Inicializa Variables y arreglos
     ///////////////////////////////////////////////////
 
-    int aluVulxCol[n_colegios], aluxcol[n_colegios];
-    int previousAluxCol[n_colegios];
-    int previousAluVulxCol[n_colegios];
-    int bestAluxCol[n_colegios];
-    int bestAluVulxCol[n_colegios];
+    int *aluVulxCol= new int[n_colegios], *aluxcol= new int[n_colegios];
+    int *previousAluxCol= new int[n_colegios];
+    int *previousAluVulxCol= new int[n_colegios];
+    int *bestAluxCol= new int[n_colegios];
+    int *bestAluVulxCol= new int[n_colegios];
 
     int *previousSolution= nullptr;
     int *bestSolution= nullptr;
@@ -214,6 +233,19 @@ std::tuple<double, int> sasFunc(float len1,
                 students,
                 colegios);
     assignSchoolToArray(previousSolution, bestSolution, currentSolution, ptr_colegios, ptr_students, cupoArray);
+
+
+    for(int i = 0; i < n_colegios; i++){
+        int mmmmm = 0;
+        for (int x = 0; x < n_students; x++){
+            if(previousSolution [x] == i){
+                mmmmm++;
+            }
+        }
+        cout << mmmmm << " ";
+    }
+    cout << endl;
+
     calcDist(ptr_colegios, ptr_students, distMat);
     max_dist = getMaxDistance(distMat);
     normalizedAlpha(alpha);
@@ -355,6 +387,11 @@ std::tuple<double, int> sasFunc(float len1,
     //cout << var2 << "\n";
     var3 = (currentVars[2] /n_colegios);
     costBestSolution = (double)((ptr_alpha[0]*var1)+(ptr_alpha[1]*var2)+(ptr_alpha[2]*var3));
+    cout << "INicio" << endl;
+    cout << "currentVars" << currentVars[0] << " " << currentVars[1]<< " " << currentVars[2] << endl;
+    cout << "vars" << var1 << " "<< var2 << " "<< var3 << endl;
+    cout << "costBestSolution" << costBestSolution << endl;
+
     //cout << costBestSolution << endl;
     costPreviousSolution = costBestSolution;
     costCurrentSolution = costBestSolution;
@@ -431,14 +468,7 @@ std::tuple<double, int> sasFunc(float len1,
     ////////////////////////////////////////////////////
     /////// Stream 
     ///////////////////////////////////////////////////
-    int deviceId;
-    int numberOfSMs;
-    cudaDeviceProp deviceProp;
-    cudaGetDevice(&deviceId);
-    cudaDeviceGetAttribute(&numberOfSMs, cudaDevAttrMultiProcessorCount, deviceId); // Calcula el numero de SMstream 
-    cudaGetDeviceProperties(&deviceProp, 0);
-    int threadsPerBlock = 256;
-    int numberOfBlocks = 32 * numberOfSMs;
+
     int NUM_STREAMS = 10;
     int nWarp = deviceProp.warpSize;
     cudaStream_t streams[NUM_STREAMS];
@@ -500,7 +530,11 @@ std::tuple<double, int> sasFunc(float len1,
     ///////////////////////////////////////////////////
     /// Inicio el contador de tiempo antes de iniciar el algortimo
     ///////////////////////////////////////////////////
-
+    for(int i = 0; i < n_colegios; i++){
+        if(aluxcol[i]<0){
+            cout << "Error: " << aluxcol[i] << " colegio: " << i << endl;
+        }
+    }
 
     cudaMemcpyAsync(d_currentSolution, currentSolution, n_students * sizeof(int), cudaMemcpyHostToDevice,streams[2]);
     cudaMemcpyAsync(d_previousSolution, currentSolution, n_students * sizeof(int), cudaMemcpyHostToDevice,streams[3]);
@@ -514,7 +548,12 @@ std::tuple<double, int> sasFunc(float len1,
     cudaMemcpyAsync(d_bestVars, currentVars, 3 * sizeof(double), cudaMemcpyHostToDevice,streams[1]);
     cudaMemcpyAsync(d_alumnosSep, alumnosSep, n_students * sizeof(int), cudaMemcpyHostToDevice,streams[2]);
     cudaMemcpyAsync(d_cupoArray, cupoArray, n_colegios * sizeof(int), cudaMemcpyHostToDevice,streams[3]);
-    
+    errSync  = cudaGetLastError();
+    errAsync = cudaDeviceSynchronize();
+    if (errSync != cudaSuccess) 
+    printf("Sync kernel error: %s\n", cudaGetErrorString(errSync));
+    if (errAsync != cudaSuccess)
+    printf("Async kernel error: %s\n", cudaGetErrorString(errAsync));
     ///////////////////////////// Incorporar para acceder mas rapido al costCurrentSolution
     //int deviceId;
     //cudaGetDevice(&deviceId);                                         // The ID of the currently active GPU device.
@@ -523,13 +562,39 @@ std::tuple<double, int> sasFunc(float len1,
     double current_time = 0.0;
     int count_reheating = 0;
     auto start = chrono::high_resolution_clock::now(); 
-    temp = 10000000000.0;   
+    temp = 100000.0;   
+
+    cudaMemcpyAsync(previousSolution, d_previousSolution, n_students * sizeof(int), cudaMemcpyDeviceToHost,streams[1]);
+
+    errSync  = cudaGetLastError();
+    errAsync = cudaDeviceSynchronize();
+    if (errSync != cudaSuccess) 
+    printf("Sync kernel error: %s\n", cudaGetErrorString(errSync));
+    if (errAsync != cudaSuccess)
+    printf("Async kernel error: %s\n", cudaGetErrorString(errAsync));
+    for(int i = 0; i < n_colegios; i++){
+        int mmmmm = 0;
+        for (int x = 0; x < n_students; x++){
+            if(previousSolution[x] == i){
+                mmmmm++;
+            }
+        }
+        cout << mmmmm << " ";
+    }
+    cout << endl;
+
     while(temp > min_temp && count_reheating<100 && current_time < limit_time){
 
         copyMemSolution<<<numberOfBlocks,threadsPerBlock,0,streams[0]>>>(d_currentSolution, d_previousSolution,n_students);
         copyMemCol<<<numberOfBlocks,threadsPerBlock,0,streams[1]>>>(d_aluxcol, d_previousAluxcol,n_colegios);
         copyMemCol<<<numberOfBlocks,threadsPerBlock,0,streams[2]>>>(d_aluVulxCol, d_previousAluVulxCol,n_colegios);
         copyVars<<<1,3,0,streams[3]>>>(d_currentVars, d_previousVars);
+        errSync  = cudaGetLastError();
+        errAsync = cudaDeviceSynchronize();
+        if (errSync != cudaSuccess) 
+        printf("mem Sync kernel error: %s\n", cudaGetErrorString(errSync));
+        if (errAsync != cudaSuccess)
+        printf("mem Async kernel error: %s\n", cudaGetErrorString(errAsync));
         //for (int i = 0; i < NUM_STREAMS; ++i) { cudaStreamSynchronize(streams[i]); }
 
         /*
@@ -563,8 +628,13 @@ std::tuple<double, int> sasFunc(float len1,
         
         cudaMemcpyAsync(d_shuffle_students, shuffle_student, max_changes_students* sizeof(int), cudaMemcpyHostToDevice,streams[0]);
         cudaMemcpyAsync(d_shuffle_colegios, shuffle_colegios, max_changes_school * sizeof(int), cudaMemcpyHostToDevice,streams[1]);
-        cudaDeviceSynchronize();
 
+        errSync  = cudaGetLastError();
+        errAsync = cudaDeviceSynchronize();
+        if (errSync != cudaSuccess) 
+        printf("mem Sync kernel error: %s\n", cudaGetErrorString(errSync));
+        if (errAsync != cudaSuccess)
+        printf("mem Async kernel error: %s\n", cudaGetErrorString(errAsync));
         ///////////////////////////////////////////////////
         ///  Ejecuta los kernel
         //////////////////////////////////////////////////
@@ -584,11 +654,22 @@ std::tuple<double, int> sasFunc(float len1,
                                 d_shuffle_colegios,
                                 d_currentVars,
                                 pitch);
+        errSync  = cudaGetLastError();
+        errAsync = cudaDeviceSynchronize();
+        if (errSync != cudaSuccess) 
+        printf("Despues de newsolution_kernel Sync kernel error: %s\n", cudaGetErrorString(errSync));
+        if (errAsync != cudaSuccess)
+        printf("Despues de newsolution_kernel Async kernel error: %s\n", cudaGetErrorString(errAsync));
         reduce_block_kernel<<<1,n_block,
         (n_block/nWarp+1)* sizeof(double)+ (n_block/nWarp+1)* sizeof(int)+ (n_block/nWarp+1)* sizeof(int)>>>(d_array_current_Solution,
                 d_array_current_Solution_alu,
                 d_array_current_Solution_col);
-
+        errSync  = cudaGetLastError();
+        errAsync = cudaDeviceSynchronize();
+        if (errSync != cudaSuccess) 
+        printf("Reduce kernel error: %s\n", cudaGetErrorString(errSync));
+        if (errAsync != cudaSuccess)
+        printf("REduce Async kernel error: %s\n", cudaGetErrorString(errAsync));
         //cout << endl;
         calculateSolution<<<1,1>>>(d_array_current_Solution,
                     d_array_current_Solution_alu,
@@ -605,7 +686,12 @@ std::tuple<double, int> sasFunc(float len1,
         cudaMemcpy(&costCurrentSolution,&d_array_current_Solution[0], sizeof(double),cudaMemcpyDeviceToHost);
         //cudaMemcpyAsync(&selectThread,&d_array_current_Solution_alu[0], sizeof(int),cudaMemcpyDeviceToHost,streams[1]);
         //cudaMemcpyAsync(&selectBlock,d_array_current_Solution_col, sizeof(int),cudaMemcpyDeviceToHost,streams[2]);
-        cudaDeviceSynchronize();
+        errSync  = cudaGetLastError();
+        errAsync = cudaDeviceSynchronize();
+        if (errSync != cudaSuccess) 
+        printf("Despues de calculate Sync kernel error: %s\n", cudaGetErrorString(errSync));
+        if (errAsync != cudaSuccess)
+        printf("Despues de calculate Async kernel error: %s\n", cudaGetErrorString(errAsync));
 
         /*
         if(costCurrentSolution > costBestSolution){
@@ -657,6 +743,7 @@ std::tuple<double, int> sasFunc(float len1,
         //std::cout << selectBlock << "\n";
         
         if(costCurrentSolution<0.00 || isnan(costCurrentSolution)){
+            cout << "colegios: "<< n_colegios << " n_students" << n_students << endl;
             std:: cout << "iteration: " << count << endl;
             std:: cout << "temp: " << temp << endl;
             std:: cout << "n_thread: " << n_thread << endl;
@@ -684,17 +771,17 @@ std::tuple<double, int> sasFunc(float len1,
             copyVars<<<1,3,0,streams[5]>>>(d_bestVars, d_currentVars);
             copyCost<<<1,1,0,streams[6]>>>(d_costBestSolution,d_costCurrentSolution);
             copyCost<<<1,1,0,streams[7]>>>(d_costPreviousSolution,d_costCurrentSolution);
-            cudaDeviceSynchronize();
+            errSync  = cudaGetLastError();
+            errAsync = cudaDeviceSynchronize();
+            if (errSync != cudaSuccess) 
+            printf("Sync kernel error: %s\n", cudaGetErrorString(errSync));
+            if (errAsync != cudaSuccess)
+            printf("Async kernel error: %s\n", cudaGetErrorString(errAsync));
             costBestSolution=costCurrentSolution;
             costPreviousSolution=costCurrentSolution;
             c_accepta++;
             count_rechaso=0;
         }
-
-
-
-        // En el caso que el la solución actual sea mas alta intenta aceptar una peor solución en base
-        // a la función acepta
         else{
             if(metropolisAC1(costPreviousSolution,costCurrentSolution)==1){
 
@@ -704,7 +791,12 @@ std::tuple<double, int> sasFunc(float len1,
                 copyVars<<<1,3,0,streams[3]>>>(d_previousVars, d_currentVars);
                 copyCost<<<1,1,0,streams[4]>>>(d_costPreviousSolution,d_costCurrentSolution);
                 //for (int i = 0; i < NUM_STREAMS; ++i) { cudaStreamSynchronize(streams[i]); }
-                cudaDeviceSynchronize();
+                errSync  = cudaGetLastError();
+                errAsync = cudaDeviceSynchronize();
+                if (errSync != cudaSuccess) 
+                printf("Sync kernel error: %s\n", cudaGetErrorString(errSync));
+                if (errAsync != cudaSuccess)
+                printf("Async kernel error: %s\n", cudaGetErrorString(errAsync));
 
                 /*
                 memcpy(previousSolution,currentSolution,sizeof(int)*n_students);
@@ -757,8 +849,43 @@ std::tuple<double, int> sasFunc(float len1,
         vector_historyMove.push_back(std::tuple<int,int>(shuffle_colegios[selectThread],shuffle_student[selectBlock]));     
         */
         
-        
-        
+        cudaMemcpy(aluxcol,d_previousAluxcol, sizeof(double),cudaMemcpyDeviceToHost);
+        errSync  = cudaGetLastError();
+        errAsync = cudaDeviceSynchronize();
+        if (errSync != cudaSuccess) 
+        printf("Sync kernel error: %s\n", cudaGetErrorString(errSync));
+        if (errAsync != cudaSuccess)
+        printf("Async kernel error: %s\n", cudaGetErrorString(errAsync));
+        for(int i = 0; i < n_colegios; i++){
+            if(aluxcol[i]<0){
+                cudaMemcpyAsync(&selectThread,&d_array_current_Solution_alu[0], sizeof(int),cudaMemcpyDeviceToHost,streams[1]);
+                cudaMemcpyAsync(&selectBlock,d_array_current_Solution_col, sizeof(int),cudaMemcpyDeviceToHost,streams[2]);
+                cudaMemcpyAsync(previousSolution, d_previousSolution, n_students * sizeof(int), cudaMemcpyDeviceToHost,streams[1]);
+
+                errSync  = cudaGetLastError();
+                errAsync = cudaDeviceSynchronize();
+                if (errSync != cudaSuccess) 
+                printf("Sync kernel error: %s\n", cudaGetErrorString(errSync));
+                if (errAsync != cudaSuccess)
+                printf("Async kernel error: %s\n", cudaGetErrorString(errAsync));
+                for(int irr = 0; irr< n_colegios; irr++){
+                    int mmmmm = 0;
+                    for (int x = 0; x < n_students; x++){
+                        if(previousSolution [x] == irr){
+                            mmmmm++;
+                        }
+                    }
+                    cout << mmmmm << " ";
+                }
+                cout << endl;
+                cout << "Error en ciclo: " << aluxcol[i] << " colegio: " << i << endl;
+                cout << count << endl;
+                cout << selectThread << " " << selectBlock << endl;
+                exit(1);
+            }
+        }
+
+        //cout << costCurrentSolution << "| |" << temp << "| |" << count<< endl;
         count_trials++;
         count++;
         current_time = chrono::duration_cast<chrono::nanoseconds>(chrono::high_resolution_clock::now() - start).count();
@@ -767,13 +894,39 @@ std::tuple<double, int> sasFunc(float len1,
     }
     cudaMemcpyAsync(bestSolution, d_bestSolution, n_students * sizeof(int), cudaMemcpyDeviceToHost,streams[0]);
     cudaMemcpyAsync(previousSolution, d_previousSolution, n_students * sizeof(int), cudaMemcpyDeviceToHost,streams[1]);
-    cudaDeviceSynchronize();
+    errSync  = cudaGetLastError();
+    errAsync = cudaDeviceSynchronize();
+    if (errSync != cudaSuccess) 
+    printf("Sync final kernel error: %s\n", cudaGetErrorString(errSync));
+    if (errAsync != cudaSuccess)
+    printf("Async final kernel error: %s\n", cudaGetErrorString(errAsync));
     ///////////////////////////////////////////////////
     /// Obtiene el tiempo de ejecución
     ///////////////////////////////////////////////////
     auto end = chrono::high_resolution_clock::now();
     double time_taken = chrono::duration_cast<chrono::nanoseconds>(end - start).count();
     time_taken *= 1e-9;
+
+    cudaMemcpyAsync(&selectThread,&d_array_current_Solution_alu[0], sizeof(int),cudaMemcpyDeviceToHost,streams[1]);
+    cudaMemcpyAsync(&selectBlock,d_array_current_Solution_col, sizeof(int),cudaMemcpyDeviceToHost,streams[2]);
+    cudaMemcpyAsync(previousSolution, d_previousSolution, n_students * sizeof(int), cudaMemcpyDeviceToHost,streams[1]);
+
+    errSync  = cudaGetLastError();
+    errAsync = cudaDeviceSynchronize();
+    if (errSync != cudaSuccess) 
+    printf("Sync kernel error: %s\n", cudaGetErrorString(errSync));
+    if (errAsync != cudaSuccess)
+    printf("Async kernel error: %s\n", cudaGetErrorString(errAsync));
+    for(int irr = 0; irr< n_colegios; irr++){
+        int mmmmm = 0;
+        for (int x = 0; x < n_students; x++){
+            if(previousSolution [x] == irr){
+                mmmmm++;
+            }
+        }
+        cout << mmmmm << " ";
+    }
+
     /*
     for(x=0;x<n_students;x++){
         info_graficos_bestSolution << bestSolution[x] << ",";
@@ -883,24 +1036,50 @@ std::tuple<double, int> sasFunc(float len1,
     */
 
     for (int i = 0; i < NUM_STREAMS; ++i) { cudaStreamDestroy(streams[i]); }
-    cudaFree(d_currentSolution);
-    cudaFree(d_alumnosSep);
-    cudaFree(d_distMat);
-    cudaFree(d_cupoArray);
+
+
     cudaFree(d_array_current_Solution);
+    cudaFree(d_costCurrentSolution);
+    cudaFree(d_costBestSolution);
+    cudaFree(d_costPreviousSolution);
+    cudaFree(d_currentVars);
+    cudaFree(d_bestVars);
+    cudaFree(d_previousVars);
     cudaFree(d_array_current_Solution_alu);
     cudaFree(d_array_current_Solution_col);
-    cudaFree(d_alpha);
-
+    cudaFree(d_shuffle_colegios);
+    cudaFree(d_shuffle_students);
+    cudaFree(d_aluxcol);
+    cudaFree(d_previousAluxcol);
+    cudaFree(d_aluVulxCol);
+    cudaFree(d_previousAluVulxCol);
+    cudaFree(d_currentSolution);
+    cudaFree(d_bestSolution);
+    cudaFree(d_previousSolution);
+    cudaFree(d_alumnosSep);
+    cudaFree(d_cupoArray);
+    cudaFree(d_distMat);
+    //cudaFree(d_alpha);
     cudaEventDestroy(start_cuda);
     cudaEventDestroy(stop_cuda);
+    errSync  = cudaGetLastError();
+    errAsync = cudaDeviceSynchronize();
+    if (errSync != cudaSuccess) 
+    printf("Despues de cudafree Sync kernel error: %s\n", cudaGetErrorString(errSync));
+    if (errAsync != cudaSuccess)
+    printf("Despues de cudaFree Async kernel error: %s\n", cudaGetErrorString(errAsync));
     
     for(x=0; x < n_students; x++) {
         free(distMat[x]);
     }
     free(distMat);
     free(array_costCurrentSolution);
-
+    delete [] aluVulxCol;
+    delete [] aluxcol;
+    delete [] previousAluxCol;
+    delete [] previousAluVulxCol;
+    delete [] bestAluxCol;
+    delete [] bestAluVulxCol;
 
     return std::make_tuple(costBestSolution,count);
 
@@ -1026,7 +1205,7 @@ double sumCostCupo(int currentSolution[],int cupoArray[]){
                 totalAluCol++;
             }
         }
-        totalcostCupo+= round_n((double)totalAluCol*fabs(((double)cupoArray[j]-totalAluCol)/pow(((double)cupoArray[j]/2),2)));
+        totalcostCupo+= round_n((double)totalAluCol*fabs((double)cupoArray[j]-totalAluCol)/pow(((double)cupoArray[j]/2),2));
     }
     return totalcostCupo;
 }

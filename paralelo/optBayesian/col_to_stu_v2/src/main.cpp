@@ -41,11 +41,11 @@ class paralelOptimization: public bayesopt::ContinuousModel
     // Transforma Valores
     float var1 = round(Xi(0)*9)+1; // Len1    [1,10]
     float var2  = round(Xi(1)*84)+1; // Len2   [1,85]
-    double var3 = 0.099*Xi(2)+0.900; // CoolingRate [0.9,0.999]
-    double var4 = Xi(3)+0.001; // k_reheating (0,1] 
+    double var3 = min(0.099*Xi(2)+0.900,1.0); // CoolingRate [0.9,0.999]
+    double var4 = Xi(3); // k_reheating (0,1] 
     int var5 = round(Xi(4)*99)+1; // n_reheating [1, 100] 
-    int var6 = round(Xi(5)*16)*32; // n_thread [] multiplos de 32
-    int  var7 = round(Xi(6)*16)*32; // n_block [] multiplos de 32
+    int var6 = round(Xi(5)*15)*32+32; // n_thread [] multiplos de 32
+    int  var7 = round(Xi(6)*15)*32+32; // n_block [] multiplos de 32
     cout << Xi(0) << " " << Xi(1) << " " << Xi(2) << " " << Xi(3) << " " << Xi(4) << " " << Xi(5) << " " << Xi(6) << endl;
     cout << var1 << " " << var2 << " " << var3 << " " << var4 << " " << var5 << " " << var6 << " " << var7 << endl;
     // Ejecuta
@@ -132,7 +132,7 @@ int main(int argc, char *argv[]) {
 
     params.l_type = L_MCMC; // L_MCMC mayor precición pero mayor tiempo, L_EMPIRICAL mas rapido pero con menor precición
     params.noise = 0.001; 
-    params.n_iterations = 100;    // Number of iterations
+    params.n_iterations = 80;    // Number of iterations
     params.random_seed = 0; // Si el valor es positivo se usa como semilla para el generador de numeros aleatorios, si es negativo se usa como semilla el tiempo.
     params.n_init_samples = 10; //
     params.n_iter_relearn = 1; 
@@ -145,8 +145,8 @@ int main(int argc, char *argv[]) {
     paralelOptimization optimizer(dim,params);
     //Define bounds and prepare result.
     boost::numeric::ublas::vector<double> bestPoint(dim);
-    boost::numeric::ublas::vector<double> lowerBound(dim);
-    boost::numeric::ublas::vector<double> upperBound(dim);
+    //boost::numeric::ublas::vector<double> lowerBound(dim);
+    //boost::numeric::ublas::vector<double> upperBound(dim);
     //Set the bounds. This is optional. Default is [0,1]
     //Only required because we are doing continuous optimization
     //optimizer.setBoundingBox(lowerBounds,upperBounds);

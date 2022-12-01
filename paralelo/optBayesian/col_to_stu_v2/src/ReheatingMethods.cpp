@@ -14,8 +14,10 @@ void reheatingTR11(double &temp,
     int count_rechaso)
 {
     if(count_rechaso >= n_reheating){
+        if(k_reheating<1.0){
         temp= temp/k_reheating;
         count_reheating++;
+        }
         //cout << "reheating" << temp << endl;
     }
 }
