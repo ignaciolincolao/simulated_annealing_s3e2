@@ -30,14 +30,14 @@ double alpha1 = 15; // Alpha de distancia valor 1 < alpha1
 double alpha2 = 30; // Alpha de segregación valor 1 < alpha2
 double alpha3 = 25; // Alpha de costocupo valor 1 < alpha3
 double coolingRate = 0.98; // Tasa de enfriamiento valores entre 0 < coolingRate < 1
-double temp = 10000000000.0; // Temperatura inicial
+double temp = 10000000000000.0; // Temperatura inicial
 double min_temp = 0.00000009; // Minima temperatura que puede llegar
 double max_temp = 0;
-double k_reheating = 0.97;
-int n_reheating = 100; // Variable ligada a cuanto debe esperar para iniciar recalentamiento
+double k_reheating = 1;
+int n_reheating = 1; // Variable ligada a cuanto debe esperar para iniciar recalentamiento
 int seed = 12315;
-float len1 =1;// 0.00000009; // Minima temperatura que puede llegar
-float len2 =2;
+float len1 =10;// 0.00000009; // Minima temperatura que puede llegar
+float len2 =85;
 double len3 = 1.0;
 double len4 = 0.99;
 double e_const=0.01;
@@ -63,8 +63,8 @@ string prefijo_save;
 
 int selectThread=0,
     selectBlock = 0,
-    n_block = 64, // Numero de estudiantes simultaneos
-    n_thread = 512; // Numero de escuelas simultaneos
+    n_block = 1024, // Numero de estudiantes simultaneos
+    n_thread = 1024; // Numero de escuelas simultaneos
 
 
 
@@ -108,7 +108,7 @@ int main(int argc, char *argv[]) {
     alpha[0]=alpha1;
     alpha[1]=alpha2;
     alpha[2]=alpha3;
-    mt.seed(seed);
+    mt.seed(time(NULL));
     
     double a = sasFunc();
     return (EXIT_SUCCESS);

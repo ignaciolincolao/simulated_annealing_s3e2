@@ -1,6 +1,4 @@
 cmake_minimum_required(VERSION 3.0.0)
-
-cmake_minimum_required(VERSION 3.0.0)
 if (WIN32)
     find_package(CUDAToolkit)
     set(CMAKE_CUDA_ARCHITECTURES 52 60 61 75 86)

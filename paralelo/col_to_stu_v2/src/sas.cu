@@ -431,6 +431,7 @@ double sasFunc() {
     ///////////////////////////////////////////////////
     /// Inicio el contador de tiempo antes de iniciar el algortimo
     ///////////////////////////////////////////////////
+    //int vef_count = 0;
 
 
     cudaMemcpyAsync(d_currentSolution, currentSolution, n_students * sizeof(int), cudaMemcpyHostToDevice,streams[2]);
@@ -445,7 +446,12 @@ double sasFunc() {
     cudaMemcpyAsync(d_bestVars, currentVars, 3 * sizeof(double), cudaMemcpyHostToDevice,streams[1]);
     cudaMemcpyAsync(d_alumnosSep, alumnosSep, n_students * sizeof(int), cudaMemcpyHostToDevice,streams[2]);
     cudaMemcpyAsync(d_cupoArray, cupoArray, n_colegios * sizeof(int), cudaMemcpyHostToDevice,streams[3]);
-
+    cudaError_t errSync  = cudaGetLastError();
+    cudaError_t errAsync = cudaDeviceSynchronize();
+    if (errSync != cudaSuccess) 
+    printf("0 Sync kernel error: %s\n", cudaGetErrorString(errSync));
+    if (errAsync != cudaSuccess)
+    printf("0 Async kernel error: %s\n", cudaGetErrorString(errAsync));
     ///////////////////////////// Incorporar para acceder mas rapido al costCurrentSolution
     //int deviceId;
     //cudaGetDevice(&deviceId);                                         // The ID of the currently active GPU device.
@@ -457,6 +463,12 @@ double sasFunc() {
         copyMemCol<<<numberOfBlocks,threadsPerBlock,0,streams[1]>>>(d_aluxcol, d_previousAluxcol,n_colegios);
         copyMemCol<<<numberOfBlocks,threadsPerBlock,0,streams[2]>>>(d_aluVulxCol, d_previousAluVulxCol,n_colegios);
         copyVars<<<1,3,0,streams[3]>>>(d_currentVars, d_previousVars);
+        errSync  = cudaGetLastError();
+        errAsync = cudaDeviceSynchronize();
+        if (errSync != cudaSuccess) 
+        printf("1 Sync kernel error: %s\n", cudaGetErrorString(errSync));
+        if (errAsync != cudaSuccess)
+        printf("1 Async kernel error: %s\n", cudaGetErrorString(errAsync));
         //for (int i = 0; i < NUM_STREAMS; ++i) { cudaStreamSynchronize(streams[i]); }
 
         /*
@@ -490,7 +502,12 @@ double sasFunc() {
         
         cudaMemcpyAsync(d_shuffle_students, shuffle_student, max_changes_students* sizeof(int), cudaMemcpyHostToDevice,streams[0]);
         cudaMemcpyAsync(d_shuffle_colegios, shuffle_colegios, max_changes_school * sizeof(int), cudaMemcpyHostToDevice,streams[1]);
-        cudaDeviceSynchronize();
+        errSync  = cudaGetLastError();
+        errAsync = cudaDeviceSynchronize();
+        if (errSync != cudaSuccess) 
+        printf("2 Sync kernel error: %s\n", cudaGetErrorString(errSync));
+        if (errAsync != cudaSuccess)
+        printf("2 Async kernel error: %s\n", cudaGetErrorString(errAsync));
 
         ///////////////////////////////////////////////////
         ///  Ejecuta los kernel
@@ -511,12 +528,109 @@ double sasFunc() {
                                 d_shuffle_colegios,
                                 d_currentVars,
                                 pitch);
+        errSync  = cudaGetLastError();
+        errAsync = cudaDeviceSynchronize();
+        if (errSync != cudaSuccess) 
+        printf("3 Sync kernel error: %s\n", cudaGetErrorString(errSync));
+        if (errAsync != cudaSuccess)
+        printf("3 Async kernel error: %s\n", cudaGetErrorString(errAsync));
         reduce_block_kernel<<<1,n_block,
         (n_block/nWarp+1)* sizeof(double)+ (n_block/nWarp+1)* sizeof(int)+ (n_block/nWarp+1)* sizeof(int)>>>(d_array_current_Solution,
                 d_array_current_Solution_alu,
                 d_array_current_Solution_col);
+        errSync  = cudaGetLastError();
+        errAsync = cudaDeviceSynchronize();
+        if (errSync != cudaSuccess) 
+        printf("4 Sync kernel error: %s\n", cudaGetErrorString(errSync));
+        if (errAsync != cudaSuccess)
+        printf("4 Async kernel error: %s\n", cudaGetErrorString(errAsync));
 
+        /********************************
+        /* Metodo Nuevo
+        */
+        cudaMemcpy(&costCurrentSolution,&d_array_current_Solution[0], sizeof(double),cudaMemcpyDeviceToHost);
+        errSync  = cudaGetLastError();
+        errAsync = cudaDeviceSynchronize();
+        if (errSync != cudaSuccess) 
+        printf("5 Sync kernel error: %s\n", cudaGetErrorString(errSync));
+        if (errAsync != cudaSuccess)
+        printf("5 Async kernel error: %s\n", cudaGetErrorString(errAsync));
+
+        if(costCurrentSolution >= costPreviousSolution){
+            if(metropolisAC1(costPreviousSolution,costCurrentSolution)==1){
+                selectThread = dist(mt);
+                selectBlock = dist2(mt);
+                cudaMemcpy(&d_array_current_Solution_alu[0],&selectThread, sizeof(int),cudaMemcpyHostToDevice);
+                cudaMemcpy(d_array_current_Solution_col,&selectBlock, sizeof(int),cudaMemcpyHostToDevice);
+                errSync  = cudaGetLastError();
+                errAsync = cudaDeviceSynchronize();
+                if (errSync != cudaSuccess) 
+                printf("6 Sync kernel error: %s\n", cudaGetErrorString(errSync));
+                if (errAsync != cudaSuccess)
+                printf("6 Async kernel error: %s\n", cudaGetErrorString(errAsync));
+                //cout << "son iguales" << endl;
+            }
+        }
+
+        /* best
+        if(costCurrentSolution >= costPreviousSolution){
+            if(costCurrentSolution > costPreviousSolution){
+                selectThread = dist(mt);
+                selectBlock = dist2(mt);
+                cudaMemcpy(&d_array_current_Solution_alu[0],&selectThread, sizeof(int),cudaMemcpyHostToDevice);
+                cudaMemcpy(d_array_current_Solution_col,&selectBlock, sizeof(int),cudaMemcpyHostToDevice);
+                errSync  = cudaGetLastError();
+                errAsync = cudaDeviceSynchronize();
+                if (errSync != cudaSuccess) 
+                printf("6 Sync kernel error: %s\n", cudaGetErrorString(errSync));
+                if (errAsync != cudaSuccess)
+                printf("6 Async kernel error: %s\n", cudaGetErrorString(errAsync));
+                //cout << "son iguales" << endl;
+                }
+            else{
+                if(metropolisAC1(costPreviousSolution,costCurrentSolution)==1){
+                    reduce_block_max<<<1,n_block,
+                    (n_block/nWarp+1)* sizeof(double)+ (n_block/nWarp+1)* sizeof(int)+ (n_block/nWarp+1)* sizeof(int)>>>(d_array_current_Solution,
+                    d_array_current_Solution_alu,
+                    d_array_current_Solution_col);
+                    errSync  = cudaGetLastError();
+                    errAsync = cudaDeviceSynchronize();
+                    if (errSync != cudaSuccess) 
+                    printf("6 Sync kernel error: %s\n", cudaGetErrorString(errSync));
+                    if (errAsync != cudaSuccess)
+                    printf("6 Async kernel error: %s\n", cudaGetErrorString(errAsync));
+                }
+            }
+            
+        }
+        */
+        calculateSolution<<<1,1>>>(d_array_current_Solution,
+            d_array_current_Solution_alu,
+            d_array_current_Solution_col,
+            d_cupoArray,
+            d_alumnosSep,
+            d_aluxcol,
+            d_aluVulxCol,
+            d_currentSolution,
+            d_distMat,
+            pitch,
+            d_currentVars,
+            d_costCurrentSolution);
+        cudaMemcpy(&costCurrentSolution,&d_array_current_Solution[0], sizeof(double),cudaMemcpyDeviceToHost);
+        //cudaMemcpyAsync(&selectThread,&d_array_current_Solution_alu[0], sizeof(int),cudaMemcpyDeviceToHost,streams[1]);
+        //cudaMemcpyAsync(&selectBlock,d_array_current_Solution_col, sizeof(int),cudaMemcpyDeviceToHost,streams[2]);
+        errSync  = cudaGetLastError();
+        errAsync = cudaDeviceSynchronize();
+        if (errSync != cudaSuccess) 
+        printf("8 Sync kernel error: %s\n", cudaGetErrorString(errSync));
+        if (errAsync != cudaSuccess)
+        printf("8 Async kernel error: %s\n", cudaGetErrorString(errAsync));
+
+        /********************************
+        // Metodo antiguo
+        */
         //cout << endl;
+        /*
         calculateSolution<<<1,1>>>(d_array_current_Solution,
                     d_array_current_Solution_alu,
                     d_array_current_Solution_col,
@@ -533,7 +647,8 @@ double sasFunc() {
         //cudaMemcpyAsync(&selectThread,&d_array_current_Solution_alu[0], sizeof(int),cudaMemcpyDeviceToHost,streams[1]);
         //cudaMemcpyAsync(&selectBlock,d_array_current_Solution_col, sizeof(int),cudaMemcpyDeviceToHost,streams[2]);
         cudaDeviceSynchronize();
-
+        */
+        /*
         if(costCurrentSolution > costBestSolution){
             if(metropolisAC1(costPreviousSolution,costCurrentSolution)==1){
             reduce_block_max<<<1,n_block,
@@ -557,7 +672,7 @@ double sasFunc() {
             //cudaMemcpyAsync(&selectBlock,d_array_current_Solution_col, sizeof(int),cudaMemcpyDeviceToHost,streams[2]);
             cudaDeviceSynchronize();
             }
-        }
+        }*/
         
 
         //exit(0);
@@ -592,6 +707,7 @@ double sasFunc() {
         }
         
         
+        
         if(costCurrentSolution < costBestSolution){
             
             copyMemSolution<<<numberOfBlocks,threadsPerBlock,0,streams[0]>>>(d_bestSolution, d_currentSolution,n_students);
@@ -603,7 +719,12 @@ double sasFunc() {
             copyCost<<<1,1,0,streams[6]>>>(d_costBestSolution,d_costCurrentSolution);
             copyCost<<<1,1,0,streams[7]>>>(d_costPreviousSolution,d_costCurrentSolution);
             //for (int i = 0; i < NUM_STREAMS; ++i) { cudaStreamSynchronize(streams[i]); }
-            cudaDeviceSynchronize();
+            errSync  = cudaGetLastError();
+            errAsync = cudaDeviceSynchronize();
+            if (errSync != cudaSuccess) 
+            printf("9 Sync kernel error: %s\n", cudaGetErrorString(errSync));
+            if (errAsync != cudaSuccess)
+            printf("9 Async kernel error: %s\n", cudaGetErrorString(errAsync));
             /*
             memcpy(bestSolution,currentSolution,sizeof(int)*n_students);
             memcpy(previousSolution,currentSolution,sizeof(int)*n_students);
@@ -615,15 +736,15 @@ double sasFunc() {
             
             costBestSolution=costCurrentSolution;
             costPreviousSolution=costCurrentSolution;
-            cout << costBestSolution << "| |" << temp << "| |" << count<< endl;
-            
+            //cout << costBestSolution << "| |" << temp << "| |" << count<< endl;
+            /*
             vector_costCurrentSolution.push_back(costCurrentSolution);
             vector_meanDist.push_back(meanDist(currentSolution,distMat));
             vector_segregation.push_back(S(currentSolution, alumnosSep, totalVuln));
             vector_costoCupo.push_back(costCupo(currentSolution,cupoArray));
             vector_temp.push_back(temp);
             vector_count.push_back(count);
-            
+            */
             c_accepta++;
             count_rechaso=0;
         }
@@ -638,7 +759,12 @@ double sasFunc() {
                 copyVars<<<1,3,0,streams[3]>>>(d_previousVars, d_currentVars);
                 copyCost<<<1,1,0,streams[4]>>>(d_costPreviousSolution,d_costCurrentSolution);
                 //for (int i = 0; i < NUM_STREAMS; ++i) { cudaStreamSynchronize(streams[i]); }
-                cudaDeviceSynchronize();
+                errSync  = cudaGetLastError();
+                errAsync = cudaDeviceSynchronize();
+                if (errSync != cudaSuccess) 
+                printf("10 Sync kernel error: %s\n", cudaGetErrorString(errSync));
+                if (errAsync != cudaSuccess)
+                printf("10 Async kernel error: %s\n", cudaGetErrorString(errAsync));
 
                 /*
                 memcpy(previousSolution,currentSolution,sizeof(int)*n_students);
@@ -664,7 +790,7 @@ double sasFunc() {
             coolingCS2(temp,coolingRate);
         }
 
-        reheatingTR11(temp, k_reheating, n_reheating, count_rechaso);
+        //reheatingTR11(temp, k_reheating, n_reheating, count_rechaso);
         //reheatingTR12(temp, k_reheating, n_reheating, count);
         //reheatingTR13(temp, k_reheating, n_reheating, c_cooling_temperature);
         //reheatingTR14(temp, k_reheating, k_reheating_init, n_reheating, count_rechaso, e_const);
@@ -674,7 +800,7 @@ double sasFunc() {
         ///////////////////////////////////////////////////
         /// History
         ///////////////////////////////////////////////////
-        
+        /*
         vector_historyCostSolution.push_back(costCurrentSolution);
         vector_historyTemp.push_back(temp);
         vector_historymeanDist.push_back(meanDist(currentSolution,distMat));
@@ -688,10 +814,15 @@ double sasFunc() {
             vector_historyAcceptSolution.push_back(0);
         }
         vector_historyMove.push_back(std::tuple<int,int>(shuffle_colegios[selectThread],shuffle_student[selectBlock]));     
+        */
         
-        
-        
-        
+        //cout << costCurrentSolution << costPreviousSolution << "| |" << temp << "| |" << count<< endl;
+        errSync  = cudaGetLastError();
+        errAsync = cudaDeviceSynchronize();
+        if (errSync != cudaSuccess) 
+        printf("6 Sync kernel error: %s\n", cudaGetErrorString(errSync));
+        if (errAsync != cudaSuccess)
+        printf("6 Async kernel error: %s\n", cudaGetErrorString(errAsync));
         count_trials++;
         count++;
     }
@@ -810,13 +941,27 @@ double sasFunc() {
 
 
     for (int i = 0; i < NUM_STREAMS; ++i) { cudaStreamDestroy(streams[i]); }
-    cudaFree(d_currentSolution);
-    cudaFree(d_alumnosSep);
-    cudaFree(d_distMat);
-    cudaFree(d_cupoArray);
     cudaFree(d_array_current_Solution);
+    cudaFree(d_costCurrentSolution);
+    cudaFree(d_costBestSolution);
+    cudaFree(d_costPreviousSolution);
+    cudaFree(d_currentVars);
+    cudaFree(d_bestVars);
+    cudaFree(d_previousVars);
     cudaFree(d_array_current_Solution_alu);
     cudaFree(d_array_current_Solution_col);
+    cudaFree(d_shuffle_colegios);
+    cudaFree(d_shuffle_students);
+    cudaFree(d_aluxcol);
+    cudaFree(d_previousAluxcol);
+    cudaFree(d_aluVulxCol);
+    cudaFree(d_previousAluVulxCol);
+    cudaFree(d_currentSolution);
+    cudaFree(d_bestSolution);
+    cudaFree(d_previousSolution);
+    cudaFree(d_alumnosSep);
+    cudaFree(d_cupoArray);
+    cudaFree(d_distMat);
     cudaFree(d_alpha);
 
     cudaEventDestroy(start_cuda);
