@@ -111,6 +111,7 @@ int main(int argc, char *argv[]) {
     
     double bestSolution;
     int count;
+    /*
     for(int x=0; x<10; x++){
         prefijo_save = to_string(x)+"_32_32";
         sasFunc(1,2,0.98,alpha1,alpha2,alpha3,k_reheating,n_reheating,max_reheating,100000,min_temp,32,32,-1,2);
@@ -127,7 +128,8 @@ int main(int argc, char *argv[]) {
         prefijo_save = to_string(x)+"_1024_1024";
         sasFunc(1,2,0.98,alpha1,alpha2,alpha3,k_reheating,n_reheating,max_reheating,100000,min_temp,1024,1024,-1,2);
     }
-    //tie(bestSolution, count)  = sasFunc(len1,len2,coolingRate,alpha1,alpha2,alpha3,k_reheating,n_reheating,max_reheating,temp,min_temp,n_block,n_thread,seed,2);
+    */
+    tie(bestSolution, count)  = sasFunc(1,2,0.98,alpha1,alpha2,alpha3,k_reheating,n_reheating,max_reheating,100000,min_temp,1024,1024,-1,3);
     //tie(bestSolution, count)  = 
     //tie(bestSolution, count)  = sasFunc(1,2,0.98,alpha1,alpha2,alpha3,k_reheating,n_reheating,max_reheating,100000,min_temp,64,64,seed,1);
     //tie(bestSolution, count)  = sasFunc(1,2,0.98,alpha1,alpha2,alpha3,k_reheating,n_reheating,max_reheating,100000,min_temp,256,256,seed,1);

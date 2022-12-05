@@ -664,8 +664,9 @@ std::tuple<double, int> sasFunc(float lenTemp1,
 
             costBestSolution=costCurrentSolution;
             costPreviousSolution=costCurrentSolution;
+            cudaMemcpy(currentSolution, d_currentSolution, n_students * sizeof(int), cudaMemcpyDeviceToHost);
             //cout << costBestSolution << "| |" << temp << "| |" << count<< endl;
-            /*
+            
             if(level_registers>=3){
                 vector_costCurrentSolution.push_back(costCurrentSolution);
                 vector_meanDist.push_back(meanDist(currentSolution,distMat));
@@ -674,7 +675,7 @@ std::tuple<double, int> sasFunc(float lenTemp1,
                 vector_temp.push_back(temp);
                 vector_count.push_back(count);
             }
-            */
+            
             c_accepta++;
             count_rechaso=0;
         }

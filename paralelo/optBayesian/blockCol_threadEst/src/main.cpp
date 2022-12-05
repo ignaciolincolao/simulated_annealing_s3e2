@@ -159,7 +159,7 @@ int main(int argc, char *argv[]) {
     params.sc_type = SC_MAP;
 
     params.l_type = L_MCMC; // L_MCMC mayor precición pero mayor tiempo, L_EMPIRICAL mas rapido pero con menor precición
-    params.noise = 0.001; 
+    params.noise = 0.001536158;// 0.0000003726624; 
     params.n_iterations = 60;    // Number of iterations
     params.random_seed = 0; // Si el valor es positivo se usa como semilla para el generador de numeros aleatorios, si es negativo se usa como semilla el tiempo.
     params.n_init_samples = 5; //
