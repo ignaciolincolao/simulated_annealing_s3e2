@@ -92,9 +92,9 @@ class paralelOptimization: public bayesopt::ContinuousModel
     int var5 = round(Xi(4)*999)+1; // n_reheating [1, 1000] 
     int var6 = round(Xi(5)*31)*32+32; // n_thread [] multiplos de 32
     int  var7 = round(Xi(6)*31)*32+32; // n_block [] multiplos de 32
-    int var8 = round(Xi(7)*900)+100; // max numero de recalentamiento
-    double var9 = round(Xi(7)*1000000000000)+0.0;
-    double var10 = round(Xi(7)*0.000999999990)+0.000000000009;
+    int var8 = round(Xi(7)*100); // max numero de recalentamiento
+    double var9 = round(Xi(7)*100000000)+0.0;
+    double var10 = round(Xi(7)*0.99999990)+0.00000009;
     cout << Xi(0) << " " << Xi(1) << " " << Xi(2) << " " << Xi(3) << " " << Xi(4) << endl;
     cout << var1 << " " << var2 << " " << var3 << " " << var4 << " " << var5 << endl;
     cout << Xi(5) << " " << Xi(6) << " " << Xi(7) << " " << Xi(8) << " " << Xi(9) << endl;
@@ -160,7 +160,7 @@ int main(int argc, char *argv[]) {
 
     params.l_type = L_MCMC; // L_MCMC mayor precición pero mayor tiempo, L_EMPIRICAL mas rapido pero con menor precición
     params.noise = 0.001; 
-    params.n_iterations = 5;    // Number of iterations
+    params.n_iterations = 60;    // Number of iterations
     params.random_seed = 0; // Si el valor es positivo se usa como semilla para el generador de numeros aleatorios, si es negativo se usa como semilla el tiempo.
     params.n_init_samples = 5; //
     params.n_iter_relearn = 1; 
