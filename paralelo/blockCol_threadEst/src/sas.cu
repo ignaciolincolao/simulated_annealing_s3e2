@@ -806,7 +806,6 @@ std::tuple<double, int> sasFunc(float lenTemp1,
     cout << bestVars[1] << endl;
     cout << sumCostCupo(bestSolution,cupoArray) << "\n";
     cout << bestVars[2] << endl;
-    cout << "Tiempo de ejecución de SA get_result: " << vector_time1 << "\n";
 
     cout << "--------------- Finalizo con exito ----------------" << "\n";
     }

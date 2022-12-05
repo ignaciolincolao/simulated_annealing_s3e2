@@ -66,7 +66,7 @@ string prefijo_save;
 int selectThread=0,
     selectBlock = 0,
     n_block = 32, // Numero de estudiantes simultaneos
-    n_thread = 1024; // Numero de escuelas simultaneos
+    n_thread = 32; // Numero de escuelas simultaneos
 
 
 
@@ -111,10 +111,24 @@ int main(int argc, char *argv[]) {
     
     double bestSolution;
     int count;
-    tie(bestSolution, count)  = sasFunc(len1,len2,coolingRate,alpha1,alpha2,alpha3,k_reheating,n_reheating,max_reheating,temp,min_temp,n_block,n_thread,seed,1);
-    cout << bestSolution << endl;
-    cout << count  <<   endl;
-    //tie(bestSolution, count)  = sasFunc(1,2,0.98,alpha1,alpha2,alpha3,k_reheating,n_reheating,max_reheating,100000,min_temp,32,32,seed,1);
+    for(int x=0; x<10; x++){
+        prefijo_save = to_string(x)+"_32_32";
+        sasFunc(1,2,0.98,alpha1,alpha2,alpha3,k_reheating,n_reheating,max_reheating,100000,min_temp,32,32,-1,2);
+    }
+    for(int x=0; x<10; x++){
+        prefijo_save = to_string(x)+"_256_256";
+        sasFunc(1,2,0.98,alpha1,alpha2,alpha3,k_reheating,n_reheating,max_reheating,100000,min_temp,256,256,-1,2);
+    }
+    for(int x=0; x<10; x++){
+        prefijo_save = to_string(x)+"_512_512";
+        sasFunc(1,2,0.98,alpha1,alpha2,alpha3,k_reheating,n_reheating,max_reheating,100000,min_temp,512,512,-1,2);
+    }
+        for(int x=0; x<10; x++){
+        prefijo_save = to_string(x)+"_1024_1024";
+        sasFunc(1,2,0.98,alpha1,alpha2,alpha3,k_reheating,n_reheating,max_reheating,100000,min_temp,1024,1024,-1,2);
+    }
+    //tie(bestSolution, count)  = sasFunc(len1,len2,coolingRate,alpha1,alpha2,alpha3,k_reheating,n_reheating,max_reheating,temp,min_temp,n_block,n_thread,seed,2);
+    //tie(bestSolution, count)  = 
     //tie(bestSolution, count)  = sasFunc(1,2,0.98,alpha1,alpha2,alpha3,k_reheating,n_reheating,max_reheating,100000,min_temp,64,64,seed,1);
     //tie(bestSolution, count)  = sasFunc(1,2,0.98,alpha1,alpha2,alpha3,k_reheating,n_reheating,max_reheating,100000,min_temp,256,256,seed,1);
     //tie(bestSolution, count)  = sasFunc(1,2,0.98,alpha1,alpha2,alpha3,k_reheating,n_reheating,max_reheating,100000,min_temp,512,512,seed,1);

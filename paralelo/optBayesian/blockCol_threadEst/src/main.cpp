@@ -87,14 +87,14 @@ class paralelOptimization: public bayesopt::ContinuousModel
     // Transforma Valores
     float var1 = round(Xi(0)*84)+1; // Len1    [1,85]
     float var2  = round(Xi(1)*84)+1; // Len2   [1,85]
-    double var3 = min(0.099*Xi(2)+0.900,1.0); // CoolingRate [0.9,0.999]
-    double var4 = Xi(3); // k_reheating (0,1] 
-    int var5 = round(Xi(4)*999)+1; // n_reheating [1, 1000] 
+    double var3 = min(0.09*Xi(2)+0.90,1.0); // CoolingRate [0.9,0.99]
+    double var4 = min(Xi(3)*0.99+0.009,1.0); // k_reheating (0,1] 
+    int var5 = round(Xi(4)*100)+1; // n_reheating [1, 100] 
     int var6 = round(Xi(5)*31)*32+32; // n_thread [] multiplos de 32
     int  var7 = round(Xi(6)*31)*32+32; // n_block [] multiplos de 32
     int var8 = round(Xi(7)*100); // max numero de recalentamiento
-    double var9 = round(Xi(7)*100000000)+0.0;
-    double var10 = round(Xi(7)*0.99999990)+0.00000009;
+    double var9 = round(Xi(7)*100000000)+0.0; // Temperatura inicial
+    double var10 = round(Xi(7)*0.99999990)+0.00000009; // Temperatura minima
     cout << Xi(0) << " " << Xi(1) << " " << Xi(2) << " " << Xi(3) << " " << Xi(4) << endl;
     cout << var1 << " " << var2 << " " << var3 << " " << var4 << " " << var5 << endl;
     cout << Xi(5) << " " << Xi(6) << " " << Xi(7) << " " << Xi(8) << " " << Xi(9) << endl;
