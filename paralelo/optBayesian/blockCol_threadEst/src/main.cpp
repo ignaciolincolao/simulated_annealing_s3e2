@@ -95,14 +95,15 @@ class paralelOptimization: public bayesopt::ContinuousModel
     int var8 = round(Xi(7)*100); // max numero de recalentamiento
     double var9 = round(Xi(7)*100000000)+0.0; // Temperatura inicial
     double var10 = round(Xi(7)*0.99999990)+0.00000009; // Temperatura minima
-    cout << Xi(0) << " " << Xi(1) << " " << Xi(2) << " " << Xi(3) << " " << Xi(4) << endl;
-    cout << var1 << " " << var2 << " " << var3 << " " << var4 << " " << var5 << endl;
-    cout << Xi(5) << " " << Xi(6) << " " << Xi(7) << " " << Xi(8) << " " << Xi(9) << endl;
-    cout << var6 << " " << var7 << " " << var8 << " " << var9 << " " << var10 << endl;
+    cout << "Len1" << setw(20) << "Len2" << setw(20) << "coolingRate" << setw(20) << "k_reheating" << setw(20) << "n_reheating" << endl;
+    cout << Xi(0) << setw(20) << Xi(1) << setw(20) << Xi(2) << setw(20) << Xi(3) << setw(20) << Xi(4) << endl;
+    cout << var1 << setw(20) << var2 << setw(20) << var3 << setw(20) << var4 << setw(20) << var5 << endl;
+    cout << "n_thread" << setw(20) << "n_block" << setw(20) << "max_n_reheating" << setw(20) << "temp_init" << setw(20) << "temp_min" << endl;
+    cout << Xi(5) << setw(20) << Xi(6) << setw(20) << Xi(7) << setw(20) << Xi(8) << setw(20) << Xi(9) << endl;
+    cout << var6 << setw(20) << var7 << setw(20) << var8 << setw(20) << var9 << setw(20) << var10 << endl;
     // Ejecuta
     tie(bestSolution, count)  = sasFunc(var1,var2,var3,alpha1,alpha2,alpha3,var4,var5,var8,var9,var10,var7,var6,-1,1);
-    cout << "Solución Actual: " << bestSolution << " | Iteraciones: "
-         << count << endl;
+    cout << "Solución Actual: " << bestSolution << " | Iteraciones: " << count << endl;
     cout << "---------------------------------------------------------------------------------------------------------" << endl;
     return bestSolution;
   };
