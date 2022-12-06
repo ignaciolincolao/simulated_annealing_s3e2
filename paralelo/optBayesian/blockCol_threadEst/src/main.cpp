@@ -101,13 +101,10 @@ class paralelOptimization: public bayesopt::ContinuousModel
     cout << var6 << " " << var7 << " " << var8 << " " << var9 << " " << var10 << endl;
     // Ejecuta
     tie(bestSolution, count)  = sasFunc(var1,var2,var3,alpha1,alpha2,alpha3,var4,var5,var8,var9,var10,var7,var6,-1,1);
-    result = (bestSolution*a1)+(a2*((double)count/30000000));
     cout << "Solución Actual: " << bestSolution << " | Iteraciones: "
-         << count << " | resultado: " << result <<  " | a1: " << a1 
-         <<   " | a2: " << a2 << " (count/30000000): " << ((double)count/30000000) 
-         << " (bestSolution*a1): " <<  (bestSolution*a1) << " (a2*(count/30000000)): " <<  (a2*((double)count/30000000)) << endl;
+         << count << endl;
     cout << "---------------------------------------------------------------------------------------------------------" << endl;
-    return result;
+    return bestSolution;
   };
   bool checkReachability( const boost::numeric::ublas::vector<double> &query )
   { 

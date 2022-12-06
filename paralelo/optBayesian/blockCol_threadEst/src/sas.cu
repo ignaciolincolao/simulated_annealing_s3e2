@@ -497,8 +497,12 @@ std::tuple<double, int> sasFunc(float lenTemp1,
     //int deviceId;
     //cudaGetDevice(&deviceId);                                         // The ID of the currently active GPU device.
     //cudaMemPrefetchAsync(pointerToSomeUMData, size, deviceId); 
+
     auto start = chrono::high_resolution_clock::now();
-    while(temp > min_temp){
+    auto end_cycle = chrono::high_resolution_clock::now();
+    double time = chrono::duration_cast<chrono::nanoseconds>(end_cycle - start).count();
+    time *= 1e-9;
+    while(temp > min_temp && time < 1200.0){
 
         copyMemSolution<<<numberOfBlocks,threadsPerBlock,0,streams[0]>>>(d_currentSolution, d_previousSolution,n_students);
         copyMemCol<<<numberOfBlocks,threadsPerBlock,0,streams[1]>>>(d_aluxcol, d_previousAluxcol,n_colegios);
@@ -757,16 +761,18 @@ std::tuple<double, int> sasFunc(float lenTemp1,
         printf("6 Async kernel error: %s\n", cudaGetErrorString(errAsync));
         count_trials++;
         count++;
+        end_cycle = chrono::high_resolution_clock::now();
+        time = chrono::duration_cast<chrono::nanoseconds>(end_cycle - start).count();
+        time *= 1e-9;
     }
+    auto end = chrono::high_resolution_clock::now();
+    double time_taken = chrono::duration_cast<chrono::nanoseconds>(end - start).count();
+    time_taken *= 1e-9;
     cudaMemcpyAsync(bestSolution, d_bestSolution, n_students * sizeof(int), cudaMemcpyDeviceToHost,streams[0]);
     cudaMemcpyAsync(previousSolution, d_previousSolution, n_students * sizeof(int), cudaMemcpyDeviceToHost,streams[1]);
     ///////////////////////////////////////////////////
     /// Obtiene el tiempo de ejecución
     ///////////////////////////////////////////////////
-    auto end = chrono::high_resolution_clock::now();
-    double time_taken = chrono::duration_cast<chrono::nanoseconds>(end - start).count();
-    time_taken *= 1e-9;
-
     if(level_registers>=2){
         for(x=0;x<n_students;x++){
             info_graficos_bestSolution << bestSolution[x] << ",";
