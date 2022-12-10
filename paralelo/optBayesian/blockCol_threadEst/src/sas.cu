@@ -502,7 +502,7 @@ std::tuple<double, int> sasFunc(float lenTemp1,
     auto end_cycle = chrono::high_resolution_clock::now();
     double time = chrono::duration_cast<chrono::nanoseconds>(end_cycle - start).count();
     time *= 1e-9;
-    while(temp > min_temp && time < 1200.0){
+    while(temp > min_temp && time < 1800.0){
 
         copyMemSolution<<<numberOfBlocks,threadsPerBlock,0,streams[0]>>>(d_currentSolution, d_previousSolution,n_students);
         copyMemCol<<<numberOfBlocks,threadsPerBlock,0,streams[1]>>>(d_aluxcol, d_previousAluxcol,n_colegios);
