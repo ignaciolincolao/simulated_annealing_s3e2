@@ -30,16 +30,16 @@ int n_students, n_colegios;
 double alpha1 = 15; // Alpha de distancia valor 1 < alpha1
 double alpha2 = 30; // Alpha de segregación valor 1 < alpha2
 double alpha3 = 25; // Alpha de costocupo valor 1 < alpha3
-double coolingRate = 0.98; // Tasa de enfriamiento valores entre 0 < coolingRate < 1
-double temp = 100000.0; // Temperatura inicial
+double coolingRate = 0.9738105300000001; // Tasa de enfriamiento valores entre 0 < coolingRate < 1
+double temp = 8984.0; // Temperatura inicial
 double min_temp = 0.00000009; // Minima temperatura que puede llegar
 double max_temp = 0;
-double k_reheating = 1;
-int n_reheating = 1; // Variable ligada a cuanto debe esperar para iniciar recalentamiento
-int max_reheating = 100;
+double k_reheating = 0.36278937;
+int n_reheating = 101; // Variable ligada a cuanto debe esperar para iniciar recalentamiento
+int max_reheating = 0;
 int seed = 12315;
-float len1 =1;// 0.00000009; // Minima temperatura que puede llegar
-float len2 =2;
+float len1 =85;// 0.00000009; // Minima temperatura que puede llegar
+float len2 =85;
 double len3 = 1.0;
 double len4 = 0.99;
 double e_const=0.01;
@@ -65,8 +65,8 @@ string prefijo_save;
 
 int selectThread=0,
     selectBlock = 0,
-    n_block = 32, // Numero de estudiantes simultaneos
-    n_thread = 32; // Numero de escuelas simultaneos
+    n_block = 1024, // Numero de estudiantes simultaneos
+    n_thread = 1024; // Numero de escuelas simultaneos
 
 
 
@@ -111,6 +111,8 @@ int main(int argc, char *argv[]) {
     
     double bestSolution;
     int count;
+
+    tie(bestSolution, count)  = sasFunc(len1,len2,coolingRate,alpha1,alpha2,alpha3,k_reheating,n_reheating,max_reheating,temp,min_temp,n_block,n_thread,seed,2);
     /*
     for(int x=0; x<10; x++){
         prefijo_save = to_string(x)+"_32_32";
@@ -129,8 +131,8 @@ int main(int argc, char *argv[]) {
         sasFunc(1,2,0.98,alpha1,alpha2,alpha3,k_reheating,n_reheating,max_reheating,100000,min_temp,1024,1024,-1,2);
     }
     */
-    tie(bestSolution, count)  = sasFunc(1,2,0.98,alpha1,alpha2,alpha3,k_reheating,n_reheating,max_reheating,100000,min_temp,1024,1024,-1,3);
-    //tie(bestSolution, count)  = 
+    //tie(bestSolution, count)  = sasFunc(1,2,0.98,alpha1,alpha2,alpha3,k_reheating,n_reheating,max_reheating,100000,min_temp,1024,1024,-1,3);
+    
     //tie(bestSolution, count)  = sasFunc(1,2,0.98,alpha1,alpha2,alpha3,k_reheating,n_reheating,max_reheating,100000,min_temp,64,64,seed,1);
     //tie(bestSolution, count)  = sasFunc(1,2,0.98,alpha1,alpha2,alpha3,k_reheating,n_reheating,max_reheating,100000,min_temp,256,256,seed,1);
     //tie(bestSolution, count)  = sasFunc(1,2,0.98,alpha1,alpha2,alpha3,k_reheating,n_reheating,max_reheating,100000,min_temp,512,512,seed,1);
