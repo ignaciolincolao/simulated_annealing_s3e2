@@ -10,26 +10,21 @@ using std::cout;
 using std::endl;
 using std::max;
 
-void reheatingTR11(double &temp, 
-    double k_reheating,
-    int n_reheating,
-    int count_rechaso);
+class ReHeating
+{
+private:
+    double *temp_, *k_reheating_;
+    int *n_reheating_;
 
-void reheatingTR12(double &temp, 
-    double k_reheating,
-    int n_reheating,
-    int count);
+public:
+    ReHeating(double *temp, double *k_reheating, int *n_reheating);
+    void TR11(int count_rechaso);
 
-void reheatingTR13(double &temp,
-    double k_reheating,
-    int n_reheating,
-    int c_cooling_temperature);
+    void TR12(int count);
 
-void reheatingTR14(double &temp,
-    double k_reheating,
-    int k_reheating_init,
-    int n_reheating,
-    int count_rechaso,
-    double e_const);
+    void TR13(int c_cooling_temperature);
+
+    void TR14(int k_reheating_init, int count_rechaso, double e_const);
+};
 
 #endif

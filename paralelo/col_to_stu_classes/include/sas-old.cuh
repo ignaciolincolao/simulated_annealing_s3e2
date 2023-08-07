@@ -2,8 +2,6 @@
 #define MAIN_S3E2_H
 
 
-
-#include <iostream>
 #include <cmath>
 #include <ctime>
 #include <cstdlib>
@@ -15,16 +13,13 @@
 #include <iomanip>
 #include <chrono>
 #include <iostream>
-#include <string>
 
-
-using std::string;
-using std::stof;
 using std::stoi;
 using std::stod;
 using std::ofstream;
 using std::ifstream;
 using std::vector;
+using std::string;
 using std::cout;
 using std::random_device;
 using std::stringstream;
@@ -54,21 +49,26 @@ struct Info_alu {
 };
 
 extern int n_students, n_colegios;
-extern float len1, len2;
-extern double len3, len4;
-extern double e_const, Th;
-extern double coolingRate; // Tasa de enfriamiento
-extern double temp; // Temperatura Inicial
-extern double min_temp;// 0.00000009; // Minima temperatura que puede llegar
+
 extern double alpha1; // Alpha de distancia
 extern double alpha2; // Alpha de segregación
 extern double alpha3; // Alpha de costocupo
+
+extern float len1, len2;
+extern double len3, len4;
+
+extern double e_const, Th;
+extern double coolingRate; // Tasa de enfriamiento
+
+extern double temp; // Temperatura Inicial
+extern double min_temp;// 0.00000009; // Minima temperatura que puede llegar
 extern double max_temp;
 extern double k_reheating;
 extern int n_reheating;
 extern int seed;
 
 extern string ruta_save; // Ruta para guardar los archivos
+extern string name_exp;
 extern double alpha[3]; // Valores del alpha con orden Distancia, Segregación, Costo Cupo
 extern std::mt19937 mt;
 extern std::uniform_int_distribution<int> dist;

@@ -4,11 +4,11 @@
 class CoolingScheme
 {
 private:
-    double temp_, coolingRate_;
+    double *temp_, coolingRate_;
 
 public:
-    CoolingScheme(double temp, double coolingRate);
-    void coolingCS2();
+    CoolingScheme(double *temp, double coolingRate);
+    void CS2();
     double getTemp();
     double getCoolingRate();
 };

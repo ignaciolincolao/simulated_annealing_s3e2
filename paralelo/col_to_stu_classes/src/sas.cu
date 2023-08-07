@@ -244,12 +244,12 @@ double sasFunc() {
 
     
     int count_rechaso=0;
-    int reheating = 0;
+    // int reheating = 0;
     int c_accepta = 0;
     int c_cooling_temperature = 0;
-    int valmaxheating=n_colegios;
-    int count_reheating = 0;
-    double bestTemp = 0;
+    // int valmaxheating=n_colegios;
+    // int count_reheating = 0;
+    // double bestTemp = 0;
     double k_reheating_init = k_reheating;
     double temp_init = temp;
     int count_trials = 0;
@@ -262,7 +262,7 @@ double sasFunc() {
     // VARIABLES DE PRUEBA
     ////////////////////////////////////////////////////////////////////////
 
-    double costCurrentSolutionV2 = costCurrentSolution;
+    // double costCurrentSolutionV2 = costCurrentSolution;
     double *currentVars;
     cudaMallocHost( (void**)&currentVars,3 * sizeof(double));
     double *previousVars;
@@ -291,9 +291,9 @@ double sasFunc() {
     auto start_compare = std::chrono::high_resolution_clock::now();
     auto end_compare = std::chrono::high_resolution_clock::now();
     double time_taken_v1 = std::chrono::duration_cast<std::chrono::nanoseconds>(end_compare - start_compare).count();
-    double time_taken_v2;
+    //double time_taken_v2;
     double vector_time1 =0;
-    double vector_time2=0;
+    // double vector_time2=0;
 
     /////////////////////////////////////////////////////////////////////////
     // VARIABLES PARA CUDA
@@ -425,8 +425,8 @@ double sasFunc() {
     cudaEvent_t stop_cuda;
     cudaEventCreate(&start_cuda);
     cudaEventCreate(&stop_cuda);
-    float elapsedTime;
-    double timeCuda = 0.0;
+    // float elapsedTime;
+    // double timeCuda = 0.0;
     ///////////////////////////////////////////////////
     /// Inicio el contador de tiempo antes de iniciar el algortimo
     ///////////////////////////////////////////////////
@@ -458,7 +458,8 @@ double sasFunc() {
     //cudaGetDevice(&deviceId);                                         // The ID of the currently active GPU device.
     //cudaMemPrefetchAsync(pointerToSomeUMData, size, deviceId); 
 
-    CoolingScheme cooling = CoolingScheme(temp, coolingRate);
+    CoolingScheme cooling = CoolingScheme(&temp, coolingRate);
+    //Reheating reheating = Reheating(&temp, &k_reheating, &n_reheating);
 
     while(cooling.getTemp() > min_temp){
 
@@ -790,14 +791,14 @@ double sasFunc() {
         //if(temperatureTL8(temp, c_cooling_temperature, count_trials, len1, len2, coolingRate)){
         //if(temperatureTL9(temp, c_cooling_temperature, count_trials, len3, len4, coolingRate)){
         //if(temperatureTL11(temp, c_cooling_temperature, count_trials, len3, len4, coolingRate)){
-            cooling.coolingCS2();
+            cooling.CS2();
             cout << cooling.getTemp() << "\n";
         }
 
-        //reheatingTR11(temp, k_reheating, n_reheating, count_rechaso);
-        //reheatingTR12(temp, k_reheating, n_reheating, count);
-        //reheatingTR13(temp, k_reheating, n_reheating, c_cooling_temperature);
-        //reheatingTR14(temp, k_reheating, k_reheating_init, n_reheating, count_rechaso, e_const);
+        //reheating.TR11(temp, k_reheating, n_reheating, count_rechaso);
+        //reheating.TR12(temp, k_reheating, n_reheating, count);
+        //reheating.TR13(temp, k_reheating, n_reheating, c_cooling_temperature);
+        //reheating.TR14(temp, k_reheating, k_reheating_init, n_reheating, count_rechaso, e_const);
         
         
         
@@ -1070,7 +1071,7 @@ double sumS(const int currentSolution[],const int alumnosSep[], int totalVuln){
 double costCupo(int currentSolution[],int cupoArray[]){
     double totalcostCupo = 0.0;
     int totalAluCol = 0;
-    double a = 0.0;
+    // double a = 0.0;
     for(int j=0;j<n_colegios;j++){
         totalAluCol = 0;
         for(int i=0; i<n_students; i++){
@@ -1174,7 +1175,7 @@ void calcDist(Info_colegio *ptr_colegios, Info_alu *ptr_students, double **distM
 ///////////////////////////////////////////////////
 double newSolution_v2(int n_students,int n_colegios,int totalVuln,int aluxcol[],int aluVulxCol[],int cupoArray[],double **distMat, int currentSolution[], const double ptr_alpha[]){
     double sumDist=0;
-    double mean=0.0;
+    // double mean=0.0;
     double totalcostCupo = 0.0;
     double totalSesc = 0.0;
     int aluVulCol, aluNoVulCol,totalAluCol;
