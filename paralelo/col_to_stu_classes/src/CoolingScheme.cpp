@@ -1,8 +1,11 @@
 #include <CoolingScheme.hpp>
 
+CoolingScheme::CoolingScheme(double temp, double coolingRate) : temp_{temp}, coolingRate_{coolingRate} {}
 
-
-void coolingCS2(double &temp,double coolingRate)
+void CoolingScheme::coolingCS2()
 {
-    temp=temp*(coolingRate);
+    temp_ = temp_ * (coolingRate_);
 }
+
+double CoolingScheme::getTemp() { return temp_; }
+double CoolingScheme::getCoolingRate() { return coolingRate_; }

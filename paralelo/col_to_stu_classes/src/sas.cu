@@ -1,4 +1,4 @@
-#include <sas.cuh>
+#include <sas-old.cuh>
 #include <kernel.cuh>
 #include <ExplorationCriterion.hpp>
 #include <AcceptanceCriterion.hpp>
@@ -65,7 +65,6 @@ double sasFunc() {
     ofstream info_graficos;
     string name_info_graficos = ruta_save + prefijo_save +"-info-graficos.txt";
     info_graficos.open(name_info_graficos);
-
     ///////////////////////////////////////////////////
     /// Datos colegios
     /// Lee el archivo linea por linea y luego lo agrega al arreglo de estructura Info_colegio
@@ -90,6 +89,7 @@ double sasFunc() {
     /// Inicializa Variables y arreglos
     ///////////////////////////////////////////////////
 
+
     int aluVulxCol[n_colegios], aluxcol[n_colegios];
     int previousAluxCol[n_colegios];
     int previousAluVulxCol[n_colegios];
@@ -109,7 +109,7 @@ double sasFunc() {
         costCurrentSolution,
         *ptr_alpha = &alpha[0];
     
-    int count=0;
+    int count = 0;
 
     cudaMallocHost((void**)&previousSolution, sizeof(int)*n_students);
     cudaMallocHost((void**)&bestSolution, sizeof(int)*n_students);
@@ -150,9 +150,9 @@ double sasFunc() {
     ///////////////////////////////////////////////////
     /// Registro de datos
     ///////////////////////////////////////////////////
-    costBestSolution=calCosto(currentSolution,distMat,ptr_alpha, alumnosSep, totalVuln, cupoArray);
-    costPreviousSolution=costBestSolution;
-    costCurrentSolution=costBestSolution;
+    costBestSolution = calCosto(currentSolution,distMat,ptr_alpha, alumnosSep, totalVuln, cupoArray);
+    costPreviousSolution = costBestSolution;
+    costCurrentSolution = costBestSolution;
     
     
     cout << "--------------- Primeros datos -------------" << "\n";
@@ -161,11 +161,11 @@ double sasFunc() {
     cout << "Primer Segregación: " << S(currentSolution, alumnosSep, totalVuln) << "\n";
     cout << "Primer CostoCupo: " << costCupo(currentSolution,cupoArray) << "\n";
 
-    info      << "--------------- Primeros datos -------------" << "\n";
-    info      << "Primer costo de solución: " << costBestSolution << "\n";
-    info      << "Primer distancia: " << meanDist(currentSolution,distMat) << "\n";
-    info      << "Primer Segregación: " << S(currentSolution, alumnosSep, totalVuln) << "\n";
-    info      << "Primer CostoCupo: " << costCupo(currentSolution,cupoArray) << "\n";
+    info << "--------------- Primeros datos -------------" << "\n";
+    info << "Primer costo de solución: " << costBestSolution << "\n";
+    info << "Primer distancia: " << meanDist(currentSolution,distMat) << "\n";
+    info << "Primer Segregación: " << S(currentSolution, alumnosSep, totalVuln) << "\n";
+    info << "Primer CostoCupo: " << costCupo(currentSolution,cupoArray) << "\n";
 
 
     ///////////////////////////////////////////////////
@@ -202,7 +202,7 @@ double sasFunc() {
     ofstream info_graficos_bestSolution;
     string name_info_graficos_bestSolution = ruta_save + prefijo_save +"-info-graficos_bestSolution.txt"; // concatenar
     info_graficos_bestSolution.open(name_info_graficos_bestSolution);
-    for(x=0;x<n_students;x++){
+    for(x = 0; x < n_students; x++){
         info_graficos_bestSolution << currentSolution[x] << ",";
     }
     info_graficos_bestSolution << "\n";
@@ -445,18 +445,22 @@ double sasFunc() {
     cudaMemcpyAsync(d_bestVars, currentVars, 3 * sizeof(double), cudaMemcpyHostToDevice,streams[1]);
     cudaMemcpyAsync(d_alumnosSep, alumnosSep, n_students * sizeof(int), cudaMemcpyHostToDevice,streams[2]);
     cudaMemcpyAsync(d_cupoArray, cupoArray, n_colegios * sizeof(int), cudaMemcpyHostToDevice,streams[3]);
+
     cudaError_t errSync  = cudaGetLastError();
     cudaError_t errAsync = cudaDeviceSynchronize();
+    
     if (errSync != cudaSuccess) 
-    printf("0 Sync kernel error: %s\n", cudaGetErrorString(errSync));
+        printf("0 Sync kernel error: %s\n", cudaGetErrorString(errSync));
     if (errAsync != cudaSuccess)
-    printf("0 Async kernel error: %s\n", cudaGetErrorString(errAsync));
+        printf("0 Async kernel error: %s\n", cudaGetErrorString(errAsync));
     ///////////////////////////// Incorporar para acceder mas rapido al costCurrentSolution
     //int deviceId;
     //cudaGetDevice(&deviceId);                                         // The ID of the currently active GPU device.
     //cudaMemPrefetchAsync(pointerToSomeUMData, size, deviceId); 
 
-    while(temp > min_temp){
+    CoolingScheme cooling = CoolingScheme(temp, coolingRate);
+
+    while(cooling.getTemp() > min_temp){
 
         copyMemSolution<<<numberOfBlocks,threadsPerBlock,0,streams[0]>>>(d_currentSolution, d_previousSolution,n_students);
         copyMemCol<<<numberOfBlocks,threadsPerBlock,0,streams[1]>>>(d_aluxcol, d_previousAluxcol,n_colegios);
@@ -481,8 +485,8 @@ double sasFunc() {
         ///  Selecciona aleatoria mente a los alumnos
         ///////////////////////////////////////////////////
 
-        shuffle(shuffle_student,max_changes_students,dist);
-        shuffle(shuffle_colegios,max_changes_school,dist2);
+        shuffle(shuffle_student, max_changes_students, dist);
+        shuffle(shuffle_colegios, max_changes_school, dist2);
         ///////////////////////////////////////////////////
         /// Actualiza la memoria en CUDA
         ///////////////////////////////////////////////////
@@ -625,6 +629,7 @@ double sasFunc() {
         if (errAsync != cudaSuccess)
         printf("8 Async kernel error: %s\n", cudaGetErrorString(errAsync));
 
+        
         /********************************
         // Metodo antiguo
         */
@@ -673,7 +678,6 @@ double sasFunc() {
             }
         }*/
         
-
         //exit(0);
         ///////////////////////////////////////////////////
         ///  Actualizo datos basicos
@@ -733,8 +737,8 @@ double sasFunc() {
             memcpy(bestVars,currentVars,sizeof(double)*3);
             */
             
-            costBestSolution=costCurrentSolution;
-            costPreviousSolution=costCurrentSolution;
+            costBestSolution = costCurrentSolution;
+            costPreviousSolution = costCurrentSolution;
             //cout << costBestSolution << "| |" << temp << "| |" << count<< endl;
             /*
             vector_costCurrentSolution.push_back(costCurrentSolution);
@@ -745,12 +749,12 @@ double sasFunc() {
             vector_count.push_back(count);
             */
             c_accepta++;
-            count_rechaso=0;
+            count_rechaso = 0;
         }
         // En el caso que el la solución actual sea mas alta intenta aceptar una peor solución en base
         // a la función acepta
         else{
-            if(metropolisAC1(costPreviousSolution,costCurrentSolution)==1){
+            if(metropolisAC1(costPreviousSolution,costCurrentSolution) == 1) {
 
                 copyMemSolution<<<numberOfBlocks,threadsPerBlock,0,streams[0]>>>(d_previousSolution, d_currentSolution,n_students);
                 copyMemCol<<<numberOfBlocks,threadsPerBlock,0,streams[1]>>>(d_previousAluxcol, d_aluxcol,n_colegios);
@@ -758,7 +762,7 @@ double sasFunc() {
                 copyVars<<<1,3,0,streams[3]>>>(d_previousVars, d_currentVars);
                 copyCost<<<1,1,0,streams[4]>>>(d_costPreviousSolution,d_costCurrentSolution);
                 //for (int i = 0; i < NUM_STREAMS; ++i) { cudaStreamSynchronize(streams[i]); }
-                errSync  = cudaGetLastError();
+                errSync = cudaGetLastError();
                 errAsync = cudaDeviceSynchronize();
                 if (errSync != cudaSuccess) 
                 printf("10 Sync kernel error: %s\n", cudaGetErrorString(errSync));
@@ -771,9 +775,9 @@ double sasFunc() {
                 memcpy(previousAluVulxCol,aluVulxCol,sizeof(int)*n_colegios);
                 memcpy(previousVars,currentVars,sizeof(double)*3);
                 */
-                costPreviousSolution=costCurrentSolution;
+                costPreviousSolution = costCurrentSolution;
 
-                count_rechaso=0;
+                count_rechaso = 0;
                 c_accepta++;
             }
             else{
@@ -782,11 +786,12 @@ double sasFunc() {
             }
         }
 
-        if(temperatureTL7(temp, c_cooling_temperature, c_accepta, len1, len2, n_colegios, coolingRate,count)){
+        if(temperatureTL7(c_cooling_temperature, c_accepta, len1, len2, n_colegios, count)){
         //if(temperatureTL8(temp, c_cooling_temperature, count_trials, len1, len2, coolingRate)){
         //if(temperatureTL9(temp, c_cooling_temperature, count_trials, len3, len4, coolingRate)){
         //if(temperatureTL11(temp, c_cooling_temperature, count_trials, len3, len4, coolingRate)){
-            coolingCS2(temp,coolingRate);
+            cooling.coolingCS2();
+            cout << cooling.getTemp() << "\n";
         }
 
         //reheatingTR11(temp, k_reheating, n_reheating, count_rechaso);
@@ -866,8 +871,8 @@ double sasFunc() {
     cout << "Segregación: " << S(bestSolution, alumnosSep, totalVuln) << "\n";
     cout << "CostoCupo: " << costCupo(bestSolution,cupoArray) << "\n";
 
-    cout << "Cal costo" << calCosto(bestSolution,distMat,ptr_alpha, alumnosSep, totalVuln, cupoArray) << endl;
-    cout << "Costo de:" << costBestSolution << "\n";
+    cout << "Cal costo " << calCosto(bestSolution, distMat, ptr_alpha, alumnosSep, totalVuln, cupoArray) << endl;
+    cout << "Costo de: " << costBestSolution << "\n";
 
 
     //cout << fixed << setprecision(70) << endl;
@@ -902,7 +907,7 @@ double sasFunc() {
             << "," << costCupo(bestSolution,cupoArray) 
             << "," << count 
             << "," << fixed << temp_init << setprecision(13) 
-            << "," << fixed << temp << setprecision(13) 
+            << "," << fixed << cooling.getTemp() << setprecision(13) 
             << "," << min_temp 
             << "," << seed
             << "," << alpha1 
@@ -1143,7 +1148,6 @@ void assignSchoolToArray(int previousSolution[], int bestSolution[], int current
          */
 
         cupoArray[x] = ptr_colegios->num_alu+ ((int)((ptr_colegios->num_alu*10)/100));
-
         ptr_students = ptr_aux;
         ptr_colegios++;
     }

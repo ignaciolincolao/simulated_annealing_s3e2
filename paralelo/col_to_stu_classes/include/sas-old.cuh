@@ -53,7 +53,6 @@ struct Info_alu {
     double longitude = 0.0;
 };
 
-
 extern int n_students, n_colegios;
 extern float len1, len2;
 extern double len3, len4;
@@ -86,29 +85,29 @@ extern int selectBlock;
 extern string prefijo_save;
 extern string name_exp;
 
-
-class Sas {
-public:
-    double run();
-    double calCosto(int currentSolution[], double **distMat, const double ptr_alpha[], int alumnosSep[], int totalVuln, int cupoArray[]);
-    double meanDist(const int currentSolution[], double  **distMat);
-    double sumDist(const int currentSolution[], double  **distMat);
-    double S(const int currentSolution[],const int alumnosSep[], int totalVuln);
-    double sumS(const int currentSolution[],const int alumnosSep[], int totalVuln);
-    double costCupo(int currentSolution[],int cupoArray[]);
-    double sumCostCupo(int currentSolution[],int cupoArray[]);
-    void newSolution(int currentSolution[],const int previousSolution[]);
-    double newSolution_v2(int n_students,int n_colegios,int totalVuln,int aluxcol[],int aluVulxCol[],int cupoArray[],double **distMat, int currentSolution[],const double ptr_alpha[]);
-    void assignSchoolToArray(int previousSolution[], int bestSolution[], int currentSolution[], Info_colegio *ptr_colegios, Info_alu *ptr_students, int cupoArray[]);
-    void calcDist(Info_colegio *ptr_colegios, Info_alu *ptr_students, double **distMat);
-    void shuffle(int[],int,std::uniform_int_distribution<int>);
-    void getDataSchool(std::vector<Info_colegio> &colegios);
-    void getDataStudents(std::vector<Info_alu> &students, int &totalVuln);
-    double getMaxDistance(double **distMat);
-    void normalizedAlpha(double alpha[3]);
-    void initializeArray(int *aluxcol, int *previousAluxCol, int *bestAluxCol, int *aluVulxCol, int *previousAluVulxCol, int *bestAluVulxCol, int *alumnosSep, std::vector<Info_alu> &students,std::vector<Info_colegio> &colegios);
-};
-
-
+///////////////////////////////////////////////////
+/// Funciones generales
+///////////////////////////////////////////////////
+double sasFunc();
+double calCosto(int currentSolution[], double **distMat, const double ptr_alpha[], int alumnosSep[], int totalVuln, int cupoArray[]);
+double meanDist(const int currentSolution[], double  **distMat);
+double sumDist(const int currentSolution[], double  **distMat);
+double S(const int currentSolution[],const int alumnosSep[], int totalVuln);
+double sumS(const int currentSolution[],const int alumnosSep[], int totalVuln);
+double costCupo(int currentSolution[],int cupoArray[]);
+double sumCostCupo(int currentSolution[],int cupoArray[]);
+void newSolution(int currentSolution[],const int previousSolution[]);
+double newSolution_v2(int n_students,int n_colegios,int totalVuln,int aluxcol[],int aluVulxCol[],int cupoArray[],double **distMat, int currentSolution[],const double ptr_alpha[]);
+void assignSchoolToArray(int previousSolution[], int bestSolution[], int currentSolution[], Info_colegio *ptr_colegios, Info_alu *ptr_students, int cupoArray[]);
+void calcDist(Info_colegio *ptr_colegios, Info_alu *ptr_students, double **distMat);
+void shuffle(int[],int,std::uniform_int_distribution<int>);
+void getDataSchool(std::vector<Info_colegio> &colegios);
+void getDataStudents(std::vector<Info_alu> &students, int &totalVuln);
+double getMaxDistance(double **distMat);
+void normalizedAlpha(double alpha[3]);
+void initializeArray(int *aluxcol, int *previousAluxCol, int *bestAluxCol, int *aluVulxCol, int *previousAluVulxCol, int *bestAluVulxCol, int *alumnosSep, std::vector<Info_alu> &students,std::vector<Info_colegio> &colegios);
+double round_n(double x, int n);
 
 #endif
+
+

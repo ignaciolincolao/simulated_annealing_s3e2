@@ -1,12 +1,16 @@
 #ifndef COOLING_SCHEME_H
 #define COOLING_SCHEME_H
 
-#include <iostream>
-#include <algorithm>
-#include <cstdlib>
-#include <random>
+class CoolingScheme
+{
+private:
+    double temp_, coolingRate_;
 
-
-void coolingCS2(double &temp,double coolingRate);
+public:
+    CoolingScheme(double temp, double coolingRate);
+    void coolingCS2();
+    double getTemp();
+    double getCoolingRate();
+};
 
 #endif
