@@ -460,6 +460,7 @@ double sasFunc() {
 
     CoolingScheme cooling = CoolingScheme(&temp, coolingRate);
     TemperatureLength temperature = TemperatureLength();
+    AcceptanceCriterion accept = AcceptanceCriterion(&costPreviousSolution, &costCurrentSolution);
     //Reheating reheating = Reheating(&temp, &k_reheating, &n_reheating);
 
     while(cooling.getTemp() > min_temp){
@@ -485,7 +486,7 @@ double sasFunc() {
 
         ///////////////////////////////////////////////////
         ///  Selecciona aleatoria mente a los alumnos
-        ///////////////////////////////////////////////////
+        /////////////////////////////////////////////////389286//
 
         shuffle(shuffle_student, max_changes_students, dist);
         shuffle(shuffle_colegios, max_changes_school, dist2);
@@ -562,7 +563,7 @@ double sasFunc() {
         printf("5 Async kernel error: %s\n", cudaGetErrorString(errAsync));
 
         if(costCurrentSolution >= costPreviousSolution){
-            if(metropolisAC1(costPreviousSolution,costCurrentSolution)==1){
+            if(accept.metropolisAC1() == 1){
                 selectThread = dist(mt);
                 selectBlock = dist2(mt);
                 cudaMemcpy(&d_array_current_Solution_alu[0],&selectThread, sizeof(int),cudaMemcpyHostToDevice);
@@ -756,7 +757,7 @@ double sasFunc() {
         // En el caso que el la solución actual sea mas alta intenta aceptar una peor solución en base
         // a la función acepta
         else{
-            if(metropolisAC1(costPreviousSolution,costCurrentSolution) == 1) {
+            if(accept.metropolisAC1() == 1) {
 
                 copyMemSolution<<<numberOfBlocks,threadsPerBlock,0,streams[0]>>>(d_previousSolution, d_currentSolution,n_students);
                 copyMemCol<<<numberOfBlocks,threadsPerBlock,0,streams[1]>>>(d_previousAluxcol, d_aluxcol,n_colegios);
