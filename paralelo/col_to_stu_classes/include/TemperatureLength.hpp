@@ -6,33 +6,30 @@
 #include <cstdlib>
 #include <math.h>
 
-bool temperatureTL7(
-    int &c_cooling_temperature,
-    int &c_accepta,
-    float len1,
-    float len2,
-    int n_colegios,
-    int count);
+class TemperatureLength
+{
+public:
+    bool TL7(int &c_cooling_temperature,
+             int &c_accepta,
+             float len1,
+             float len2,
+             int n_colegios,
+             int count);
 
-bool temperatureTL8(double &temp,
-                    int &c_cooling_temperature,
-                    int &count_trials,
-                    float &len1,
-                    float len2,
-                    double coolingRate);
+    bool TL8(int &c_cooling_temperature,
+             int &count_trials,
+             float &len1,
+             float len2);
 
-bool temperatureTL9(double &temp,
-                    int &c_cooling_temperature,
-                    int &count_trials,
-                    double &len3,
-                    double &len4,
-                    double coolingRate);
+    bool TL9(int &c_cooling_temperature,
+             int &count_trials,
+             double &len3,
+             double &len4);
 
-bool temperatureTL11(double &temp,
-                     int &c_cooling_temperature,
-                     int &count_trials,
-                     double &len3,
-                     double &len4,
-                     double coolingRate);
+    bool TL11(int &c_cooling_temperature,
+              int &count_trials,
+              double &len3,
+              double &len4);
+};
 
 #endif

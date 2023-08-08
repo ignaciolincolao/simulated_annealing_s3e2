@@ -6,7 +6,7 @@
  * len3 =  length initial double
  * len4 =  length const double (less than 1)
  **/
-bool temperatureTL7(
+bool TemperatureLength::TL7(
     int &c_cooling_temperature,
     int &c_accepta,
     float len1,
@@ -31,12 +31,11 @@ bool temperatureTL7(
 /**
  * Arithmetic
  */
-bool temperatureTL8(double &temp,
-                    int &c_cooling_temperature,
-                    int &count_trials,
-                    float &len1,
-                    float len2,
-                    double coolingRate)
+bool TemperatureLength::TL8(
+    int &c_cooling_temperature,
+    int &count_trials,
+    float &len1,
+    float len2)
 {
     if (count_trials >= len1)
     {
@@ -50,12 +49,11 @@ bool temperatureTL8(double &temp,
 /**
  * Geometric
  */
-bool temperatureTL9(double &temp,
-                    int &c_cooling_temperature,
-                    int &count_trials,
-                    double &len3,
-                    double &len4,
-                    double coolingRate)
+bool TemperatureLength::TL9(
+    int &c_cooling_temperature,
+    int &count_trials,
+    double &len3,
+    double &len4)
 {
     if (count_trials >= len3)
     {
@@ -70,12 +68,11 @@ bool temperatureTL9(double &temp,
 /**
  * Exponential
  */
-bool temperatureTL11(double &temp,
-                     int &c_cooling_temperature,
-                     int &count_trials,
-                     double &len3,
-                     double &len4,
-                     double coolingRate)
+bool TemperatureLength::TL11(
+    int &c_cooling_temperature,
+    int &count_trials,
+    double &len3,
+    double &len4)
 {
     if (count_trials >= len3)
     {

@@ -459,6 +459,7 @@ double sasFunc() {
     //cudaMemPrefetchAsync(pointerToSomeUMData, size, deviceId); 
 
     CoolingScheme cooling = CoolingScheme(&temp, coolingRate);
+    TemperatureLength temperature = TemperatureLength();
     //Reheating reheating = Reheating(&temp, &k_reheating, &n_reheating);
 
     while(cooling.getTemp() > min_temp){
@@ -787,7 +788,7 @@ double sasFunc() {
             }
         }
 
-        if(temperatureTL7(c_cooling_temperature, c_accepta, len1, len2, n_colegios, count)){
+        if(temperature.TL7(c_cooling_temperature, c_accepta, len1, len2, n_colegios, count)){
         //if(temperatureTL8(temp, c_cooling_temperature, count_trials, len1, len2, coolingRate)){
         //if(temperatureTL9(temp, c_cooling_temperature, count_trials, len3, len4, coolingRate)){
         //if(temperatureTL11(temp, c_cooling_temperature, count_trials, len3, len4, coolingRate)){
