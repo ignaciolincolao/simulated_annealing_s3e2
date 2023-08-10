@@ -461,6 +461,7 @@ double sasFunc() {
     CoolingScheme cooling = CoolingScheme(&temp, coolingRate);
     TemperatureLength temperature = TemperatureLength();
     AcceptanceCriterion accept = AcceptanceCriterion(&costPreviousSolution, &costCurrentSolution);
+    // ExplorationCriterion exploration = ExplorationCriterion(&)
     //Reheating reheating = Reheating(&temp, &k_reheating, &n_reheating);
 
     while(cooling.getTemp() > min_temp){
@@ -842,7 +843,7 @@ double sasFunc() {
     double time_taken = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
     time_taken *= 1e-9;
 
-    for(x=0;x<n_students;x++){
+    for(x = 0; x < n_students; x++) {
         info_graficos_bestSolution << bestSolution[x] << ",";
     }
     

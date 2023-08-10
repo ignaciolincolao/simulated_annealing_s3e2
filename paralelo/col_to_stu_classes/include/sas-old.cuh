@@ -106,7 +106,6 @@ void getDataStudents(std::vector<Info_alu> &students, int &totalVuln);
 double getMaxDistance(double **distMat);
 void normalizedAlpha(double alpha[3]);
 void initializeArray(int *aluxcol, int *previousAluxCol, int *bestAluxCol, int *aluVulxCol, int *previousAluVulxCol, int *bestAluVulxCol, int *alumnosSep, std::vector<Info_alu> &students,std::vector<Info_colegio> &colegios);
-double round_n(double x, int n);
 
 #endif
 
