@@ -16,7 +16,11 @@
 #include <chrono>
 #include <iostream>
 #include <string>
-
+#include <structure/AcceptanceCriterion/AcceptanceCriterion.hpp>
+#include <structure/CoolingScheme/CoolingScheme.hpp>
+#include <structure/ExplorationCriterion/ExplorationCriterion.hpp>
+#include <structure/LengthTemperature/LengthTemperature.hpp>
+#include <structure/ReheatingMethod/ReheatingMethod.hpp>
 
 using std::string;
 using std::stof;
@@ -33,25 +37,7 @@ using std::setprecision;
 using std::fixed;
 
 
-///////////////////////////////////////////////////
-/// Estructura de datos de los colegios.
-///////////////////////////////////////////////////
-struct Info_colegio {
-    double latitude = 0.0;
-    double longitude = 0.0;
-    int num_alu = 0;
-    int rbd = 0;
-    int prioritario = 0;
-};
-///////////////////////////////////////////////////
-/// Estructura de alumnos
-///////////////////////////////////////////////////
-struct Info_alu {
-    int rbd = 0;
-    int sep = 0;
-    double latitude = 0.0;
-    double longitude = 0.0;
-};
+
 
 
 extern int n_students, n_colegios;
@@ -87,8 +73,23 @@ extern string prefijo_save;
 extern string name_exp;
 
 
-class Sas {
+class SimulatedAnnealing {
+
+private:
+    AcceptanceCriterion* acceptanceCriterion;
+    CoolingScheme* coolingScheme;
+    ExplorationCriterion* explorationCriterion;
+    LengthTemperature* lengthTemperature;
+    ReheatingMethod* reheatingMethod;
+
 public:
+    SimulatedAnnealing(AcceptanceCriterion* AC,
+        CoolingScheme* CS,
+        ExplorationCriterion* EC,
+        LengthTemperature* LT,
+        ReheatingMethod* RM
+    )
+    ~SimulatedAnnealing();
     double run();
     double calCosto(int currentSolution[], double **distMat, const double ptr_alpha[], int alumnosSep[], int totalVuln, int cupoArray[]);
     double meanDist(const int currentSolution[], double  **distMat);

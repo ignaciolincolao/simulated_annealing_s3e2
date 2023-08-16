@@ -1,5 +1,6 @@
-#ifndef EXPLORATION_CRITERION_H
-#define EXPLORATION_CRITERION_H
+#ifndef EXPLORATION_CRITERION_HPP
+#define EXPLORATION_CRITERION_HPP
+
 
 #include <iostream>
 #include <algorithm>
@@ -9,6 +10,7 @@
 #include <cstdint>
 #include <cstring>
 #include <iomanip>
+#include <utils/SAParameters.hpp>
 
 using std::mt19937;
 using std::uniform_int_distribution;
@@ -96,5 +98,7 @@ public:
         int *shuffle_colegios,
         int *alumnosSep);
 };
+
+
 
 #endif

@@ -1,19 +1,21 @@
-cmake_minimum_required(VERSION 3.0.0)
+cmake_minimum_required(VERSION 3.25.2)
 if (WIN32)
     find_package(CUDAToolkit)
     set(CMAKE_CUDA_ARCHITECTURES 52 60 61 75 86)
 
 endif (WIN32)
 if (UNIX)
-    set(CMAKE_CUDA_COMPILER /usr/local/cuda-12.2/bin/nvcc)
+    
+    set(CMAKE_CUDA_COMPILER /usr/local/cuda/bin/nvcc)
     set(CMAKE_CUDA_ARCHITECTURES 52 60 61 75 86)
 endif (UNIX)
 
-
 project(paralelo LANGUAGES CUDA CXX)
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CUDA_STANDARD 20)
+set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 include_directories(
@@ -21,7 +23,7 @@ include_directories(
 )
 enable_testing()
 
-file(GLOB all_SRCS
+file(GLOB_RECURSE all_SRCS
     "${PROJECT_SOURCE_DIR}/src/*.cpp"
     "${PROJECT_SOURCE_DIR}/src/*.c"
     "${PROJECT_SOURCE_DIR}/src/*.cu"
@@ -54,4 +56,5 @@ target_compile_options(paralelo PRIVATE $<$<COMPILE_LANGUAGE:CUDA>: -lineinfo --
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pg")
 SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pg")
 SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -pg")
+
 include(CPack)

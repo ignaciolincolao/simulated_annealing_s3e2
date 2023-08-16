@@ -1,4 +1,4 @@
-#include <ExplorationCriterion.hpp>
+#include <structure/ExplorationCriterion/ExplorationCriterion.hpp>
 
 double ExplorationCriterion::solutionNE1(
     int *aluVulxCol,
