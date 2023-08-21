@@ -194,6 +194,7 @@ void CUDAWrapper::AcceptanceBestSolution(){
     if (errAsync != cudaSuccess)
     printf("9 Async kernel error: %s\n", cudaGetErrorString(errAsync));
 }
+
 void CUDAWrapper::AcceptanceSolution(){
     copyMemSolution<<<numberOfBlocks,threadsPerBlock,0,streams[0]>>>(d_previousSolution, d_currentSolution,saParams.n_students);
     copyMemCol<<<numberOfBlocks,threadsPerBlock,0,streams[1]>>>(d_previousAluxcol, d_aluxcol,saParams.n_colegios);
@@ -204,14 +205,14 @@ void CUDAWrapper::AcceptanceSolution(){
     errSync = cudaGetLastError();
     errAsync = cudaDeviceSynchronize();
     if (errSync != cudaSuccess) 
-    printf("10 Sync kernel error: %s\n", cudaGetErrorString(errSync));
+        printf("10 Sync kernel error: %s\n", cudaGetErrorString(errSync));
     if (errAsync != cudaSuccess)
-    printf("10 Async kernel error: %s\n", cudaGetErrorString(errAsync));
+        printf("10 Async kernel error: %s\n", cudaGetErrorString(errAsync));
 
 }
 
 void CUDAWrapper::newSolution(){
-    newSolution_kernel<<<cuParams.n_block,cuParams.n_thread,
+    newSolution_kernel<<<cuParams.n_block, cuParams.n_thread,
         (cuParams.n_thread/nWarp+1) * sizeof(double)+ (cuParams.n_thread/nWarp+1)* sizeof(int) + (cuParams.n_thread/nWarp+1)* sizeof(int)>>>(
                         d_array_current_Solution,
                                 d_array_current_Solution_alu,
@@ -291,9 +292,9 @@ void CUDAWrapper::getCurrentSolutionGpuToHost(double& costCurrentSolution)
     errSync  = cudaGetLastError();
     errAsync = cudaDeviceSynchronize();
     if (errSync != cudaSuccess) 
-    printf("5 Sync kernel error: %s\n", cudaGetErrorString(errSync));
+        printf("5 Sync kernel error: %s\n", cudaGetErrorString(errSync));
     if (errAsync != cudaSuccess)
-    printf("5 Async kernel error: %s\n", cudaGetErrorString(errAsync));
+        printf("5 Async kernel error: %s\n", cudaGetErrorString(errAsync));
 }
 
 
@@ -302,9 +303,9 @@ void CUDAWrapper::synchronizeBucle(){
     errSync  = cudaGetLastError();
     errAsync = cudaDeviceSynchronize();
     if (errSync != cudaSuccess) 
-    printf("6 Sync kernel error: %s\n", cudaGetErrorString(errSync));
+        printf("6 Sync kernel error: %s\n", cudaGetErrorString(errSync));
     if (errAsync != cudaSuccess)
-    printf("6 Async kernel error: %s\n", cudaGetErrorString(errAsync));
+        printf("6 Async kernel error: %s\n", cudaGetErrorString(errAsync));
 }
 
 void CUDAWrapper::copySolutionToHost(int* bestSolution, int* previousSolution){
@@ -333,12 +334,12 @@ void CUDAWrapper::mallocHost(
     cudaMallocHost((void**)&currentSolution, sizeof(int)*saParams.n_students);
     cudaMallocHost((void**)&cupoArray, sizeof(int)*saParams.n_colegios);
     cudaMallocHost((void**)&alumnosSep, sizeof(int)*saParams.n_students);
-    cudaMallocHost( (void**)&matrestest,sizeof(double) * saParams.n_students * saParams.n_colegios); 
+    cudaMallocHost((void**)&matrestest,sizeof(double) * saParams.n_students * saParams.n_colegios); 
     cudaMallocHost((void**)&saParams.shuffle_student, sizeof(int)*saParams.n_students);
     cudaMallocHost((void**)&saParams.shuffle_colegios, sizeof(int)*saParams.n_colegios);
-    cudaMallocHost( (void**)&currentVars,3 * sizeof(double));
-    cudaMallocHost( (void**)&previousVars,3 * sizeof(double)); 
-    cudaMallocHost( (void**)&bestVars,3 * sizeof(double)); 
+    cudaMallocHost((void**)&currentVars,3 * sizeof(double));
+    cudaMallocHost((void**)&previousVars,3 * sizeof(double)); 
+    cudaMallocHost((void**)&bestVars,3 * sizeof(double)); 
     errSync  = cudaGetLastError();
     errAsync = cudaDeviceSynchronize();
 }

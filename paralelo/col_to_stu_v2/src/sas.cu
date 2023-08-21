@@ -736,14 +736,12 @@ double sasFunc() {
             costBestSolution=costCurrentSolution;
             costPreviousSolution=costCurrentSolution;
             //cout << costBestSolution << "| |" << temp << "| |" << count<< endl;
-            /*
             vector_costCurrentSolution.push_back(costCurrentSolution);
             vector_meanDist.push_back(meanDist(currentSolution,distMat));
             vector_segregation.push_back(S(currentSolution, alumnosSep, totalVuln));
             vector_costoCupo.push_back(costCupo(currentSolution,cupoArray));
             vector_temp.push_back(temp);
             vector_count.push_back(count);
-            */
             c_accepta++;
             count_rechaso=0;
         }

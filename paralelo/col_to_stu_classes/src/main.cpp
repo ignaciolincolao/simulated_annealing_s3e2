@@ -8,24 +8,16 @@
 #include <Dataset.hpp>
 #include <SimulatedAnnealing.cuh>
 
-
-
-
-
-
 int seed = time(NULL);
 string name_exp = "base";
-string ruta_save = "../save/";              // Ruta para guardar los archivos
- // Valores del alpha con orden Distancia, Segregación, Costo Cupo
+string ruta_save = "../save/"; // Ruta para guardar los archivos
+                               // Valores del alpha con orden Distancia, Segregación, Costo Cupo
 random_device rd;
 mt19937 mt(rd());
 uniform_int_distribution<int> dist(0, 0);
 uniform_int_distribution<int> dist2(0, 0);
 uniform_real_distribution<double> dist_accepta(0.0, 1.0);
 char timestr[20];
-string prefijo_save;
-
-
 
 int main(int argc, char *argv[])
 {
@@ -41,53 +33,45 @@ int main(int argc, char *argv[])
 
     SimulatedParams saParams;
 
-
     saParams = {
-        .seed= 123456,
-        .n_students=0,
-        .n_colegios=0,
-        .count_rechaso=0,
-        .count=0,
-        .c_cooling_temperature=0,
-        .c_accepta=0,
-        .temp= 1.0,
-        .min_temp= 0.0000009,
-        .alpha1= 15.0,
-        .alpha2= 30.0,
-        .alpha3= 25.0,
-        .max_dist=0.0,
-        .min_dist=0.0,
-        .init_dist=0.0,
-        .costPrevious=0.0,
-        .costCurrent=0.0
-    };
-
+        .seed = 123456,
+        .n_students = 0,
+        .n_colegios = 0,
+        .count_rechaso = 0,
+        .count = 0,
+        .c_cooling_temperature = 0,
+        .c_accepta = 0,
+        .temp = 1.0,
+        .min_temp = 0.0000009,
+        .alpha1 = 15.0,
+        .alpha2 = 30.0,
+        .alpha3 = 25.0,
+        .max_dist = 0.0,
+        .min_dist = 0.0,
+        .init_dist = 0.0,
+        .costPrevious = 0.0,
+        .costCurrent = 0.0};
 
     AcceptanceParams acParams = {
-        .Th=1.1
-    };
+        .Th = 1.1};
     CoolingParams csParams = {
-        .coolingRate=0.96
-    };
+        .coolingRate = 0.96};
     LengthParams ltParams = {
-        .len1=1,
-        .len2=2,
-        .len3=1.0,
-        .len4=0.99
-    };
+        .len1 = 1,
+        .len2 = 2,
+        .len3 = 1.0,
+        .len4 = 0.99};
     ReheatingParams rtParams = {
-        .e_const= 0.01,
-        .max_temp=0.0,
-        .k_reheating= 30,
-        .n_reheating=1,
-        .k_reheating_init=0
-    };
+        .e_const = 0.01,
+        .max_temp = 0.0,
+        .k_reheating = 30,
+        .n_reheating = 1,
+        .k_reheating_init = 0};
     CUDAParams cuParams = {
-        .n_block=48,
-        .n_thread=32,
-        .selectThread=0,
-        .selectBlock=0
-    };
+        .n_block = 48,
+        .n_thread = 32,
+        .selectThread = 0,
+        .selectBlock = 0};
 
     if (argc > 1)
     {
@@ -114,7 +98,7 @@ int main(int argc, char *argv[])
         // Exploration criterion
         cuParams.n_block = stoi(argv[16]);  // Numero de blockes = numeros de alumnos aleatorios
         cuParams.n_thread = stoi(argv[17]); // Numero de threads por bloque = numeros de
-                                   // escuelas aleatorios
+                                            // escuelas aleatorios
         // Ubicacion de archivos
         ruta_save = argv[18];
         prefijo_save = argv[19];
@@ -127,15 +111,13 @@ int main(int argc, char *argv[])
     alpha[2] = saParams.alpha3;
     mt.seed(time(NULL));
 
+    AcceptanceCriterion *aC = new AC1(saParams, acParams);
+    CoolingScheme *cS = new CS2(saParams, csParams);
+    LengthTemperature *lT = new TL7(saParams, ltParams);
+    ReheatingMethod *rM = new TR0(saParams, rtParams);
+    Dataset *dS = new Dataset("colegios_utm.txt", "alumnos_utm.txt");
+    SimulatedAnnealing *simulatedAnneling = new SimulatedAnnealing(aC, cS, lT, rM, dS, saParams, cuParams);
 
-
-    AcceptanceCriterion* aC = new AC1(saParams, acParams); 
-    CoolingScheme* cS = new CS2(saParams,csParams);
-    LengthTemperature* lT = new TL7(saParams,ltParams);
-    ReheatingMethod* rM = new TR0(saParams,rtParams);
-    Dataset* dS = new Dataset("colegios_utm.txt","alumnos_utm.txt");
-    SimulatedAnnealing* simulatedAnneling = new SimulatedAnnealing(aC, cS, lT, rM, dS,saParams, cuParams);
-    
     simulatedAnneling->runGPU();
     return (EXIT_SUCCESS);
 }

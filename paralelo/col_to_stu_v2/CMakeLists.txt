@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0.0)
+cmake_minimum_required(VERSION 3.25.0)
 if (WIN32)
     find_package(CUDAToolkit)
     set(CMAKE_CUDA_ARCHITECTURES 52 60 61 75 86)
@@ -12,8 +12,10 @@ endif (UNIX)
 
 project(paralelo LANGUAGES CUDA CXX)
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CUDA_STANDARD 20)
+set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 include_directories(
