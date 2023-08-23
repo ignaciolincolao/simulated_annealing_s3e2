@@ -1,11 +1,9 @@
 #include <SimulatedAnnealing.cuh>
 #include <CUDAWrapper.cuh>
-#include <Dataset.hpp>
 
 #include <limits>
 
 #define DECIMAL 16
-
 
 typedef std::numeric_limits<double> dbl;
 
@@ -14,19 +12,23 @@ SimulatedAnnealing::SimulatedAnnealing(AcceptanceCriterion* AC,
     LengthTemperature* LT,
     ReheatingMethod* RM,
     Dataset* DS,
+    RecordManager* RMgr,
     SimulatedParams& saParams,
-    CUDAParams& cuParams): 
+    CUDAParams& cuParams)
+    : 
     acceptanceCriterion(AC), 
     coolingScheme(CS),
     lengthTemperature(LT),
     reheatingMethod(RM),
     dataSet(DS),
+    recordManager(RMgr),
     saParams(saParams),
     cuParams(cuParams),
     acParams(AC->getAcParams()),
     csParams(CS->getCsParams()),
     ltParams(LT->getLtParams()),
     rmParams(RM->getRmParams()),
+    rmgrParams(RMgr->getRmgrParams()),
     mt(rd()), 
     dist(0, 0), 
     dist2(0, 0), 
@@ -37,7 +39,7 @@ SimulatedAnnealing::SimulatedAnnealing(AcceptanceCriterion* AC,
 
 double SimulatedAnnealing::runGPU(){
     CUDAWrapper* cudaWrapper = new CUDAWrapper(cuParams, saParams);
-    cout << "test" << endl;
+    // cout << "test" << endl;
     inicializationValues(cudaWrapper);
     cudaWrapper->memInit(previousSolution,
         bestSolution,
@@ -50,6 +52,31 @@ double SimulatedAnnealing::runGPU(){
         matrestest,
         alpha,
         currentVars);
+
+    cout << "--------------- Primeros datos -------------\n";
+    cout << "Primer costo de solución: " << costBestSolution << "\n";
+    cout << "Primer distancia: " << meanDist(currentSolution, distMat) << "\n";
+    cout << "Primer Segregación: " << S(currentSolution, alumnosSep, totalVuln) << "\n";
+    cout << "Primer CostoCupo: " << costCupo(currentSolution, cupoArray) << "\n\n";
+
+    recordManager->openRecordInfo();
+    recordManager->openRecordGraphics();
+
+    recordManager->SaveInfoInit(costBestSolution,
+                                meanDist(currentSolution, distMat),
+                                S(currentSolution, alumnosSep, totalVuln),
+                                costCupo(currentSolution, cupoArray));
+
+    recordManager->SaveGraphicsInit(meanDist(currentSolution, distMat),
+                                    S(currentSolution, alumnosSep, totalVuln),
+                                    costCupo(currentSolution, cupoArray),
+                                    costCurrentSolution);
+
+
+
+    recordManager->closeRecordInfo();
+    recordManager->closeRecordGraphics();
+
     ///////////////////////////////////////////////////
     /// Inicio el contador de tiempo antes de iniciar el algortimo
     ///////////////////////////////////////////////////
@@ -153,7 +180,33 @@ double SimulatedAnnealing::runGPU(){
     double time_taken = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
     time_taken *= 1e-9;
     cudaWrapper->copySolutionToHost(bestSolution, previousSolution);
-    cout << "finalizo con :" << costBestSolution << endl;
+
+    cout << "--------------- Resultado Final ----------------" << "\n";
+    cout << "Numero de Ciclos: " << saParams.count << "\n";
+    cout << "Costo de la solución previa: " << costPreviousSolution << "\n";
+    cout << "Costo de la mejor solución: " << costBestSolution << "\n";
+    cout << "Costo de la solución actual: " << costCurrentSolution << "\n";
+    cout << "Tiempo de ejecución de SA: " << time_taken << "\n";
+    cout << "distancia: " << meanDist(bestSolution, distMat) << "\n";
+    cout << "Segregación: " << S(bestSolution, alumnosSep, totalVuln) << "\n";
+    cout << "CostoCupo: " << costCupo(bestSolution, cupoArray) << "\n";
+    cout << "--------------- Finalizo con exito ----------------" << "\n";
+
+
+    recordManager->openRecordInfo();
+
+    recordManager->SaveInfoFinish(costPreviousSolution,
+                                  costBestSolution,
+                                  costCurrentSolution,
+                                  time_taken,
+                                  meanDist(bestSolution, distMat),
+                                  S(bestSolution, alumnosSep, totalVuln),
+                                  costCupo(bestSolution, cupoArray));
+
+    recordManager->closeRecordInfo();
+
+
+    // cout << "finalizo con :" << costBestSolution << endl;
     return (costBestSolution);
 }
 
@@ -261,7 +314,6 @@ void SimulatedAnnealing::inicializationValues(T* wrapper){
     previousVars[2] = currentVars[2];
     
     double var1,var2,var3;
-    cout << costBestSolution << endl;
     var1 = (currentVars[0]/saParams.n_students);
     var1= (var1/saParams.max_dist);
     //cout << var1 << "\n";
@@ -269,7 +321,6 @@ void SimulatedAnnealing::inicializationValues(T* wrapper){
     //cout << var2 << "\n";
     var3 = (currentVars[2] /saParams.n_colegios);
     costBestSolution = (double)((ptr_alpha[0]*var1)+(ptr_alpha[1]*var2)+(ptr_alpha[2]*var3));
-    cout << costBestSolution << endl;
     costPreviousSolution = costBestSolution;
     costCurrentSolution = costBestSolution;
     auto start_compare = std::chrono::high_resolution_clock::now();

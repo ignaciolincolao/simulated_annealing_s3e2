@@ -31,6 +31,10 @@ int main(int argc, char *argv[])
     strftime(timestr, sizeof(timestr), "%Y-%m-%d T:%H-%M", time_info);
     prefijo_save = string(timestr);
 
+    RecordParams rMgrParams = {
+        .prefijo_save = prefijo_save,
+        .ruta_save = "../save/"};
+
     SimulatedParams saParams;
 
     saParams = {
@@ -67,6 +71,7 @@ int main(int argc, char *argv[])
         .k_reheating = 30,
         .n_reheating = 1,
         .k_reheating_init = 0};
+
     CUDAParams cuParams = {
         .n_block = 48,
         .n_thread = 32,
@@ -115,8 +120,9 @@ int main(int argc, char *argv[])
     CoolingScheme *cS = new CS2(saParams, csParams);
     LengthTemperature *lT = new TL7(saParams, ltParams);
     ReheatingMethod *rM = new TR0(saParams, rtParams);
+    RecordManager *rMgr = new RecordManager(saParams, rMgrParams);
     Dataset *dS = new Dataset("colegios_utm.txt", "alumnos_utm.txt");
-    SimulatedAnnealing *simulatedAnneling = new SimulatedAnnealing(aC, cS, lT, rM, dS, saParams, cuParams);
+    SimulatedAnnealing *simulatedAnneling = new SimulatedAnnealing(aC, cS, lT, rM, dS, rMgr, saParams, cuParams);
 
     simulatedAnneling->runGPU();
     return (EXIT_SUCCESS);

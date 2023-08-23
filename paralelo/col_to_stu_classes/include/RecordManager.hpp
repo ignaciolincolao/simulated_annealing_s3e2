@@ -6,13 +6,13 @@
 #include <vector>
 #include <array>
 #include <string>
+#include <utils/SAParameters.hpp>
 
-// struct RecordParams
-// {
-//     std::string name_info;
-//     std::string name_info_register;
-//     std::string name_info_graphics;
-// };
+struct RecordParams
+{
+    std::string prefijo_save;
+    std::string ruta_save;
+};
 
 class RecordManager
 {
@@ -20,6 +20,14 @@ private:
     std::ofstream info;
     std::ofstream infoRegister;
     std::ofstream infoGraphics;
+    std::array<std::string, 3> path_names;
+    RecordParams &rMgrParams;
+    SimulatedParams &saParams;
+
+private:
+    void open_file(std::size_t n_file, std::ofstream &file);
+
+public:
     std::vector<double> vector_costCurrentSolution;
     std::vector<double> vector_meanDist;
     std::vector<double> vector_segregation;
@@ -35,17 +43,44 @@ private:
     std::vector<bool> vector_historyAcceptSolution;
     std::vector<int> vector_historyAsign;
     std::vector<std::tuple<int, int>> vector_historyMove;
-    std::array<std::string, 3> path_names;
-    void open_file(std::size_t);
 
 public:
-    RecordManager(const std::string &ruta_save_, const std::string &prefijo_save_);
-    void initRecordInfo();
-    void initRecordRegister();
-    void initRecordGraphics();
-    void SaveInfo();
-    void SaveInfoRegister();
-    void SaveGraphics();
+    RecordManager(SimulatedParams &saParams_, RecordParams &params_);
+
+    RecordParams &getRmgrParams() { return rMgrParams; }
+
+    void openRecordInfo();
+    void openRecordRegister();
+    void openRecordGraphics();
+
+    void closeRecordInfo();
+    void closeRecordRegister();
+    void closeRecordGraphics();
+
+    void SaveInfoInit(double costBestSolution,
+                      double meanDist,
+                      double S,
+                      double costCupo);
+
+    void SaveInfoFinish(double costPreviousSolution,
+                        double costBestSolution,
+                        double costCurrentSolution,
+                        double time_taken,
+                        double meanDist,
+                        double S,
+                        double costCupo);
+
+    void SaveInfoRegisterInit();
+
+    void SaveInfoRegisterFinish();
+
+    void SaveGraphicsInit(double meanDist,
+                          double S,
+                          double costCupo,
+                          double costCurrentSolution);
+
+    void SaveGraphicsFinish();
+
     ~RecordManager();
 };
 

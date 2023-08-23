@@ -20,6 +20,7 @@
 #include <structure/ExplorationCriterion/ExplorationCriterion.hpp>
 #include <structure/LengthTemperature/LengthTemperature.hpp>
 #include <structure/ReheatingMethod/ReheatingMethod.hpp>
+#include <RecordManager.hpp>
 #include <Dataset.hpp>
 
 using std::string;
@@ -49,6 +50,7 @@ private:
     LengthTemperature* lengthTemperature;
     ReheatingMethod* reheatingMethod;
     Dataset* dataSet;
+    RecordManager* recordManager;
 
     int* previousSolution;
     int* bestSolution;
@@ -77,6 +79,7 @@ public:
     CoolingParams& csParams;
     LengthParams& ltParams;
     ReheatingParams& rmParams;
+    RecordParams& rmgrParams;
     CUDAParams& cuParams;
     int totalVuln;
     double costCurrentSolution;
@@ -92,6 +95,7 @@ public:
         LengthTemperature* LT,
         ReheatingMethod* RM,
         Dataset* DS,
+        RecordManager* RMgr,
         SimulatedParams& saParams_,
         CUDAParams& cuParams_
     );
