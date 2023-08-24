@@ -6,7 +6,7 @@
 #include <random>
 #include <stdio.h>
 #include <Dataset.hpp>
-#include <SimulatedFactory.cpp>
+#include <SimulatedFactory.hpp>
 
 
 int seed = time(NULL);
