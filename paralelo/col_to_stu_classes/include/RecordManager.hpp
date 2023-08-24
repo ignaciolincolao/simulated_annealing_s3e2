@@ -12,6 +12,7 @@ struct RecordParams
 {
     std::string prefijo_save;
     std::string ruta_save;
+    std::string name_exp;
 };
 
 class RecordManager
@@ -20,7 +21,8 @@ private:
     std::ofstream info;
     std::ofstream infoRegister;
     std::ofstream infoGraphics;
-    std::array<std::string, 3> path_names;
+    std::ofstream infoGraphicsBestSolution;
+    std::array<std::string, 4> path_names;
     RecordParams &rMgrParams;
     SimulatedParams &saParams;
 
@@ -52,10 +54,12 @@ public:
     void openRecordInfo();
     void openRecordRegister();
     void openRecordGraphics();
+    void openRecordGraphicsBestSolution();
 
     void closeRecordInfo();
     void closeRecordRegister();
     void closeRecordGraphics();
+    void closeRecordGraphicsBestSolution();
 
     void SaveInfoInit(double costBestSolution,
                       double meanDist,
@@ -70,9 +74,27 @@ public:
                         double S,
                         double costCupo);
 
-    void SaveInfoRegisterInit();
-
-    void SaveInfoRegisterFinish();
+    void SaveInfoRegister(
+        double time_taken,
+        double costBestSolution,
+        double meanDist,
+        double S,
+        double costCupo,
+        double coolingRate,
+        double k_reheating_init,
+        double e_const,
+        int n_reheating,
+        int len1_init,
+        int len2_init,
+        double len3_init,
+        double len4_init,
+        int len1,
+        int len2,
+        double len3,
+        double len4,
+        double Th,
+        int n_block,
+        int n_thread);
 
     void SaveGraphicsInit(double meanDist,
                           double S,
@@ -80,6 +102,8 @@ public:
                           double costCurrentSolution);
 
     void SaveGraphicsFinish();
+
+    void SaveGraphicsBestSolution(int *solution);
 
     ~RecordManager();
 };

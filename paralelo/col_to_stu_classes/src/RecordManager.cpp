@@ -9,6 +9,7 @@ RecordManager::RecordManager(SimulatedParams &saParams_, RecordParams &params_)
     path_names[0] = rMgrParams.ruta_save + rMgrParams.prefijo_save + "-info.txt";
     path_names[1] = rMgrParams.ruta_save + rMgrParams.prefijo_save + "-info-register.txt";
     path_names[2] = rMgrParams.ruta_save + rMgrParams.prefijo_save + "-info-graphics.txt";
+    path_names[3] = rMgrParams.ruta_save + rMgrParams.prefijo_save + "-info-graphicsBestSolution.txt";
 }
 
 RecordManager::~RecordManager()
@@ -19,6 +20,8 @@ RecordManager::~RecordManager()
         infoRegister.close();
     if (infoGraphics.is_open())
         infoGraphics.close();
+    if (infoGraphicsBestSolution.is_open())
+        infoGraphicsBestSolution.close();
 }
 
 void RecordManager::open_file(const std::size_t n_file, std::ofstream &file)
@@ -52,6 +55,11 @@ void RecordManager::openRecordGraphics()
     open_file(2, infoGraphics);
 }
 
+void RecordManager::openRecordGraphicsBestSolution()
+{
+    open_file(3, infoGraphicsBestSolution);
+}
+
 void RecordManager::closeRecordInfo()
 {
     info.close();
@@ -65,6 +73,11 @@ void RecordManager::closeRecordRegister()
 void RecordManager::closeRecordGraphics()
 {
     infoGraphics.close();
+}
+
+void RecordManager::closeRecordGraphicsBestSolution()
+{
+    infoGraphicsBestSolution.close();
 }
 
 /*
@@ -105,12 +118,11 @@ void RecordManager::SaveInfoFinish(
          << "\n";
 }
 
-void RecordManager::SaveInfoRegisterInit()
+void RecordManager::SaveGraphicsBestSolution(int *solution)
 {
-}
-
-void RecordManager::SaveInfoRegisterFinish()
-{
+    for (std::size_t i{}; i < saParams.n_students; i++)
+        infoGraphicsBestSolution << solution[i] << ",";
+    infoGraphicsBestSolution << "\n";
 }
 
 void RecordManager::SaveGraphicsInit(double meanDist, double S, double costCupo, double costCurrentSolution)
@@ -127,110 +139,71 @@ void RecordManager::SaveGraphicsInit(double meanDist, double S, double costCupo,
 
 void RecordManager::SaveGraphicsFinish()
 {
+    for (std::size_t x = 0; x < vector_count.size(); x++)
+    {
+        infoGraphics << vector_count.at(x) << ","
+                     << vector_meanDist.at(x) / saParams.max_dist << "," // Distancia promedio recorrida por los estudiantes normalizada
+                     << vector_meanDist.at(x) << ","
+                     << vector_segregation.at(x) << ","
+                     << vector_costoCupo.at(x) << ","
+                     << vector_costCurrentSolution.at(x) << ","
+                     << std::fixed << vector_temp.at(x) << std::setprecision(13) << "\n";
+    }
 }
-// void RecordManager::recordEnd()
-// {
 
-//   for (x = 0; x < n_students; x++)
-//   {
-//       info_graficos_bestSolution << bestSolution[x] << ",";
-//   }
-
-//   for (x = 0; x < vector_count.size(); x++)
-//   {
-//       info_graficos << vector_count.at(x) << ","
-//                     << vector_meanDist.at(x) / max_dist << "," // Distancia promedio recorrida por los estudiantes normalizada
-//                     << vector_meanDist.at(x) << ","
-//                     << vector_segregation.at(x) << ","
-//                     << vector_costoCupo.at(x) << ","
-//                     << vector_costCurrentSolution.at(x) << ","
-//                     << std::fixed << vector_temp.at(x) << std::setprecision(13) << "\n";
-//   }
-
-//   ///////////////////////////////////////////////////
-//   /// Almacenamiento de datos
-//   ///////////////////////////////////////////////////
-//   cout.precision(dbl::max_digits10);
-//   cout << "--------------- Resultado Final ----------------"
-//        << "\n";
-//   cout << "Numero de Ciclos " << count << "\n";
-//   cout << "Costo de la solución previa: " << costPreviousSolution << "\n";
-//   cout << "Costo de la mejor solución: " << costBestSolution << "\n";
-//   cout << "Costo de la solución actual: " << costCurrentSolution << "\n";
-//   cout << "Tiempo de ejecución de SA: " << time_taken << "\n";
-//   cout << "distancia: " << meanDist(bestSolution, distMat) << "\n";
-//   cout << "Segregación: " << S(bestSolution, alumnosSep, totalVuln) << "\n";
-//   cout << "CostoCupo: " << costCupo(bestSolution, cupoArray) << "\n";
-
-//   cout << "Cal costo " << calCosto(bestSolution, distMat, ptr_alpha, alumnosSep, totalVuln, cupoArray) << endl;
-//   cout << "Costo de: " << costBestSolution << "\n";
-
-//   // cout << fixed << setprecision(70) << endl;
-//   cout << sumDist(bestSolution, distMat) << "\n";
-//   cout << bestVars[0] << endl;
-//   cout << sumS(bestSolution, alumnosSep, totalVuln) << "\n";
-//   cout << bestVars[1] << endl;
-//   cout << sumCostCupo(bestSolution, cupoArray) << "\n";
-//   cout << bestVars[2] << endl;
-//   cout << "Tiempo de ejecución de SA get_result: " << vector_time1 << "\n";
-
-//   cout << "--------------- Finalizo con exito ----------------"
-//        << "\n";
-
-//   info << "--------------- Resultado Final ----------------"
-//        << "\n";
-//   info << "Numero de Ciclos " << count << "\n";
-//   info << "Costo de la solución previa: " << costPreviousSolution << "\n";
-//   info << "Costo de la mejor solución: " << costBestSolution << "\n";
-//   info << "Costo de la solución actual: " << costCurrentSolution << "\n";
-//   info << "Tiempo de ejecución de SA: " << time_taken << "\n";
-//   info << "distancia: " << meanDist(bestSolution, distMat) << "\n";
-//   info << "Segregación: " << S(bestSolution, alumnosSep, totalVuln) << "\n";
-//   info << "CostoCupo: " << costCupo(bestSolution, cupoArray) << "\n";
-//   info << "--------------- Finalizo con exito ----------------"
-//        << "\n";
-
-//   info_test << fixed << time_taken << setprecision(9) << ","
-//             << costBestSolution << ","
-//             << meanDist(bestSolution, distMat) / max_dist
-//             << "," << meanDist(bestSolution, distMat)
-//             << "," << S(bestSolution, alumnosSep, totalVuln)
-//             << "," << costCupo(bestSolution, cupoArray)
-//             << "," << count
-//             << "," << fixed << temp_init << setprecision(13)
-//             << "," << fixed << cooling.getTemp() << setprecision(13)
-//             << "," << min_temp
-//             << "," << seed
-//             << "," << alpha1
-//             << "," << alpha2
-//             << "," << alpha3
-//             << "," << alpha[0]
-//             << "," << alpha[1]
-//             << "," << alpha[2]
-//             << "," << coolingRate
-//             << "," << k_reheating_init
-//             << "," << e_const
-//             << "," << n_reheating
-//             << "," << len1_init
-//             << "," << len2_init
-//             << "," << len3_init
-//             << "," << len4_init
-//             << "," << len1
-//             << "," << len2
-//             << "," << len3
-//             << "," << len4
-//             << "," << Th
-//             << "," << n_block
-//             << "," << n_thread
-//             << "," << name_exp << "\n";
-
-//   info_graficos_bestSolution.close();
-//   cout << ".";
-//   info_graficos.close();
-//   cout << ".";
-//   info_test.close();
-//   info.close();
-//   cout << ".\n";
-//   cout << " Archivos Guardado"
-//        << "\n";
-// }
+void RecordManager::SaveInfoRegister(
+    double time_taken,
+    double costBestSolution,
+    double meanDist,
+    double S,
+    double costCupo,
+    double coolingRate,
+    double k_reheating_init,
+    double e_const,
+    int n_reheating,
+    int len1_init,
+    int len2_init,
+    double len3_init,
+    double len4_init,
+    int len1,
+    int len2,
+    double len3,
+    double len4,
+    double Th,
+    int n_block,
+    int n_thread)
+{
+    infoRegister << std::fixed << time_taken << std::setprecision(9) << ","
+                 << costBestSolution << ","
+                 << meanDist / saParams.max_dist
+                 << "," << meanDist
+                 << "," << S
+                 << "," << costCupo
+                 << "," << saParams.count
+                 << "," << std::fixed << saParams.temp_init << std::setprecision(13)
+                 << "," << std::fixed << saParams.temp << std::setprecision(13)
+                 << "," << saParams.min_temp
+                 << "," << saParams.seed
+                 << "," << saParams.alpha1
+                 << "," << saParams.alpha2
+                 << "," << saParams.alpha3
+                 << "," << saParams.alpha[0]
+                 << "," << saParams.alpha[1]
+                 << "," << saParams.alpha[2]
+                 << "," << coolingRate
+                 << "," << k_reheating_init
+                 << "," << e_const
+                 << "," << n_reheating
+                 << "," << len1_init
+                 << "," << len2_init
+                 << "," << len3_init
+                 << "," << len4_init
+                 << "," << len1
+                 << "," << len2
+                 << "," << len3
+                 << "," << len4
+                 << "," << Th
+                 << "," << n_block
+                 << "," << n_thread
+                 << "," << rMgrParams.name_exp << "\n";
+}

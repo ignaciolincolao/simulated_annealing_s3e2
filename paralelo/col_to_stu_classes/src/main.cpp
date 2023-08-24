@@ -34,7 +34,8 @@ int main(int argc, char *argv[])
 
     RecordParams rMgrParams = {
         .prefijo_save = prefijo_save,
-        .ruta_save = "../save/"};
+        .ruta_save = "../save/",
+        .name_exp = name_exp};
 
     SimulatedParams saParams;
 
