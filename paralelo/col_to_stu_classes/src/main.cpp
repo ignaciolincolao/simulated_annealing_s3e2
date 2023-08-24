@@ -6,7 +6,8 @@
 #include <random>
 #include <stdio.h>
 #include <Dataset.hpp>
-#include <SimulatedAnnealing.cuh>
+#include <SimulatedFactory.cpp>
+
 
 int seed = time(NULL);
 string name_exp = "base";
