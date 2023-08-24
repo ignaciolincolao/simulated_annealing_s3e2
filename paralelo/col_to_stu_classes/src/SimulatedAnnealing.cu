@@ -61,6 +61,7 @@ double SimulatedAnnealing::runGPU(){
 
     recordManager->openRecordInfo();
     recordManager->openRecordGraphics();
+    recordManager->openRecordGraphicsBestSolution();
 
     recordManager->SaveInfoInit(costBestSolution,
                                 meanDist(currentSolution, distMat),
@@ -72,10 +73,12 @@ double SimulatedAnnealing::runGPU(){
                                     costCupo(currentSolution, cupoArray),
                                     costCurrentSolution);
 
+    recordManager->SaveGraphicsBestSolution(currentSolution);
 
 
     recordManager->closeRecordInfo();
     recordManager->closeRecordGraphics();
+    recordManager->closeRecordGraphicsBestSolution();
 
     ///////////////////////////////////////////////////
     /// Inicio el contador de tiempo antes de iniciar el algortimo
@@ -145,8 +148,15 @@ double SimulatedAnnealing::runGPU(){
             costPreviousSolution = costCurrentSolution;
             saParams.c_accepta++;
             saParams.count_rechaso = 0;
+
+            recordManager->vector_costCurrentSolution.push_back(costCurrentSolution);
+            recordManager->vector_meanDist.push_back(meanDist(currentSolution, distMat));
+            recordManager->vector_segregation.push_back(S(currentSolution, alumnosSep, totalVuln));
+            recordManager->vector_costoCupo.push_back(costCupo(currentSolution, cupoArray));
+            recordManager->vector_temp.push_back(saParams.temp);
+            recordManager->vector_count.push_back(saParams.count);
         }
-        else{
+        else {
             if(acceptanceCriterion->apply(costPreviousSolution,costCurrentSolution,dist_accepta ) == 1) {
 
                 cudaWrapper->AcceptanceSolution();
@@ -155,7 +165,7 @@ double SimulatedAnnealing::runGPU(){
                 saParams.count_rechaso = 0;
                 saParams.c_accepta++;
             }
-            else{
+            else {
                 saParams.count_rechaso++;
                 
             }
@@ -194,6 +204,9 @@ double SimulatedAnnealing::runGPU(){
 
 
     recordManager->openRecordInfo();
+    recordManager->openRecordGraphics();
+    recordManager->openRecordGraphicsBestSolution();
+    recordManager->openRecordRegister();
 
     recordManager->SaveInfoFinish(costPreviousSolution,
                                   costBestSolution,
@@ -203,7 +216,36 @@ double SimulatedAnnealing::runGPU(){
                                   S(bestSolution, alumnosSep, totalVuln),
                                   costCupo(bestSolution, cupoArray));
 
+    recordManager->SaveGraphicsFinish();
+
+    recordManager->SaveGraphicsBestSolution(bestSolution);
+    recordManager->SaveInfoRegister(
+        time_taken,
+        costBestSolution,
+        meanDist(bestSolution, distMat),
+        S(bestSolution, alumnosSep, totalVuln),
+        costCupo(bestSolution, cupoArray),
+        csParams.coolingRate,
+        rmParams.k_reheating_init,
+        rmParams.e_const,
+        rmParams.k_reheating,
+        ltParams.len1_init,
+        ltParams.len2_init,
+        ltParams.len3_init,
+        ltParams.len4_init,
+        ltParams.len1,
+        ltParams.len2,
+        ltParams.len3,
+        ltParams.len4,
+        acParams.Th,
+        cuParams.n_block,
+        cuParams.n_thread
+    );
+
     recordManager->closeRecordInfo();
+    recordManager->closeRecordGraphics();
+    recordManager->closeRecordGraphicsBestSolution();
+    recordManager->closeRecordRegister();
 
 
     // cout << "finalizo con :" << costBestSolution << endl;
