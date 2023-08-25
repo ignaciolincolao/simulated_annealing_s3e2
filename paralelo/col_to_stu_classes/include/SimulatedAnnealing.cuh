@@ -7,6 +7,7 @@
 #include <ctime>
 #include <cstdlib>
 #include <cstdint>
+#include <future>
 #include <stdio.h>
 #include <sstream>
 #include <random>
@@ -90,6 +91,9 @@ public:
     uniform_int_distribution<int> dist;
     uniform_int_distribution<int> dist2;
     uniform_real_distribution<double> dist_accepta;
+    std::vector<std::future<void>> futures;
+
+public:
     SimulatedAnnealing(AcceptanceCriterion* AC,
         CoolingScheme* CS,
         LengthTemperature* LT,

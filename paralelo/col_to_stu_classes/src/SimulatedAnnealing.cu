@@ -3,6 +3,7 @@
 
 #include <limits>
 
+#define SAVE_DATA 0
 #define DECIMAL 16
 
 typedef std::numeric_limits<double> dbl;
@@ -36,7 +37,25 @@ SimulatedAnnealing::SimulatedAnnealing(AcceptanceCriterion* AC,
     {      
         mt.seed(saParams.seed);
     }
+/*
+static std::mutex addInfoMutex;
 
+static void addInfoToSave(RecordManager *recordManager,
+                          double costCurrentSolution,
+                          double meanDist,
+                          double S,
+                          double costCupo,
+                          SimulatedParams *saParams)
+{
+    std::lock_guard<std::mutex> lock(addInfoMutex);
+    recordManager->vector_costCurrentSolution.push_back(costCurrentSolution);
+    recordManager->vector_meanDist.push_back(meanDist);
+    recordManager->vector_segregation.push_back(S);
+    recordManager->vector_costoCupo.push_back(costCupo);
+    recordManager->vector_temp.push_back(saParams->temp);
+    recordManager->vector_count.push_back(saParams->count);
+}
+*/
 double SimulatedAnnealing::runGPU(){
     CUDAWrapper* cudaWrapper = new CUDAWrapper(cuParams, saParams);
     // cout << "test" << endl;
@@ -58,7 +77,7 @@ double SimulatedAnnealing::runGPU(){
     cout << "Primer distancia: " << meanDist(currentSolution, distMat) << "\n";
     cout << "Primer Segregación: " << S(currentSolution, alumnosSep, totalVuln) << "\n";
     cout << "Primer CostoCupo: " << costCupo(currentSolution, cupoArray) << "\n\n";
-
+#if SAVE_DATA
     recordManager->openRecordInfo();
     recordManager->openRecordGraphics();
     recordManager->openRecordGraphicsBestSolution();
@@ -79,7 +98,7 @@ double SimulatedAnnealing::runGPU(){
     recordManager->closeRecordInfo();
     recordManager->closeRecordGraphics();
     recordManager->closeRecordGraphicsBestSolution();
-
+#endif
     ///////////////////////////////////////////////////
     /// Inicio el contador de tiempo antes de iniciar el algortimo
     ///////////////////////////////////////////////////
@@ -149,12 +168,23 @@ double SimulatedAnnealing::runGPU(){
             saParams.c_accepta++;
             saParams.count_rechaso = 0;
 
+            // futures.push_back(std::async(std::launch::async,
+            //                   addInfoToSave,
+            //                   recordManager,
+            //                   costCurrentSolution,
+            //                   meanDist(currentSolution, distMat),
+            //                   S(currentSolution, alumnosSep, totalVuln),
+            //                   costCupo(currentSolution, cupoArray),
+            //                   &saParams
+            //                 ));
+#if SAVE_DATA
             recordManager->vector_costCurrentSolution.push_back(costCurrentSolution);
             recordManager->vector_meanDist.push_back(meanDist(currentSolution, distMat));
             recordManager->vector_segregation.push_back(S(currentSolution, alumnosSep, totalVuln));
             recordManager->vector_costoCupo.push_back(costCupo(currentSolution, cupoArray));
             recordManager->vector_temp.push_back(saParams.temp);
             recordManager->vector_count.push_back(saParams.count);
+#endif
         }
         else {
             if(acceptanceCriterion->apply(costPreviousSolution,costCurrentSolution,dist_accepta ) == 1) {
@@ -202,7 +232,7 @@ double SimulatedAnnealing::runGPU(){
     cout << "CostoCupo: " << costCupo(bestSolution, cupoArray) << "\n";
     cout << "--------------- Finalizo con exito ----------------" << "\n";
 
-
+#if SAVE_DATA
     recordManager->openRecordInfo();
     recordManager->openRecordGraphics();
     recordManager->openRecordGraphicsBestSolution();
@@ -246,7 +276,7 @@ double SimulatedAnnealing::runGPU(){
     recordManager->closeRecordGraphics();
     recordManager->closeRecordGraphicsBestSolution();
     recordManager->closeRecordRegister();
-
+#endif
 
     // cout << "finalizo con :" << costBestSolution << endl;
     return (costBestSolution);
@@ -659,12 +689,12 @@ double SimulatedAnnealing::round_n(double x)
 }
 
 
-int SimulatedAnnealing::acceptanceCriterionApply(){
+int SimulatedAnnealing::acceptanceCriterionApply() {
     return acceptanceCriterion->apply(costPreviousSolution,costCurrentSolution,dist_accepta);
 }
 
 
-SimulatedAnnealing::~SimulatedAnnealing(){
+SimulatedAnnealing::~SimulatedAnnealing() {
 
 }
 
