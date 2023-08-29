@@ -9,7 +9,7 @@
 #include <SimulatedFactory.hpp>
 
 
-int seed = time(NULL);
+int seed = 1234;
 string name_exp = "base";
 string ruta_save = "../save/"; // Ruta para guardar los archivos
                                // Valores del alpha con orden Distancia, Segregación, Costo Cupo
@@ -116,7 +116,7 @@ int main(int argc, char *argv[])
     alpha[0] = saParams.alpha1;
     alpha[1] = saParams.alpha2;
     alpha[2] = saParams.alpha3;
-    mt.seed(time(NULL));
+    mt.seed(seed);
 
     AcceptanceCriterion *aC = new AC1(saParams, acParams);
     CoolingScheme *cS = new CS2(saParams, csParams);

@@ -3,7 +3,9 @@
 
 #include <limits>
 
+#ifndef SAVE_DATA
 #define SAVE_DATA 0
+#endif
 #define DECIMAL 16
 
 typedef std::numeric_limits<double> dbl;
@@ -178,12 +180,12 @@ double SimulatedAnnealing::runGPU(){
             //                   &saParams
             //                 ));
 #if SAVE_DATA
-            recordManager->vector_costCurrentSolution.push_back(costCurrentSolution);
-            recordManager->vector_meanDist.push_back(meanDist(currentSolution, distMat));
-            recordManager->vector_segregation.push_back(S(currentSolution, alumnosSep, totalVuln));
-            recordManager->vector_costoCupo.push_back(costCupo(currentSolution, cupoArray));
-            recordManager->vector_temp.push_back(saParams.temp);
-            recordManager->vector_count.push_back(saParams.count);
+            recordManager->vector_costCurrentSolution.emplace_back(costCurrentSolution);
+            recordManager->vector_meanDist.emplace_back(meanDist(currentSolution, distMat));
+            recordManager->vector_segregation.emplace_back(S(currentSolution, alumnosSep, totalVuln));
+            recordManager->vector_costoCupo.emplace_back(costCupo(currentSolution, cupoArray));
+            recordManager->vector_temp.emplace_back(saParams.temp);
+            recordManager->vector_count.emplace_back(saParams.count);
 #endif
         }
         else {

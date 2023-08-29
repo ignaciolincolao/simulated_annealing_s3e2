@@ -8,16 +8,18 @@
 
 class SimulatedFactory {
     private:
-        static std::map<std::string, std::function<AcceptanceCriterion*()>> AcceptanceMap;
-        static std::map<std::string, std::function<CoolingScheme*()>> CoolingMap;
-        static std::map<std::string, std::function<LengthTemperature*()>> LenghtMap;
-        static std::map<std::string, std::function<ReheatingMethod*()>> ReheatingMap;
+        static std::map<std::string, std::function<AcceptanceCriterion*(SimulatedParams& saParams, AcceptanceParams& acParams)>> AcceptanceMap;
+        static std::map<std::string, std::function<CoolingScheme*(SimulatedParams &saParams, CoolingParams &csParams)>> CoolingMap;
+        static std::map<std::string, std::function<LengthTemperature*(SimulatedParams& saParams,LengthParams& ltParams)>> LenghtMap;
+        static std::map<std::string, std::function<ReheatingMethod*(SimulatedParams& saParams,ReheatingParams& rmParams)>> ReheatingMap;
     public:
         static SimulatedAnnealing* createSimulatedAnnealing(
             string acceptancecriterion,
             string coolingscheme,
-            string lengthtemeperature,
-            string reheatingmethod);
+            string lengthtemperature,
+            string reheatingmethod,
+            int argc,
+            char *argv[]);
 };
 
 #endif

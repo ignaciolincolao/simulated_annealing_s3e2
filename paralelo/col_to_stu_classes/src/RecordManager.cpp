@@ -5,7 +5,7 @@
 RecordManager::RecordManager(SimulatedParams &saParams_, RecordParams &params_)
     : saParams(saParams_), rMgrParams(params_)
 {
-
+    
     path_names[0] = rMgrParams.ruta_save + rMgrParams.prefijo_save + "-info.txt";
     path_names[1] = rMgrParams.ruta_save + rMgrParams.prefijo_save + "-info-register.txt";
     path_names[2] = rMgrParams.ruta_save + rMgrParams.prefijo_save + "-info-graphics.txt";

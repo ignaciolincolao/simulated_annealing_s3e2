@@ -18,6 +18,16 @@ set(CMAKE_CUDA_STANDARD 20)
 set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/../save)
+option(ENABLE_SAVE_DATA "Habilita el almacenamiento de registros" ON)
+if(ENABLE_SAVE_DATA)
+    add_compile_options(-DSAVE_DATA=1)
+else()
+    add_compile_options(-DSAVE_DATA=0)
+endif()
+
+
+
 include_directories(
         ${PROJECT_SOURCE_DIR}/include
 )

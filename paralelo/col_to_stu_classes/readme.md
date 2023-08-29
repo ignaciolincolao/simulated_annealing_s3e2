@@ -8,3 +8,10 @@ sudo nsys profile --cuda-memory-usage=true --cuda-um-cpu-page-faults=true --cuda
 // Con metricas
 sudo nsys profile --gpu-metrics-device=0 paralelo
 sudo nsys profile --cuda-memory-usage=true --cuda-um-cpu-page-faults=true --cuda-um-gpu-page-faults=true --stats=true --gpu-metrics-device=0 -o paralelo-metrics paralelo
+
+
+
+flag
+
+cmake -DENABLE_SAVE_DATA=OFF .. 
+cmake -DENABLE_SAVE_DATA=ON ..
