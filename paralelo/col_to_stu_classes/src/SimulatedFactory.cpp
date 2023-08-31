@@ -25,7 +25,6 @@ std::map<std::string, std::function<ReheatingMethod*(SimulatedParams& saParams,R
 };
 
 
-
 SimulatedAnnealing* SimulatedFactory::createSimulatedAnnealing(
 
             string acceptancecriterion,
@@ -35,8 +34,7 @@ SimulatedAnnealing* SimulatedFactory::createSimulatedAnnealing(
             int argc,
             char *argv[]){
             string name_exp = "base";
-            string ruta_save = "../save/"; // Ruta para guardar los archivos
-                                        // Valores del alpha con orden Distancia, Segregación, Costo Cupo
+            string ruta_save = "../save/"; 
             std::string prefijo_save;
             time_t hora_actual;
             struct tm *time_info;
@@ -45,6 +43,7 @@ SimulatedAnnealing* SimulatedFactory::createSimulatedAnnealing(
             char timestr[20];
             strftime(timestr, sizeof(timestr), "%Y-%m-%d T:%H-%M", time_info);
             prefijo_save = string(timestr);
+
             RecordParams rMgrParams = {
                 .prefijo_save = prefijo_save,
                 .ruta_save = "../save/",
@@ -92,6 +91,43 @@ SimulatedAnnealing* SimulatedFactory::createSimulatedAnnealing(
                 .n_thread = 32,
                 .selectThread = 0,
                 .selectBlock = 0};
+
+            if (argc > 1)
+            {
+                // Config init
+                saParams.temp = stod(argv[1]);     // Temperatura inicial
+                saParams.min_temp = stod(argv[2]); // Minima temperatura que puede llegar
+                saParams.seed = stoi(argv[3]);     // Semilla inicial
+                saParams.alpha1 = stod(argv[4]);   //  de distancia
+                saParams.alpha2 = stod(argv[5]);   // Alpha de segregación
+                saParams.alpha3 = stod(argv[6]);   // Alpha de costocupo
+                // Cooling
+                csParams.coolingRate = stod(argv[7]); // Tasa de enfriamiento
+                // Reheating
+                rtParams.k_reheating = stod(argv[8]);
+                rtParams.e_const = stod(argv[9]);
+                rtParams.n_reheating = stoi(argv[10]);
+                // Temperature Length
+                ltParams.len1 = stof(argv[11]);
+                ltParams.len2 = stof(argv[12]);
+                ltParams.len3 = stod(argv[13]);
+                ltParams.len4 = stod(argv[14]);
+                // Acceptance Criterion
+                acParams.Th = stod(argv[15]);
+                // Exploration criterion
+                cuParams.n_block = stoi(argv[16]);  // Numero de blockes = numeros de alumnos aleatorios
+                cuParams.n_thread = stoi(argv[17]); // Numero de threads por bloque = numeros de
+                                                    // escuelas aleatorios
+                // Ubicacion de archivos
+                ruta_save = argv[18];
+                prefijo_save = argv[19];
+                name_exp = argv[20];
+            }
+            rtParams.max_temp = std::numeric_limits<double>::max();
+            double alpha[3] = {saParams.alpha1, saParams.alpha2, saParams.alpha3};
+            alpha[0] = saParams.alpha1;
+            alpha[1] = saParams.alpha2;
+            alpha[2] = saParams.alpha3;
 
             AcceptanceCriterion *aC; 
             CoolingScheme *cS;

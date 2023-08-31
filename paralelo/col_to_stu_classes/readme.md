@@ -15,3 +15,11 @@ flag
 
 cmake -DENABLE_SAVE_DATA=OFF .. 
 cmake -DENABLE_SAVE_DATA=ON ..
+
+
+// Instalación de libreria
+
+1-  entrar al build
+2- dentro escribir:
+    cmake ..
+    sudo cmake -P cmake_install.cmake
