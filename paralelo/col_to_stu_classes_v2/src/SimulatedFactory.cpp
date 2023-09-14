@@ -90,7 +90,7 @@ SimulatedAnnealing* SimulatedFactory::createSimulatedAnnealing(
                 .k_reheating_init = 0};
 
             CUDAParams* cuParams = new CUDAParams{
-                .n_block = 48,
+                .n_block = 32,
                 .n_thread = 32,
                 .selectThread = 0,
                 .selectBlock = 0};

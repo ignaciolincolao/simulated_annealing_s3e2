@@ -6,11 +6,12 @@
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
-#include <iostream>
 #include <random>
 #include <stdio.h>
-#include <Dataset.hpp>
 #include <SimulatedFactory.hpp>
+
+
+
 
 
 
@@ -84,24 +85,19 @@ struct Eval {
     }
 };
 
-int main()
+int main(int argc, char *argv[])
 {
 
-    rtParams.max_temp = std::numeric_limits<double>::max();
-    double alpha[3] = {saParams.alpha1, saParams.alpha2, saParams.alpha3};
-    alpha[0] = saParams.alpha1;
-    alpha[1] = saParams.alpha2;
-    alpha[2] = saParams.alpha3;
-    mt.seed(seed);
-
-    AcceptanceCriterion *aC = new AC1(saParams, acParams);
-    CoolingScheme *cS = new CS2(saParams, csParams);
-    LengthTemperature *lT = new TL7(saParams, ltParams);
-    ReheatingMethod *rM = new TR0(saParams, rtParams);
-    RecordManager *rMgr = new RecordManager(saParams, rMgrParams);
-    Dataset *dS = new Dataset("colegios_utm.txt", "alumnos_utm.txt");
-    SimulatedAnnealing *simulatedAnneling = new SimulatedAnnealing(aC, cS, lT, rM, dS, rMgr, saParams, cuParams);
-
+    random_device rd;
+    mt19937 mt(rd());
+    SimulatedAnnealing *simulatedAnneling = SimulatedFactory::createSimulatedAnnealing(
+            "AC1",
+            "CS2",
+            "TL7",
+            "TR0",
+            argc,
+            argv,
+            mt);
     simulatedAnneling->runGPU();
     // we use the default acquisition function / model / stat / etc.
     bayes_opt::BOptimizer<Params> boptimizer;

@@ -29,7 +29,7 @@ int n_students, n_colegios;
 double alpha1 = 15;        // Alpha de distancia valor 1 < alpha1
 double alpha2 = 30;        // Alpha de segregación valor 1 < alpha2
 double alpha3 = 25;        // Alpha de costocupo valor 1 < alpha3
-double coolingRate = 0.96; // Tasa de enfriamiento valores entre 0 < coolingRate < 1
+double coolingRate = 0.98; // Tasa de enfriamiento valores entre 0 < coolingRate < 1
 double temp = 1.0;         // Temperatura inicial
 double min_temp = 0.0000009;
 // double min_temp = 0.00000009;   // Minima temperatura que puede llegar
@@ -63,7 +63,7 @@ string prefijo_save;
 
 int selectThread = 0,
     selectBlock = 0,
-    n_block = 48,  // Numero de estudiantes simultaneos
+    n_block = 32,  // Numero de estudiantes simultaneos
     n_thread = 32; // Numero de escuelas simultaneos
 
 int main(int argc, char *argv[])
