@@ -42,12 +42,6 @@ using std::random_device;
 using std::uniform_int_distribution;
 using std::uniform_real_distribution;
 
-extern random_device rd;
-extern mt19937 mt;
-extern uniform_int_distribution<int> dist;
-extern uniform_int_distribution<int> dist2;
-extern uniform_real_distribution<double> dist_accepta;
-
 
 class SimulatedAnnealing {
 
@@ -77,7 +71,7 @@ private:
     double* ptr_alpha;
     double *matrestest;
     double **distMat;
-
+    mt19937& mt;
     
 
 public:
@@ -92,6 +86,10 @@ public:
     double costCurrentSolution;
     double costBestSolution;
     double costPreviousSolution;
+    
+    uniform_int_distribution<int> dist;
+    uniform_int_distribution<int> dist2;
+    uniform_real_distribution<double> dist_accepta;
     std::vector<std::future<void>> futures;
 
     SimulatedAnnealing(AcceptanceCriterion* AC,
@@ -100,25 +98,10 @@ public:
         ReheatingMethod* RM,
         Dataset* DS,
         RecordManager* RMgr,
-        SimulatedParams& saParams,
-        CUDAParams& cuParams)
-        : 
-        acceptanceCriterion(AC), 
-        coolingScheme(CS),
-        lengthTemperature(LT),
-        reheatingMethod(RM),
-        dataSet(DS),
-        recordManager(RMgr),
-        saParams(saParams),
-        cuParams(cuParams),
-        acParams(AC->getAcParams()),
-        csParams(CS->getCsParams()),
-        ltParams(LT->getLtParams()),
-        rmParams(RM->getRmParams()),
-        rmgrParams(RMgr->getRmgrParams())
-        {      
-            mt.seed(saParams.seed);
-        };
+        SimulatedParams* saParams_,
+        CUDAParams* cuParams_,
+        mt19937& mt
+    );
     ~SimulatedAnnealing();
     SimulatedParams& getSaParams() { return saParams; };
     double runGPU();

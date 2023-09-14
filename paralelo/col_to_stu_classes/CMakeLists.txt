@@ -1,27 +1,27 @@
 cmake_minimum_required(VERSION 3.25.2)
-
-# Configuración CUDA
 if (WIN32)
     find_package(CUDAToolkit)
     set(CMAKE_CUDA_ARCHITECTURES 52 60 61 75 86)
-endif (WIN32)
 
+endif (WIN32)
 if (UNIX)
+    
     set(CMAKE_CUDA_COMPILER /usr/local/cuda/bin/nvcc)
     set(CMAKE_CUDA_ARCHITECTURES 52 60 61 75)
 endif (UNIX)
 
 project(paralelo LANGUAGES CUDA CXX)
 
-# Estándares
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CUDA_STANDARD 20)
 set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-#set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -fPIC")
-# Opciones de compilación
+file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/../save)
+
+
+
 option(ENABLE_SAVE_DATA "Habilita el almacenamiento de registros" ON)
 if(ENABLE_SAVE_DATA)
     add_compile_options(-DSAVE_DATA=1)
@@ -29,23 +29,20 @@ else()
     add_compile_options(-DSAVE_DATA=0)
 endif()
 
-# Incluir directorios
-include_directories(${PROJECT_SOURCE_DIR}/include)
 
-# Fuentes
+
+include_directories(
+        ${PROJECT_SOURCE_DIR}/include
+)
+enable_testing()
+
 file(GLOB_RECURSE all_SRCS
     "${PROJECT_SOURCE_DIR}/src/*.cpp"
     "${PROJECT_SOURCE_DIR}/src/*.c"
     "${PROJECT_SOURCE_DIR}/src/*.cu"
 )
 
-# Crear una biblioteca dinámica
-add_library(paralelo SHARED ${all_SRCS})
-
-# Propiedades
-set_target_properties(paralelo PROPERTIES LINKER_LANGUAGE CXX)
-set_property(TARGET paralelo PROPERTY CUDA_SEPARABLE_COMPILATION ON)
-
+add_executable(paralelo ${all_SRCS} alumnos_utm.txt colegios_utm.txt)
 
 set_target_properties(paralelo PROPERTIES LINKER_LANGUAGE CXX)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/data/alumnos_utm.txt
@@ -73,16 +70,4 @@ SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pg")
 SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pg")
 SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -pg")
 
-
-# Instalar la biblioteca en /usr/local/lib
-install(TARGETS paralelo
-        LIBRARY DESTINATION /usr/local/lib)
-        
-# Instalar los archivos de cabecera en /usr/local/include
-install(DIRECTORY include/
-        DESTINATION /usr/local/include/paralelo
-        FILES_MATCHING 
-        PATTERN "*.h"
-        PATTERN "*.hpp"
-        PATTERN "*.cuh")
 include(CPack)

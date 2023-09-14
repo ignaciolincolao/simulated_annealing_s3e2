@@ -10,15 +10,16 @@
 
 typedef std::numeric_limits<double> dbl;
 
-/*
+
 SimulatedAnnealing::SimulatedAnnealing(AcceptanceCriterion* AC,
     CoolingScheme* CS,
     LengthTemperature* LT,
     ReheatingMethod* RM,
     Dataset* DS,
     RecordManager* RMgr,
-    SimulatedParams& saParams,
-    CUDAParams& cuParams)
+    SimulatedParams* saParams,
+    CUDAParams* cuParams,
+    mt19937& mt)
     : 
     acceptanceCriterion(AC), 
     coolingScheme(CS),
@@ -26,21 +27,21 @@ SimulatedAnnealing::SimulatedAnnealing(AcceptanceCriterion* AC,
     reheatingMethod(RM),
     dataSet(DS),
     recordManager(RMgr),
-    saParams(saParams),
-    cuParams(cuParams),
+    saParams(*saParams),
+    cuParams(*cuParams),
     acParams(AC->getAcParams()),
     csParams(CS->getCsParams()),
     ltParams(LT->getLtParams()),
     rmParams(RM->getRmParams()),
     rmgrParams(RMgr->getRmgrParams()),
-    mt(rd()), 
+    mt(mt), 
     dist(0, 0), 
     dist2(0, 0), 
     dist_accepta(0.0, 1.0)
     {      
-        mt.seed(saParams.seed);
+        mt.seed(saParams->seed);
     }
-    */
+    
 /*
 static std::mutex addInfoMutex;
 
@@ -165,6 +166,7 @@ double SimulatedAnnealing::runGPU(){
         ///////////////////////////////////////////////////
         /// 
         //////////////////////////////////////////////////
+        cout <<  costCurrentSolution << "||" << costBestSolution << endl;
         if(costCurrentSolution < costBestSolution){
             cudaWrapper->AcceptanceBestSolution();
             costBestSolution = costCurrentSolution;
@@ -182,10 +184,12 @@ double SimulatedAnnealing::runGPU(){
             //                   &saParams
             //                 ));
 #if SAVE_DATA
-            recordManager->vector_costCurrentSolution.emplace_back(costCurrentSolution);
-            recordManager->vector_meanDist.emplace_back(meanDist(currentSolution, distMat));
-            recordManager->vector_segregation.emplace_back(S(currentSolution, alumnosSep, totalVuln));
-            recordManager->vector_costoCupo.emplace_back(costCupo(currentSolution, cupoArray));
+            cudaWrapper->copySolutionToHost(bestSolution, previousSolution);
+            cout << meanDist(bestSolution, distMat) << endl;
+            recordManager->vector_costCurrentSolution.emplace_back(costBestSolution);
+            recordManager->vector_meanDist.emplace_back(meanDist(bestSolution, distMat));
+            recordManager->vector_segregation.emplace_back(S(bestSolution, alumnosSep, totalVuln));
+            recordManager->vector_costoCupo.emplace_back(costCupo(bestSolution, cupoArray));
             recordManager->vector_temp.emplace_back(saParams.temp);
             recordManager->vector_count.emplace_back(saParams.count);
 #endif

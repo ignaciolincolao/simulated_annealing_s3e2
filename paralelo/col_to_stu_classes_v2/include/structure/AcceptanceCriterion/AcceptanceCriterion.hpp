@@ -11,8 +11,6 @@
 using std::mt19937;
 using std::uniform_real_distribution;
 
-extern mt19937 mt;
-extern double temp;
 
 struct AcceptanceParams{
     double Th;
@@ -23,11 +21,12 @@ class AcceptanceCriterion
 protected:
     SimulatedParams& saParams;
     AcceptanceParams& acParams;
+    std::mt19937& mt;
 
 public:
 
-    AcceptanceCriterion(SimulatedParams& saParams, AcceptanceParams& acParams)
-    :saParams(saParams), acParams(acParams){};
+    AcceptanceCriterion(SimulatedParams& saParams, AcceptanceParams& acParams,  mt19937 &mt)
+    :saParams(saParams), acParams(acParams), mt(mt){};
     AcceptanceParams& getAcParams() { return acParams; };
     virtual ~AcceptanceCriterion() = default;
     virtual int apply(double &costPreviousSolution,double &costCurrentSolution, uniform_real_distribution<double> dist_accepta) = 0;
@@ -37,22 +36,22 @@ public:
 
 class AC1: public AcceptanceCriterion{
     public:
-        AC1(SimulatedParams& saParams, AcceptanceParams& acParams) 
-        : AcceptanceCriterion(saParams, acParams) {}
+        AC1(SimulatedParams& saParams, AcceptanceParams& acParams,  mt19937 &mt) 
+        : AcceptanceCriterion(saParams, acParams, mt) {}
         int apply(double &costPreviousSolution,double &costCurrentSolution, uniform_real_distribution<double> dist_accepta) override;
 };
 
 class AC3: public AcceptanceCriterion{
     public:
-        AC3(SimulatedParams& saParams, AcceptanceParams& acParams) 
-        : AcceptanceCriterion(saParams, acParams) {}
+        AC3(SimulatedParams& saParams, AcceptanceParams& acParams,  mt19937 &mt) 
+        : AcceptanceCriterion(saParams, acParams, mt) {}
         int apply(double &costPreviousSolution,double &costCurrentSolution, uniform_real_distribution<double> dist_accepta) override;
 };
 
 class AC6: public AcceptanceCriterion{
     public:
-        AC6(SimulatedParams& saParams, AcceptanceParams& acParams) 
-        : AcceptanceCriterion(saParams, acParams) {}
+        AC6(SimulatedParams& saParams, AcceptanceParams& acParams,  mt19937 &mt) 
+        : AcceptanceCriterion(saParams, acParams, mt) {}
         int apply(double &costPreviousSolution,double &costCurrentSolution, uniform_real_distribution<double> dist_accepta) override;
 };
 

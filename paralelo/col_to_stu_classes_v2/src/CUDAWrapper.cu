@@ -313,6 +313,12 @@ void CUDAWrapper::synchronizeBucle(){
 void CUDAWrapper::copySolutionToHost(int* bestSolution, int* previousSolution){
     cudaMemcpyAsync(bestSolution, d_bestSolution, saParams.n_students * sizeof(int), cudaMemcpyDeviceToHost,streams[0]);
     cudaMemcpyAsync(previousSolution, d_previousSolution, saParams.n_students * sizeof(int), cudaMemcpyDeviceToHost,streams[1]);
+    errSync  = cudaGetLastError();
+    errAsync = cudaDeviceSynchronize();
+    if (errSync != cudaSuccess) 
+        printf("5 Sync kernel error: %s\n", cudaGetErrorString(errSync));
+    if (errAsync != cudaSuccess)
+        printf("5 Async kernel error: %s\n", cudaGetErrorString(errAsync));
 }
 
 /*

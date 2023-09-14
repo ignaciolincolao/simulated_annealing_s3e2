@@ -180,10 +180,12 @@ double SimulatedAnnealing::runGPU(){
             //                   &saParams
             //                 ));
 #if SAVE_DATA
-            recordManager->vector_costCurrentSolution.emplace_back(costCurrentSolution);
-            recordManager->vector_meanDist.emplace_back(meanDist(currentSolution, distMat));
-            recordManager->vector_segregation.emplace_back(S(currentSolution, alumnosSep, totalVuln));
-            recordManager->vector_costoCupo.emplace_back(costCupo(currentSolution, cupoArray));
+            cudaWrapper->copySolutionToHost(bestSolution, previousSolution);
+            cout << meanDist(bestSolution, distMat) << endl;
+            recordManager->vector_costCurrentSolution.emplace_back(costBestSolution);
+            recordManager->vector_meanDist.emplace_back(meanDist(bestSolution, distMat));
+            recordManager->vector_segregation.emplace_back(S(bestSolution, alumnosSep, totalVuln));
+            recordManager->vector_costoCupo.emplace_back(costCupo(bestSolution, cupoArray));
             recordManager->vector_temp.emplace_back(saParams.temp);
             recordManager->vector_count.emplace_back(saParams.count);
 #endif

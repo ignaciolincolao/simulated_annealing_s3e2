@@ -108,7 +108,7 @@ int main(int argc, char *argv[])
     alpha[0] = alpha1;
     alpha[1] = alpha2;
     alpha[2] = alpha3;
-    mt.seed(time(NULL));
+    mt.seed(123456);
 
     double a = sasFunc();
     return (EXIT_SUCCESS);

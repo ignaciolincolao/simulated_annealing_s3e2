@@ -1,15 +1,11 @@
 #include<SimulatedFactory.hpp>
 
-random_device rd;
-mt19937 mt;
-uniform_int_distribution<int> dist;
-uniform_int_distribution<int> dist2;
-uniform_real_distribution<double> dist_accepta;
 
-std::map<std::string, std::function<AcceptanceCriterion*(SimulatedParams& saParams, AcceptanceParams& acParams)>> SimulatedFactory::AcceptanceMap{
-    {"AC1", [](SimulatedParams& saParams, AcceptanceParams& acParams) { return new AC1(saParams, acParams); }},
-    {"AC3", [](SimulatedParams& saParams, AcceptanceParams& acParams) { return new AC3(saParams, acParams); }},
-    {"AC6", [](SimulatedParams& saParams, AcceptanceParams& acParams) { return new AC6(saParams, acParams); }}
+
+std::map<std::string, std::function<AcceptanceCriterion*(SimulatedParams& saParams, AcceptanceParams& acParams, std::mt19937& mt)>> SimulatedFactory::AcceptanceMap{
+    {"AC1", [](SimulatedParams& saParams, AcceptanceParams& acParams, std::mt19937& mt) { return new AC1(saParams, acParams, mt); }},
+    {"AC3", [](SimulatedParams& saParams, AcceptanceParams& acParams, std::mt19937& mt) { return new AC3(saParams, acParams, mt); }},
+    {"AC6", [](SimulatedParams& saParams, AcceptanceParams& acParams, std::mt19937& mt) { return new AC6(saParams, acParams, mt); }}
 };
 
 std::map<std::string, std::function<CoolingScheme*(SimulatedParams &saParams, CoolingParams &csParams)>> SimulatedFactory::CoolingMap{
@@ -38,7 +34,8 @@ SimulatedAnnealing* SimulatedFactory::createSimulatedAnnealing(
             string lengthtemperature,
             string reheatingmethod,
             int argc,
-            char *argv[]){
+            char *argv[],
+            mt19937 &mt){
             string name_exp = "base";
             string ruta_save = "../save/"; 
             std::string prefijo_save;
@@ -130,17 +127,13 @@ SimulatedAnnealing* SimulatedFactory::createSimulatedAnnealing(
                 cout << "entro" << endl;
             }
             rtParams->max_temp = std::numeric_limits<double>::max();
-            double alpha[3] = {saParams->alpha1, saParams->alpha2, saParams->alpha3};
-            alpha[0] = saParams->alpha1;
-            alpha[1] = saParams->alpha2;
-            alpha[2] = saParams->alpha3;
 
             AcceptanceCriterion *aC; 
             CoolingScheme *cS;
             LengthTemperature *lT;
             ReheatingMethod *rM;
             if (AcceptanceMap.find(acceptancecriterion) != AcceptanceMap.end()) {
-                aC  = AcceptanceMap[acceptancecriterion](*saParams, *acParams);
+                aC  = AcceptanceMap[acceptancecriterion](*saParams, *acParams, mt);
                 // haz algo con "acceptance"
             }
             
@@ -160,7 +153,7 @@ SimulatedAnnealing* SimulatedFactory::createSimulatedAnnealing(
             }
             RecordManager *rMgr = new RecordManager(*saParams, *rMgrParams);
             Dataset *dS = new Dataset("colegios_utm.txt", "alumnos_utm.txt");
-            SimulatedAnnealing *simulatedAnneling = new SimulatedAnnealing(aC, cS, lT, rM, dS, rMgr, *saParams, *cuParams);
+            SimulatedAnnealing *simulatedAnneling = new SimulatedAnnealing(aC, cS, lT, rM, dS, rMgr, saParams, cuParams, mt);
             cout << simulatedAnneling->saParams.seed << endl;
             return simulatedAnneling;
 
