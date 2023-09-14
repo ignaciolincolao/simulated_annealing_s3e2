@@ -62,7 +62,7 @@ static void addInfoToSave(RecordManager *recordManager,
 }
 */
 double SimulatedAnnealing::runGPU(){
-    CUDAWrapper* cudaWrapper = new CUDAWrapper(cuParams, saParams);
+    CUDAWrapper* cudaWrapper = new CUDAWrapper(cuParams, saParams, mt);
     // cout << "test" << endl;
     inicializationValues(cudaWrapper);
     cudaWrapper->memInit(previousSolution,
@@ -139,7 +139,7 @@ double SimulatedAnnealing::runGPU(){
         if(costCurrentSolution >= costPreviousSolution){
             if(acceptanceCriterionApply() == 1){
                 cudaWrapper->newSolutionRandomSelection(dist,
-                    dist2,mt);
+                    dist2);
             }
         }
         ///////////////////////////////////////////////////
@@ -166,7 +166,6 @@ double SimulatedAnnealing::runGPU(){
         ///////////////////////////////////////////////////
         /// 
         //////////////////////////////////////////////////
-        cout <<  costCurrentSolution << "||" << costBestSolution << endl;
         if(costCurrentSolution < costBestSolution){
             cudaWrapper->AcceptanceBestSolution();
             costBestSolution = costCurrentSolution;
@@ -185,7 +184,6 @@ double SimulatedAnnealing::runGPU(){
             //                 ));
 #if SAVE_DATA
             cudaWrapper->copySolutionToHost(bestSolution, previousSolution);
-            cout << meanDist(bestSolution, distMat) << endl;
             recordManager->vector_costCurrentSolution.emplace_back(costBestSolution);
             recordManager->vector_meanDist.emplace_back(meanDist(bestSolution, distMat));
             recordManager->vector_segregation.emplace_back(S(bestSolution, alumnosSep, totalVuln));

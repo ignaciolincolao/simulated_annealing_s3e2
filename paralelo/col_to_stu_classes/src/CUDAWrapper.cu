@@ -23,7 +23,6 @@ CUDAWrapper::CUDAWrapper(CUDAParams& cuParams,SimulatedParams& saParams)
     threadsPerBlock = 256;
     numberOfBlocks = 32 * numberOfSMs;
     nWarp = deviceProp.warpSize;
-    std::cout << "hola" << std::endl;
     streams = new cudaStream_t[NUM_STREAMS]; 
     for (int i = 0; i < NUM_STREAMS; ++i) { cudaStreamCreate(&streams[i]); }
     cudaEventCreate(&start_cuda);

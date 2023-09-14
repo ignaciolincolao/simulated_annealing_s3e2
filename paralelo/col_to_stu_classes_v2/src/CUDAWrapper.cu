@@ -12,8 +12,8 @@ inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=t
    }
 }
 
-CUDAWrapper::CUDAWrapper(CUDAParams& cuParams,SimulatedParams& saParams) 
-    :  cuParams(cuParams), saParams(saParams)
+CUDAWrapper::CUDAWrapper(CUDAParams& cuParams,SimulatedParams& saParams, mt19937& mt) 
+    :  cuParams(cuParams), saParams(saParams), mt(mt)
 {
     cudaDeviceProp deviceProp;
     cudaGetDevice(&deviceId);
@@ -251,7 +251,7 @@ void CUDAWrapper::newSolution(){
 }
 
 void CUDAWrapper::newSolutionRandomSelection(uniform_int_distribution<int> dist,
-    uniform_int_distribution<int> dist2,mt19937 mt)
+    uniform_int_distribution<int> dist2)
 {
 
     /********************************
@@ -313,12 +313,7 @@ void CUDAWrapper::synchronizeBucle(){
 void CUDAWrapper::copySolutionToHost(int* bestSolution, int* previousSolution){
     cudaMemcpyAsync(bestSolution, d_bestSolution, saParams.n_students * sizeof(int), cudaMemcpyDeviceToHost,streams[0]);
     cudaMemcpyAsync(previousSolution, d_previousSolution, saParams.n_students * sizeof(int), cudaMemcpyDeviceToHost,streams[1]);
-    errSync  = cudaGetLastError();
-    errAsync = cudaDeviceSynchronize();
-    if (errSync != cudaSuccess) 
-        printf("5 Sync kernel error: %s\n", cudaGetErrorString(errSync));
-    if (errAsync != cudaSuccess)
-        printf("5 Async kernel error: %s\n", cudaGetErrorString(errAsync));
+    CUDAWrapper::synchronizeBucle();
 }
 
 /*

@@ -20,10 +20,11 @@ std::map<std::string, std::function<LengthTemperature*(SimulatedParams& saParams
 };
 
 std::map<std::string, std::function<ReheatingMethod*(SimulatedParams& saParams,ReheatingParams& rmParams)>> SimulatedFactory::ReheatingMap{
+    {"TR0", [](SimulatedParams& saParams,ReheatingParams& rmParams) { return new TR0(saParams, rmParams); }},
     {"TR11", [](SimulatedParams& saParams,ReheatingParams& rmParams) { return new TR11(saParams, rmParams); }},
     {"TR12", [](SimulatedParams& saParams,ReheatingParams& rmParams) { return new TR12(saParams, rmParams); }},
     {"TR13", [](SimulatedParams& saParams,ReheatingParams& rmParams) { return new TR13(saParams, rmParams); }},
-    {"TR14", [](SimulatedParams& saParams,ReheatingParams& rmParams) { return new TR14(saParams, rmParams); }}
+    {"TR14", [](SimulatedParams& saParams,ReheatingParams& rmParams) { return new TR14(saParams, rmParams); }},
 };
 
 

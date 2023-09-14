@@ -72,9 +72,9 @@ class CUDAWrapper{
         cudaError_t errSync;
         cudaError_t errAsync;
         size_t pitch;
-
+        mt19937& mt;
     public:
-        CUDAWrapper(CUDAParams& cuParams_,SimulatedParams& saParams);
+        CUDAWrapper(CUDAParams& cuParams_,SimulatedParams& saParams, mt19937& mt);
         ~CUDAWrapper();
         void memInit(
             int*& previousSolution,
@@ -96,9 +96,7 @@ class CUDAWrapper{
         void newSolution();
         void newSolutionRandomSelection(
             uniform_int_distribution<int> dist,
-        uniform_int_distribution<int> dist2,
-        mt19937 mt
-
+        uniform_int_distribution<int> dist2
         );
         void newSolutionUpdate(
             double& costCurrentSolution

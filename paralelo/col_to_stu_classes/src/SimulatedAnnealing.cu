@@ -181,7 +181,7 @@ double SimulatedAnnealing::runGPU(){
             //                 ));
 #if SAVE_DATA
             cudaWrapper->copySolutionToHost(bestSolution, previousSolution);
-            cout << meanDist(bestSolution, distMat) << endl;
+            //cout << meanDist(bestSolution, distMat) << endl;
             recordManager->vector_costCurrentSolution.emplace_back(costBestSolution);
             recordManager->vector_meanDist.emplace_back(meanDist(bestSolution, distMat));
             recordManager->vector_segregation.emplace_back(S(bestSolution, alumnosSep, totalVuln));

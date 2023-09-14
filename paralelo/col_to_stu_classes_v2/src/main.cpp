@@ -20,7 +20,7 @@ int main(int argc, char *argv[])
             "AC1",
             "CS2",
             "TL7",
-            "TR11",
+            "TR0",
             argc,
             argv,
             mt);
