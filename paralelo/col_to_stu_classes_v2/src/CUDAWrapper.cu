@@ -152,6 +152,8 @@ void CUDAWrapper::memInit(
     if (errAsync != cudaSuccess)
         printf("0 Async kernel error: %s\n", cudaGetErrorString(errAsync));
 
+    
+
 }
 
 void CUDAWrapper::memCopyPrevToCurrent(){
