@@ -1,29 +1,20 @@
 // please see the explanation in the documentation
 // http://www.resibots.eu/limbo
 
-#include <iostream>
 #include <algorithm>
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
+#include <iostream>
 #include <random>
 #include <stdio.h>
 #include <SimulatedFactory.hpp>
-
-
-
-
 
 
 // you can also include <limbo/limbo.hpp> but it will slow down the compilation
 #include <limbo/bayes_opt/boptimizer.hpp>
 
 using namespace limbo;
-int seed = 1234;
-string name_exp = "base";
-string ruta_save = "../save/"; // Ruta para guardar los archivos
-                               // Valores del alpha con orden Distancia, Segregación, Costo Cupo
-
 
 char timestr[20];
 struct Params {
@@ -87,16 +78,82 @@ struct Eval {
 
 int main(int argc, char *argv[])
 {
-
     random_device rd;
     mt19937 mt(rd());
+
+    // Hora Actual
+    time_t hora_actual;
+    struct tm *time_info;
+    time(&hora_actual);
+    time_info = localtime(&hora_actual);
+    char timestr[20];
+    strftime(timestr, sizeof(timestr), "%Y-%m-%d T:%H-%M", time_info);
+
+    // Configuración del algoritmo
+    RecordParams* rMgrParams = new RecordParams{
+                .prefijo_save = string(timestr),
+                .ruta_save = "../save/",
+                .name_exp = "base"};
+
+            
+    SimulatedParams* saParams = new SimulatedParams{
+        .seed = 123456,
+        .n_students = 0,
+        .n_colegios = 0,
+        .count_rechaso = 0,
+        .count = 0,
+        .c_cooling_temperature = 0,
+        .c_accepta = 0,
+        .temp = 1.0,
+        .min_temp = 0.0000009,
+        .alpha1 = 15.0,
+        .alpha2 = 30.0,
+        .alpha3 = 25.0,
+        .max_dist = 0.0,
+        .min_dist = 0.0,
+        .init_dist = 0.0,
+        .costPrevious = 0.0,
+        .costCurrent = 0.0};
+
+    AcceptanceParams* acParams = new AcceptanceParams{
+        .Th = 1.1};
+    CoolingParams* csParams = new CoolingParams{
+        .coolingRate = 0.99};
+    LengthParams* ltParams = new LengthParams{
+        .len1 = 1,
+        .len2 = 2,
+        .len3 = 1.0,
+        .len4 = 0.999};
+    ReheatingParams* rtParams = new ReheatingParams{
+        .e_const = 0.01,
+        .max_temp = std::numeric_limits<double>::max(),
+        .k_reheating = 30,
+        .n_reheating = 1,
+        .k_reheating_init = 0};
+
+    CUDAParams* cuParams = new CUDAParams{
+        .n_block = 32,
+        .n_thread = 32,
+        .selectThread = 0,
+        .selectBlock = 0};
+
+
+    SimulatedStruct* simStruct = new SimulatedStruct{
+        .acceptancecriterion = "AC1",
+        .coolingscheme = "CS2",
+        .lengthtemperature ="TL7",
+        .reheatingmethod = "TR0"
+    };
+
     SimulatedAnnealing *simulatedAnneling = SimulatedFactory::createSimulatedAnnealing(
-            "AC1",
-            "CS2",
-            "TL7",
-            "TR0",
-            argc,
-            argv,
+            simStruct,
+            rMgrParams,
+            saParams,
+            acParams,
+            csParams,
+            ltParams,
+            rtParams,
+            cuParams,
             mt);
     simulatedAnneling->runGPU();
     // we use the default acquisition function / model / stat / etc.

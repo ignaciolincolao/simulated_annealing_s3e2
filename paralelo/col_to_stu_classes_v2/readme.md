@@ -1,3 +1,6 @@
+
+
+
 // Habilitar el registro de la CPU
 sudo sysctl -w kernel.perf_event_paranoid=2
 // Hacer las pruebas
@@ -15,7 +18,7 @@ flag
 
 cmake -DENABLE_SAVE_DATA=OFF .. 
 cmake -DENABLE_SAVE_DATA=ON ..
-
+cmake -DBUILD_SHARED_LIB=ON ..
 
 // Instalación de libreria
 

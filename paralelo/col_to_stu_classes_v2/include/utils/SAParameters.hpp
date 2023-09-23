@@ -1,7 +1,17 @@
 #ifndef SA_PARAMETERS_HPP
 #define SA_PARAMETERS_HPP
 
+#include <string>
+
 class SimulatedAnnealing;
+
+struct SimulatedStruct {
+    std::string acceptancecriterion;
+    std::string coolingscheme;
+    std::string explorationCriterion;
+    std::string lengthtemperature;
+    std::string reheatingmethod;
+};
 
 struct SimulatedParams {
     int seed;
@@ -11,9 +21,9 @@ struct SimulatedParams {
     int count;
     int count_trials;
     int c_cooling_temperature;
-    int c_accepta=0;
-    int max_changes_school = 0;
-    int max_changes_students = 0;
+    int c_accepta;
+    int max_changes_school;
+    int max_changes_students;
     double temp; // Temperatura Inicial
     double temp_init;
     double min_temp;// 0.00000009; // Minima temperatura que puede llegar
@@ -23,13 +33,11 @@ struct SimulatedParams {
     double max_dist;
     double min_dist;
     double init_dist;
-    double costPrevious=0.0;
-    double costCurrent=0.0;
+    double costPrevious;
+    double costCurrent;
     int* shuffle_student;
     int* shuffle_colegios;
-    double alpha[3] = {alpha1, alpha2, alpha3}; // Valores del alpha con orden Distancia, Segregación, Costo Cupo
-
-
+    double alpha[3]; // Valores del alpha con orden Distancia, Segregación, Costo Cupo
 
 };
 

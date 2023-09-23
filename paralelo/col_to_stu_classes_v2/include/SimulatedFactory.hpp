@@ -23,12 +23,14 @@ class SimulatedFactory {
         static std::map<std::string, std::function<ReheatingMethod*(SimulatedParams& saParams,ReheatingParams& rmParams)>> ReheatingMap;
     public:
         static SimulatedAnnealing* createSimulatedAnnealing(
-            string acceptancecriterion,
-            string coolingscheme,
-            string lengthtemperature,
-            string reheatingmethod,
-            int argc,
-            char *argv[],
+            SimulatedStruct* simStruct,
+            RecordParams* rMgrParams,
+            SimulatedParams* saParams,
+            AcceptanceParams* acParams,
+            CoolingParams* csParams,
+            LengthParams* ltParams,
+            ReheatingParams* rtParams,
+            CUDAParams* cuParams,
             mt19937 &mt);
 };
 
