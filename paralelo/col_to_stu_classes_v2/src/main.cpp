@@ -30,7 +30,9 @@ int main(int argc, char *argv[])
                 .ruta_save = "../save/",
                 .name_exp = "base"};
 
-            
+    double alp1 =  15.0;
+    double alp2 = 30.0;
+    double alp3 = 25.0;
     SimulatedParams* saParams = new SimulatedParams{
         .seed = 123456,
         .n_students = 0,
@@ -41,14 +43,15 @@ int main(int argc, char *argv[])
         .c_accepta = 0,
         .temp = 1.0,
         .min_temp = 0.0000009,
-        .alpha1 = 15.0,
-        .alpha2 = 30.0,
-        .alpha3 = 25.0,
+        .alpha1 = alp1,
+        .alpha2 = alp2,
+        .alpha3 = alp3,
         .max_dist = 0.0,
         .min_dist = 0.0,
         .init_dist = 0.0,
         .costPrevious = 0.0,
-        .costCurrent = 0.0};
+        .costCurrent = 0.0,
+        .alpha = {alp1, alp2, alp3}};
 
     AcceptanceParams* acParams = new AcceptanceParams{
         .Th = 1.1};

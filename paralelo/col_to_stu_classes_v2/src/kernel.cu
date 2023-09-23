@@ -449,6 +449,13 @@ __global__ void calculateSolution(
         printf("ERRORRRRRRRRRRRR no son iguales!!!!!!!!!!!!!!!!!!\n");
         printf("%.10lf\n",d_array_current_Solution[0]);
         printf("%.10lf\n",d_costCurrentSolution[0]);
+        printf("%.10lf\n",var1);
+        printf("%.10lf\n",var2);
+        printf("%.10lf\n",var3);
+        printf("%.10lf\n",d_alpha[0]);
+        printf("%.10lf\n",d_alpha[1]);
+        printf("%.10lf\n",d_alpha[2]);
+
 
     }
     //d_array_current_Solution[0] = d_costCurrentSolution[0];

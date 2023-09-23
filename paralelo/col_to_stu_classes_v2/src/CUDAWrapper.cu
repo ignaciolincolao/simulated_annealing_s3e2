@@ -285,6 +285,7 @@ void CUDAWrapper::newSolutionUpdate(double& costCurrentSolution)
         d_currentVars,
         d_costCurrentSolution);
         getCurrentSolutionGpuToHost(costCurrentSolution);
+        synchronizeBucle();
 }
 
 void CUDAWrapper::getCurrentSolutionGpuToHost(double& costCurrentSolution)
