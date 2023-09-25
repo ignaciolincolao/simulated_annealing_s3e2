@@ -60,8 +60,8 @@ def options(opt):
 
 def build(bld):
     bld(features='cxx cxxprogram',
-        source='test1.cpp',
+        source='exp.cpp',
         includes='. ../../src',
-        target='test1',
+        target='exp',
         uselib='BOOST EIGEN TBB LIBCMAES NLOPT PARALELO',
         use='limbo')
