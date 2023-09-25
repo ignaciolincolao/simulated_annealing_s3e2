@@ -41,7 +41,36 @@ SimulatedAnnealing::SimulatedAnnealing(AcceptanceCriterion* AC,
     {      
         mt.seed(saParams->seed);
     }
-    
+SimulatedAnnealing::~SimulatedAnnealing(){
+    delete acceptanceCriterion;
+    delete coolingScheme;
+    delete lengthTemperature;
+    delete reheatingMethod;
+    delete dataSet;
+    delete recordManager;
+
+    cudaFreeHost(previousSolution);
+    cudaFreeHost(bestSolution);
+    cudaFreeHost(currentSolution);
+    cudaFreeHost(cupoArray);
+    cudaFreeHost(alumnosSep);
+    free(aluxcol);
+    free(aluVulxCol);
+    free(previousAluxCol);
+    free(previousAluVulxCol);
+    free(bestAluxCol);
+    free(bestAluVulxCol);
+    cudaFreeHost(currentVars);
+    cudaFreeHost(previousVars);
+    cudaFreeHost(bestVars);
+    cudaFreeHost(matrestest);
+    for(int i=0; i < saParams.n_students; i++ ){
+        free(distMat[i]);
+    }
+    free(distMat);
+    cudaFreeHost(saParams.shuffle_student);
+    cudaFreeHost(saParams.shuffle_colegios);
+}   
 /*
 static std::mutex addInfoMutex;
 
@@ -283,7 +312,7 @@ double SimulatedAnnealing::runGPU(){
     recordManager->closeRecordGraphicsBestSolution();
     recordManager->closeRecordRegister();
 #endif
-
+    delete cudaWrapper;
     // cout << "finalizo con :" << costBestSolution << endl;
     return (costBestSolution);
 }
@@ -699,8 +728,4 @@ int SimulatedAnnealing::acceptanceCriterionApply() {
     return acceptanceCriterion->apply(costPreviousSolution,costCurrentSolution,dist_accepta);
 }
 
-
-SimulatedAnnealing::~SimulatedAnnealing() {
-
-}
 

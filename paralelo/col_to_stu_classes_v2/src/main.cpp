@@ -13,6 +13,7 @@
 
 int main(int argc, char *argv[])
 {
+
     random_device rd;
     mt19937 mt(rd());
 
@@ -70,8 +71,8 @@ int main(int argc, char *argv[])
         .k_reheating_init = 0};
 
     CUDAParams* cuParams = new CUDAParams{
-        .n_block = 512,
-        .n_thread = 512,
+        .n_block = 32,
+        .n_thread = 32,
         .selectThread = 0,
         .selectBlock = 0};
 
@@ -93,6 +94,18 @@ int main(int argc, char *argv[])
             rtParams,
             cuParams,
             mt);
+
     simulatedAnneling->runGPU();
+    delete simulatedAnneling;
+    delete simStruct;
+    delete rMgrParams;
+    delete saParams;
+    delete acParams;
+    delete csParams;
+    delete ltParams;
+    delete rtParams;
+    delete cuParams;
+    
+    
     return (EXIT_SUCCESS);
 }
