@@ -34,7 +34,7 @@ struct Params {
         BO_PARAM(double, jitter, 0.0);
     };
     struct init_randomsampling {
-        BO_PARAM(int, samples, 2);
+        BO_PARAM(int, samples, 10);
     };
     struct kernel : public defaults::kernel {
         BO_PARAM(double, noise, 1e-10);
