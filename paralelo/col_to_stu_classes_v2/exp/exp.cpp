@@ -28,7 +28,7 @@ struct Params {
         BO_PARAM(int, stats_enabled, true);
     };
     struct stop_maxiterations {
-        BO_PARAM(int, iterations, 3);
+        BO_PARAM(int, iterations, 50);
     };
     struct acqui_ei {
         BO_PARAM(double, jitter, 0.0);
@@ -38,6 +38,7 @@ struct Params {
     };
     struct kernel : public defaults::kernel {
         BO_PARAM(double, noise, 1e-10);
+        BO_PARAM(bool, optimize_noise, true);
     };
     struct kernel_squared_exp_ard : public defaults::kernel_squared_exp_ard {
     };
@@ -74,7 +75,7 @@ Eigen::VectorXd simAnnealing(const Eigen::VectorXd& x)
     double alp2 = 30.0;
     double alp3 = 25.0;
     SimulatedParams* saParams = new SimulatedParams{
-        .seed = 123456,
+        .seed = time(NULL),
         .n_students = 0,
         .n_colegios = 0,
         .count_rechaso = 0,
@@ -130,9 +131,9 @@ Eigen::VectorXd simAnnealing(const Eigen::VectorXd& x)
 
     cuParams->n_block = 32;
     saParams->temp = valRange(100,10000,x,0);
-    csParams->coolingRate = valRange(0.9,0.999,x,1);
-    ltParams->len1 = valRange(1,100,x,2);
-    ltParams->len2 = valRange(1,100,x,3);
+    csParams->coolingRate = valRange(0.9,0.999,x,1);//valRange(0.9,0.99,x,1);//
+    ltParams->len1 = valRange(1,100,x,2);//valRange(1,10,x,2);//
+    ltParams->len2 = valRange(1,100,x,3);//valRange(1,10,x,3);//
 
     SimulatedAnnealing *simulatedAnneling = SimulatedFactory::createSimulatedAnnealing(
             simStruct,
@@ -161,18 +162,6 @@ Eigen::VectorXd simAnnealing(const Eigen::VectorXd& x)
 
     return res;
 }
-
-template <typename Params>
-struct MeanFWModel : mean::BaseMean<Params> {
-    MeanFWModel(size_t dim_out = 1) {}
-
-    template <typename GP>
-    Eigen::VectorXd operator()(const Eigen::VectorXd& x, const GP&) const
-    {
-        Eigen::VectorXd values = simAnnealing(x);
-        return values;
-    }
-};
 
 
 template <typename Params>
@@ -205,11 +194,9 @@ int main()
 {
     using kernel_t = kernel::SquaredExpARD<Params>;
 
-    using mean_t = MeanFWModel<Params>;
+    using mean_t = mean::Data<Params>;
 
-    using gp_opt_t = model::gp::KernelLFOpt<Params>;
-
-    using gp_t = model::GP<Params, kernel_t, mean_t, gp_opt_t>;
+    using gp_t = model::GP<Params, kernel_t, mean_t>;
 
     using acqui_t = acqui::EI<Params, gp_t>;
     using acqui_opt_t = opt::Cmaes<Params>;
@@ -230,5 +217,6 @@ int main()
     // so you do not reset the data in boptimizer
     // i.e. keep all the previous data points in the Gaussian Process
     boptimizer.optimize(eval_func<Params>(), aggregator, false);
+    
     return 1;
 }
