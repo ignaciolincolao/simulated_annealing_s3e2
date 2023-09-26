@@ -2,66 +2,66 @@ FILE: exp/exp/exp.cpp
 
 stop_maxiterations
 ^^^^^^^^^^^^^^^^^^
-- int iterations = 50 [defined in exp/exp/exp.cpp]<map object at 0x7f3517004f10>
+- int iterations = 50 [defined in exp/exp/exp.cpp]<map object at 0x7fa78bd0cf10>
 
 opt_cmaes
 ^^^^^^^^^
-- int restarts = 1 [defined in exp/exp/exp.cpp]<map object at 0x7f3517005db0>
-- int max_fun_evals = -1 [defined in exp/exp/exp.cpp]<map object at 0x7f3517006590>
-- int max_iters = -1 [default value, from src/limbo/opt/cmaes.hpp]<map object at 0x7f3517021390>
-- bool auto_max_iters = true [default value, from src/limbo/opt/cmaes.hpp]<map object at 0x7f3517022200>
-- bool equal_fun_evals = true [default value, from src/limbo/opt/cmaes.hpp]<map object at 0x7f3517022830>
-- bool stagnation = true [default value, from src/limbo/opt/cmaes.hpp]<map object at 0x7f3517022980>
-- double fun_tolerance = -1 [default value, from src/limbo/opt/cmaes.hpp]<map object at 0x7f3517021660>
-- double xrel_tolerance = -1 [default value, from src/limbo/opt/cmaes.hpp]<map object at 0x7f3517021510>
-- double fun_target = -1 [default value, from src/limbo/opt/cmaes.hpp]<map object at 0x7f35170219c0>
-- bool fun_compute_initial = false [default value, from src/limbo/opt/cmaes.hpp]<map object at 0x7f35170218a0>
-- int variant = aIPOP_CMAES [default value, from src/limbo/opt/cmaes.hpp]<map object at 0x7f35170226b0>
-- int elitism = 0 [default value, from src/limbo/opt/cmaes.hpp]<map object at 0x7f3517022590>
-- bool handle_uncertainty = false [default value, from src/limbo/opt/cmaes.hpp]<map object at 0x7f3517020280>
-- bool verbose = false [default value, from src/limbo/opt/cmaes.hpp]<map object at 0x7f35170211b0>
-- double lbound = 0.0 [default value, from src/limbo/opt/cmaes.hpp]<map object at 0x7f3517021090>
-- double ubound = 1.0 [default value, from src/limbo/opt/cmaes.hpp]<map object at 0x7f3517020a00>
-- bool stochastic = false [default value, from src/limbo/opt/cmaes.hpp]<map object at 0x7f35170234f0>
-- int lambda = -1 [default value, from src/limbo/opt/cmaes.hpp]<map object at 0x7f3517023bb0>
+- int restarts = 1 [defined in exp/exp/exp.cpp]<map object at 0x7fa78bd0ddb0>
+- int max_fun_evals = -1 [defined in exp/exp/exp.cpp]<map object at 0x7fa78bd0e590>
+- int max_iters = -1 [default value, from src/limbo/opt/cmaes.hpp]<map object at 0x7fa78bd25390>
+- bool auto_max_iters = true [default value, from src/limbo/opt/cmaes.hpp]<map object at 0x7fa78bd26200>
+- bool equal_fun_evals = true [default value, from src/limbo/opt/cmaes.hpp]<map object at 0x7fa78bd26830>
+- bool stagnation = true [default value, from src/limbo/opt/cmaes.hpp]<map object at 0x7fa78bd26980>
+- double fun_tolerance = -1 [default value, from src/limbo/opt/cmaes.hpp]<map object at 0x7fa78bd25660>
+- double xrel_tolerance = -1 [default value, from src/limbo/opt/cmaes.hpp]<map object at 0x7fa78bd25510>
+- double fun_target = -1 [default value, from src/limbo/opt/cmaes.hpp]<map object at 0x7fa78bd259c0>
+- bool fun_compute_initial = false [default value, from src/limbo/opt/cmaes.hpp]<map object at 0x7fa78bd258a0>
+- int variant = aIPOP_CMAES [default value, from src/limbo/opt/cmaes.hpp]<map object at 0x7fa78bd266b0>
+- int elitism = 0 [default value, from src/limbo/opt/cmaes.hpp]<map object at 0x7fa78bd26590>
+- bool handle_uncertainty = false [default value, from src/limbo/opt/cmaes.hpp]<map object at 0x7fa78bd24280>
+- bool verbose = false [default value, from src/limbo/opt/cmaes.hpp]<map object at 0x7fa78bd251b0>
+- double lbound = 0.0 [default value, from src/limbo/opt/cmaes.hpp]<map object at 0x7fa78bd25090>
+- double ubound = 1.0 [default value, from src/limbo/opt/cmaes.hpp]<map object at 0x7fa78bd24a00>
+- bool stochastic = false [default value, from src/limbo/opt/cmaes.hpp]<map object at 0x7fa78bd274f0>
+- int lambda = -1 [default value, from src/limbo/opt/cmaes.hpp]<map object at 0x7fa78bd27bb0>
 
 bayes_opt_boptimizer
 ^^^^^^^^^^^^^^^^^^^^
-- int hp_period = 10 [defined in exp/exp/exp.cpp]<map object at 0x7f3517005d80>
-
-acqui_ei
-^^^^^^^^
-- double jitter = 0.0 [defined in exp/exp/exp.cpp]<map object at 0x7f35170065f0>
-
-bayes_opt_bobase
-^^^^^^^^^^^^^^^^
-- int stats_enabled = true [defined in exp/exp/exp.cpp]<map object at 0x7f3517006380>
-- bool bounded = true [default value, from src/limbo/bayes_opt/bo_base.hpp]<map object at 0x7f3517004070>
-
-init_randomsampling
-^^^^^^^^^^^^^^^^^^^
-- int samples = 2 [defined in exp/exp/exp.cpp]<map object at 0x7f3517007040>
-
-eval_func
-^^^^^^^^^
+- int hp_period = 10 [defined in exp/exp/exp.cpp]<map object at 0x7fa78bd0de40>
 
 opt_rprop
 ^^^^^^^^^
-- int iterations = 300 [default value, from src/limbo/opt/rprop.hpp]<map object at 0x7f3517023d90>
-- double eps_stop = 0.0 [default value, from src/limbo/opt/rprop.hpp]<map object at 0x7f3517022cb0>
+- int iterations = 300 [default value, from src/limbo/opt/rprop.hpp]<map object at 0x7fa78bd27d90>
+- double eps_stop = 0.0 [default value, from src/limbo/opt/rprop.hpp]<map object at 0x7fa78bd26cb0>
 
-kernel
-^^^^^^
-- double noise = 1e-10 [defined in exp/exp/exp.cpp]<map object at 0x7f35170068c0>
-- bool optimize_noise = true [defined in exp/exp/exp.cpp]<map object at 0x7f3517005fc0>
+bayes_opt_bobase
+^^^^^^^^^^^^^^^^
+- int stats_enabled = true [defined in exp/exp/exp.cpp]<map object at 0x7fa78bd0e380>
+- bool bounded = true [default value, from src/limbo/bayes_opt/bo_base.hpp]<map object at 0x7fa78bd0c9a0>
 
 opt_parallelrepeater
 ^^^^^^^^^^^^^^^^^^^^
-- int repeats = 10 [default value, from src/limbo/opt/parallel_repeater.hpp]<map object at 0x7f3517020490>
-- double epsilon = 1e-2 [default value, from src/limbo/opt/parallel_repeater.hpp]<map object at 0x7f3517022050>
+- int repeats = 10 [default value, from src/limbo/opt/parallel_repeater.hpp]<map object at 0x7fa78bd25f60>
+- double epsilon = 1e-2 [default value, from src/limbo/opt/parallel_repeater.hpp]<map object at 0x7fa78bd24850>
 
 kernel_squared_exp_ard
 ^^^^^^^^^^^^^^^^^^^^^^
-- double sigma_sq = 1 [default value, from src/limbo/kernel/squared_exp_ard.hpp]<map object at 0x7f3516ffa800>
+- double sigma_sq = 1 [default value, from src/limbo/kernel/squared_exp_ard.hpp]<map object at 0x7fa78bd02800>
+
+init_randomsampling
+^^^^^^^^^^^^^^^^^^^
+- int samples = 10 [defined in exp/exp/exp.cpp]<map object at 0x7fa78bd0f040>
+
+acqui_ei
+^^^^^^^^
+- double jitter = 0.0 [defined in exp/exp/exp.cpp]<map object at 0x7fa78bd0e5f0>
+
+kernel
+^^^^^^
+- double noise = 1e-10 [defined in exp/exp/exp.cpp]<map object at 0x7fa78bd0e8c0>
+- bool optimize_noise = true [defined in exp/exp/exp.cpp]<map object at 0x7fa78bd0dfc0>
+
+eval_func
+^^^^^^^^^
 
 =========================================

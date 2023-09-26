@@ -196,7 +196,8 @@ int main()
 
     using mean_t = mean::Data<Params>;
 
-    using gp_t = model::GP<Params, kernel_t, mean_t>;
+    using gp_opt_t = model::gp::KernelLFOpt<Params>;
+    using gp_t = model::GP<Params, kernel_t, mean_t,gp_opt_t>;
 
     using acqui_t = acqui::EI<Params, gp_t>;
     using acqui_opt_t = opt::Cmaes<Params>;
