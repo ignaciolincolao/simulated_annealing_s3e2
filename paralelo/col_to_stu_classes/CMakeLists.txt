@@ -12,9 +12,9 @@ endif (UNIX)
 
 project(paralelo LANGUAGES CUDA CXX)
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CUDA_STANDARD 20)
+set(CMAKE_CUDA_STANDARD 14)
 set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
@@ -42,7 +42,11 @@ file(GLOB_RECURSE all_SRCS
     "${PROJECT_SOURCE_DIR}/src/*.cu"
 )
 
-add_executable(paralelo ${all_SRCS} alumnos_utm.txt colegios_utm.txt)
+# add_executable(paralelo ${all_SRCS} alumnos_utm.txt colegios_utm.txt)
+
+add_library(paralelo SHARED ${all_SRCS})
+
+
 
 set_target_properties(paralelo PROPERTIES LINKER_LANGUAGE CXX)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/data/alumnos_utm.txt
