@@ -1,5 +1,9 @@
 // please see the explanation in the documentation
 // http://www.resibots.eu/limbo
+#include <cassert>
+#include <iostream>
+#include <sstream>
+#include <string>
 
 #include <algorithm>
 #include <cstdint>
@@ -9,9 +13,19 @@
 #include <random>
 #include <stdio.h>
 #include <SimulatedFactory.hpp>
-
+#include <fstream>
 
 #include <limbo/limbo.hpp>
+#include <fstream>
+#include <limbo/kernel/exp.hpp>
+#include <limbo/kernel/squared_exp_ard.hpp>
+#include <limbo/mean/data.hpp>
+#include <limbo/model/gp.hpp>
+#include <limbo/model/gp/kernel_lf_opt.hpp>
+#include <limbo/tools.hpp>
+#include <limbo/tools/macros.hpp>
+#include <limbo/serialize/binary_archive.hpp>
+#include <limbo/serialize/text_archive.hpp>
 
 using namespace limbo;
 
@@ -75,7 +89,7 @@ Eigen::VectorXd simAnnealing(const Eigen::VectorXd& x)
     double alp2 = 30.0;
     double alp3 = 25.0;
     SimulatedParams* saParams = new SimulatedParams{
-        .seed = time(NULL),
+        .seed = static_cast<int>(time(nullptr)),
         .n_students = 0,
         .n_colegios = 0,
         .count_rechaso = 0,
@@ -129,11 +143,19 @@ Eigen::VectorXd simAnnealing(const Eigen::VectorXd& x)
     Realiza los cambios de las variables
     */
 
-    cuParams->n_block = 32;
+    cuParams->n_block = 32*int(valRange(1,32,x,4));
+    cuParams->n_thread = 32*int(valRange(1,32,x,5));
     saParams->temp = valRange(100,10000,x,0);
     csParams->coolingRate = valRange(0.9,0.999,x,1);//valRange(0.9,0.99,x,1);//
     ltParams->len1 = valRange(1,100,x,2);//valRange(1,10,x,2);//
     ltParams->len2 = valRange(1,100,x,3);//valRange(1,10,x,3);//
+    cout << "valores de x: " << "temp= "<< saParams->temp 
+        <<" | coolingRate= " << csParams->coolingRate 
+        << " | len1= " << ltParams->len1
+        << " | len2= " << ltParams->len2
+        << " | n_block= " << cuParams->n_block
+        << " | n_thread= " << cuParams->n_thread
+        << endl;
 
     SimulatedAnnealing *simulatedAnneling = SimulatedFactory::createSimulatedAnnealing(
             simStruct,
@@ -167,18 +189,21 @@ Eigen::VectorXd simAnnealing(const Eigen::VectorXd& x)
 template <typename Params>
 struct LinearWeighting {
     using result_type = double;
-    LinearWeighting() {}
+    LinearWeighting(const int& weight) : _weight(weight){}
 
     double operator()(const Eigen::VectorXd& x) const
     {
-        return -(1*x[0]+0.000001*x[1]);
+        return -(1*x[0]+(x[1]/_weight));
+        //return -(1*x[0]+0.000001*x[1]);
     }
+    protected:
+        int _weight;
 
 };
 
 template <typename Params>
 struct eval_func {
-    BO_PARAM(size_t, dim_in, 4);
+    BO_PARAM(size_t, dim_in, 6);
     BO_PARAM(size_t, dim_out, 2);
 
     eval_func() {}
@@ -210,14 +235,26 @@ int main()
 
     bayes_opt::BOptimizer<Params, modelfun<gp_t>, acquifun<acqui_t>, acquiopt<acqui_opt_t>, initfun<init_t>, statsfun<stat_t>> boptimizer;
     // Instantiate aggregator
-    LinearWeighting<Params> aggregator;
+
+    // Optimization
+    /*
+    LinearWeighting<Params> aggregator(1000000);
     boptimizer.optimize(eval_func<Params>(), aggregator);
     std::cout << "New target!" << std::endl;
-    aggregator = LinearWeighting<Params>();
-    // Do not forget to pass `false` as the last parameter in `optimize`,
-    // so you do not reset the data in boptimizer
-    // i.e. keep all the previous data points in the Gaussian Process
+    aggregator = LinearWeighting<Params>(10000000);
     boptimizer.optimize(eval_func<Params>(), aggregator, false);
+    */
+    // Do not forget to pass `false` as the last parameter in `optimize`,
+
+    
+
+    gp_t gp_ard(6, 2);
+    limbo::serialize::TextArchive f1("base_val");
+    gp_ard.load(f1);
+
+    //boptimizer.optimize_hyperparams();
+    //std::cout << "Optimizando Hyperparametros" << std::endl;
+
     
     return 1;
 }
