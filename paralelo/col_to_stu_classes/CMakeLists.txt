@@ -42,9 +42,9 @@ file(GLOB_RECURSE all_SRCS
     "${PROJECT_SOURCE_DIR}/src/*.cu"
 )
 
-# add_executable(paralelo ${all_SRCS} alumnos_utm.txt colegios_utm.txt)
+add_executable(paralelo ${all_SRCS} alumnos_utm.txt colegios_utm.txt)
 
-add_library(paralelo SHARED ${all_SRCS})
+# add_library(paralelo SHARED ${all_SRCS})
 
 
 
