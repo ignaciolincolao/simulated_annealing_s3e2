@@ -4,20 +4,22 @@
 #include <iostream>
 #include <stdio.h>
 #include <cuda.h>
-using namespace std;
 
-extern __constant__ int d_cupoArray[85];
+using std::size_t;
+
 extern __constant__ double d_alpha[3];
+extern __constant__ int d_n_students;
+extern __constant__ int d_n_colegios;
+extern __constant__ double d_max_dist;
+extern __constant__ int d_totalVuln;
+
 
 __global__ void newSolution_kernel(
     double *d_array_current_Solution,
-    int *d_array_current_Solution_thread,
-    const int n_students,
-    const int n_colegios,
-    const int n_thread,
-    const double max_dist,
+    int *d_array_current_Solution_alu,
+    int *d_array_current_Solution_col,
+    const int* __restrict__ d_cupoArray,
     const int* __restrict__ d_alumnosSep,
-    const int totalVuln,
     const int* __restrict__ d_aluxcol,
     const int* __restrict__ d_aluVulxCol,
     const int* __restrict__ d_currentSolution,
@@ -29,28 +31,20 @@ __global__ void newSolution_kernel(
 
 __global__ void reduce_block_kernel(
     double *d_array_current_Solution,
-    int *d_array_current_Solution_thread,
-    int *d_array_current_Solution_block,
-    const int n_block);
+    int *d_array_current_Solution_alu,
+    int *d_array_current_Solution_col);
 
-__global__ void reduce_block_kernel_2(
+__global__ void reduce_block_max(
     double *d_array_current_Solution,
-    int *d_array_current_Solution_thread,
-    int *d_array_current_Solution_block,
-    const int n_block);
+    int *d_array_current_Solution_alu,
+    int *d_array_current_Solution_col);
 
 __global__ void calculateSolution(
     double *d_array_current_Solution,
-    int *d_array_current_Solution_thread,
-    int *d_array_current_Solution_block,
-    const int* __restrict__ d_shuffle_students,
-    const int* __restrict__ d_shuffle_colegios,
-    const int n_students,
-    const int n_colegios,
-    const int n_thread,
-    const double max_dist,
+    int *d_array_current_Solution_alu,
+    int *d_array_current_Solution_col,
+    const int* __restrict__ d_cupoArray,
     const int* __restrict__ d_alumnosSep,
-    int totalVuln,
     int* d_aluxcol,
     int* d_aluVulxCol,
     int* d_currentSolution,
