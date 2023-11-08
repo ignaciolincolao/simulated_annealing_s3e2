@@ -6,19 +6,19 @@ Dataset::Dataset(std::string fileName_school, std::string fileName_students) {
     /// Datos colegios
     /// Lee el archivo linea por linea y luego lo agrega al arreglo de estructura Info_colegio
     ///////////////////////////////////////////////////
-    getDataSchool(fileName_school,colegios);
+    getDataSchool(fileName_school, colegios);
     ptr_colegios = colegios.data();
     n_colegios = colegios.size();
     ///////////////////////////////////////////////////
     /// Datos Alumnos
     /// Lee el archivo linea por linea y luego lo agrega al arreglo de estructura info_student
     ///////////////////////////////////////////////////
-    getDataStudents(fileName_students,students,totalVuln);
+    getDataStudents(fileName_students, students, totalVuln);
     ptr_students = students.data();
     n_students = students.size();
 }
 
-void Dataset::getDataSchool(std::string fileName_school, std::vector<Info_colegio> &colegios){
+void Dataset::getDataSchool(std::string fileName_school, std::vector<Info_colegio> &colegios) {
     string line_colegios;
     ifstream info_school(fileName_school); // concatenar
     int cx = 0;
@@ -41,8 +41,7 @@ void Dataset::getDataSchool(std::string fileName_school, std::vector<Info_colegi
     info_school.close();
 }
 
-void Dataset::getDataStudents(std::string fileName_students, std::vector<Info_alu> &students, int &totalVuln)
-{
+void Dataset::getDataStudents(std::string fileName_students, std::vector<Info_alu> &students, int &totalVuln) {
     string line_student;
     ifstream info_student(fileName_students); // concatenar
     int cx = 0;
@@ -58,17 +57,12 @@ void Dataset::getDataStudents(std::string fileName_students, std::vector<Info_al
         students[cx].longitude = std::stod(data);
         getline(linestream, data, ',');
         students[cx].sep = std::stoi(data);
-        if (students[cx].sep == 1) {
+        if (students[cx].sep == 1)
             totalVuln++;
-        }
         cx++;
-
     }
     info_student.close();
 }
-
-
-
 
 /*
 void Dataset::toCSV(std::string fileName) {

@@ -26,27 +26,26 @@ struct SimulatedParams {
     int max_changes_students;
     double temp; // Temperatura Inicial
     double temp_init;
-    double min_temp;// 0.00000009; // Minima temperatura que puede llegar
-    double alpha1; // Alpha de distancia
-    double alpha2; // Alpha de segregación
-    double alpha3; // Alpha de costocupo
+    double min_temp; // 0.00000009; // Minima temperatura que puede llegar
+    double alpha1;   // Alpha de distancia
+    double alpha2;   // Alpha de segregación
+    double alpha3;   // Alpha de costocupo
+    double alpha4;   // Alpha de costocupo
     double max_dist;
     double min_dist;
     double init_dist;
     double costPrevious;
     double costCurrent;
-    int* shuffle_student;
-    int* shuffle_colegios;
-    double alpha[3]; // Valores del alpha con orden Distancia, Segregación, Costo Cupo
-
+    int *shuffle_student;
+    int *shuffle_colegios;
+    double alpha[4]; // Valores del alpha con orden Distancia, Segregación, Costo Cupo
 };
 
-struct CUDAParams {   
+struct CUDAParams {
     int n_block;
     int n_thread;
     int selectThread;
     int selectBlock;
 };
-
 
 #endif
