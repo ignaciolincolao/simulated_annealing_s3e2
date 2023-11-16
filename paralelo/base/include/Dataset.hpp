@@ -1,25 +1,14 @@
 #ifndef DATASET_H
 #define DATASET_H
 
-#include <iostream>
-#include <vector>
-#include <random>
+#include <array>
 #include <cmath>
-#include <string>
 #include <fstream>
+#include <iostream>
+#include <random>
 #include <sstream>
-using std::string;
-using std::stof;
-using std::stoi;
-using std::stod;
-using std::ofstream;
-using std::ifstream;
-using std::vector;
-using std::cout;
-using std::random_device;
-using std::stringstream;
-using std::getline;
-using std::fixed;
+#include <string>
+#include <vector>
 
 ///////////////////////////////////////////////////
 /// Estructura de datos de los colegios.
@@ -39,23 +28,28 @@ struct Info_alu {
     int sep = 0;
     double latitude = 0.0;
     double longitude = 0.0;
+    std::array<uint8_t, 5> choices;
 };
 
 class Dataset {
-    public:
-        Dataset(std::string fileName_school, std::string fileName_students);
-        std::vector<Info_colegio> colegios;
-        std::vector<Info_alu> students;
-        Info_colegio *ptr_colegios;
-        Info_alu *ptr_students;
-        int totalVuln;
-        int n_colegios;
-        int n_students;
-        void getDataSchool(std::string fileName_school, std::vector<Info_colegio> &colegios);
-        void getDataStudents(std::string fileName_students, std::vector<Info_alu> &students, int &totalVuln);
-        
-        //void toCSV(std::string fileName);
-};
 
+private:
+    std::size_t totalVuln;
+    std::vector<Info_colegio> colegios;
+    std::vector<Info_alu> students;
+    void getDataSchool(std::string fileName_school);
+    void getDataStudents(std::string fileName_students);
+    void getDataParents(std::string fileName_parents);
+
+public:
+    Dataset(std::string fileName_school, std::string fileName_students, std::string fileName_parents);
+    Info_alu *get_students();
+    Info_colegio *get_colleges();
+    std::size_t getn_students();
+    std::size_t getn_colleges();
+    std::size_t get_totalVuln();
+
+    // void toCSV(std::string fileName);
+};
 
 #endif

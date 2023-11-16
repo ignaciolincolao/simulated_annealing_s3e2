@@ -47,9 +47,10 @@ if (BUILD_SHARED_LIB)
             PATTERN "*.hpp"
             PATTERN "*.cuh")
 else()
-    add_executable(paralelo ${all_SRCS} alumnos_utm.txt colegios_utm.txt)
+    add_executable(paralelo ${all_SRCS} alumnos_utm.txt colegios_utm.txt parents.txt)
     configure_file(${CMAKE_CURRENT_SOURCE_DIR}/data/alumnos_utm.txt ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
     configure_file(${CMAKE_CURRENT_SOURCE_DIR}/data/colegios_utm.txt ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
+    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/data/parents.txt ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
 endif()
 
 set_target_properties(paralelo PROPERTIES LINKER_LANGUAGE CXX)

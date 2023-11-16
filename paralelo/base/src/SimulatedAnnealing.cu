@@ -286,9 +286,9 @@ double SimulatedAnnealing::runGPU() {
 template <typename T>
 void SimulatedAnnealing::inicializationValues(T *wrapper) {
     int x = 0, z = 0;
-    totalVuln = dataSet->totalVuln;
-    saParams.n_colegios = dataSet->n_colegios;
-    saParams.n_students = dataSet->n_students;
+    totalVuln = dataSet->get_totalVuln();
+    saParams.n_colegios = dataSet->getn_colleges();
+    saParams.n_students = dataSet->getn_students();
     // cout << fixed << setprecision(70) << endl;
     // srand(time(NULL));
 
@@ -298,6 +298,7 @@ void SimulatedAnnealing::inicializationValues(T *wrapper) {
 
     aluxcol = (int *)malloc(sizeof(int) * saParams.n_colegios);
     aluVulxCol = (int *)malloc(sizeof(int) * saParams.n_colegios);
+    choices_parents = (uint8_t **)malloc(saParams.n_students);
     previousAluxCol = (int *)malloc(sizeof(int) * saParams.n_colegios);
     previousAluVulxCol = (int *)malloc(sizeof(int) * saParams.n_colegios);
     bestAluxCol = (int *)malloc(sizeof(int) * saParams.n_colegios);
@@ -308,8 +309,10 @@ void SimulatedAnnealing::inicializationValues(T *wrapper) {
     saParams.count = 0;
 
     distMat = (double **)malloc(sizeof(double) * saParams.n_students);
-    for (x = 0; x < saParams.n_students; x++)
+    for (x = 0; x < saParams.n_students; x++) {
         distMat[x] = (double *)malloc(sizeof(double) * saParams.n_colegios);
+        choices_parents[x] = (uint8_t *)malloc(5);
+    }
 
     wrapper->mallocHost(
         previousSolution,
@@ -334,11 +337,11 @@ void SimulatedAnnealing::inicializationValues(T *wrapper) {
                     previousAluVulxCol,
                     bestAluVulxCol,
                     alumnosSep,
-                    dataSet->students,
-                    dataSet->colegios);
+                    dataSet->get_students(),
+                    dataSet->get_colleges());
 
-    assignSchoolToArray(previousSolution, bestSolution, currentSolution, dataSet->ptr_colegios, dataSet->ptr_students, cupoArray);
-    calcDist(dataSet->ptr_colegios, dataSet->ptr_students, distMat);
+    assignSchoolToArray(previousSolution, bestSolution, currentSolution, dataSet->get_colleges(), dataSet->get_students(), cupoArray);
+    calcDist(dataSet->get_colleges(), dataSet->get_students(), distMat);
     saParams.max_dist = getMaxDistance(distMat);
 
     normalizedAlpha(alpha);
@@ -379,7 +382,7 @@ void SimulatedAnnealing::inicializationValues(T *wrapper) {
     currentVars[0] = sumDist(currentSolution, distMat);
     currentVars[1] = sumS(currentSolution, alumnosSep, totalVuln);
     currentVars[2] = sumCostCupo(currentSolution, cupoArray);
-    currentVars[3] = penaltyParents(currentSolution, weights);
+    currentVars[3] = penaltyParents(currentSolution);
     previousVars[0] = currentVars[0];
     previousVars[1] = currentVars[1];
     previousVars[2] = currentVars[2];
@@ -439,7 +442,7 @@ double SimulatedAnnealing::calCosto(int *currentSolution, double **distMat, cons
     // cout << "Segregación: " << var2 << "\n";
     double var3 = costCupo(currentSolution, cupoArray);
     // cout << "CostoCupo: " << var3 << "\n";
-    double var4 = penaltyParents(currentSolution, weights);
+    double var4 = penaltyParents(currentSolution);
 
     return (double)((ptr_alpha[0] * var1) + (ptr_alpha[1] * var2) + (ptr_alpha[2] * var3) + (ptr_alpha[3] * var4));
 }
@@ -651,7 +654,7 @@ void SimulatedAnnealing::normalizedAlpha(double *alpha) {
 ///////////////////////////////////////////////////
 /// Asigna Información de las escuelas a best, previus y current soluciones
 ///////////////////////////////////////////////////
-void SimulatedAnnealing::initializeArray(int *aluxcol, int *previousAluxCol, int *bestAluxCol, int *aluVulxCol, int *previousAluVulxCol, int *bestAluVulxCol, int *alumnosSep, vector<Info_alu> &students, vector<Info_colegio> &colegios) {
+void SimulatedAnnealing::initializeArray(int *aluxcol, int *previousAluxCol, int *bestAluxCol, int *aluVulxCol, int *previousAluVulxCol, int *bestAluVulxCol, int *alumnosSep, Info_alu *students, Info_colegio *colegios) {
     for (int x = 0; x < saParams.n_colegios; x++) {
         aluxcol[x] = colegios[x].num_alu;
         previousAluxCol[x] = colegios[x].num_alu;
@@ -663,8 +666,12 @@ void SimulatedAnnealing::initializeArray(int *aluxcol, int *previousAluxCol, int
     ///////////////////////////////////////////////////
     /// Se crear un arreglo donde el el valor es la posición del estudiante sep
     ///////////////////////////////////////////////////
-    for (int x = 0; x < saParams.n_students; x++)
+    for (int x = 0; x < saParams.n_students; x++) {
         alumnosSep[x] = students[x].sep;
+        for (std::size_t i = 0; i < 5; i++)
+            // choices_parents[x][i] = students[x].choices[i];
+            students[x].choices[i];
+    }
 }
 
 double SimulatedAnnealing::round_n(double x) {
@@ -674,4 +681,28 @@ double SimulatedAnnealing::round_n(double x) {
 
 int SimulatedAnnealing::acceptanceCriterionApply() {
     return acceptanceCriterion->apply(costPreviousSolution, costCurrentSolution, dist_accepta);
+}
+
+std::size_t SimulatedAnnealing::penaltyParents(int *currentSolution) {
+    std::array<uint8_t, 6> weights{0, 10, 20, 30, 40, 255};
+
+    std::size_t penalty = 0;
+    bool find = false;
+
+    for (std::size_t i = 0; i < saParams.n_students; i++) {
+        for (std::size_t j = 0; j < 5; j++) {
+            if (currentSolution[i] == choices_parents[i][j]) {
+                penalty += weights[j];
+                find = true;
+                break;
+            }
+        }
+
+        if (!find)
+            penalty += weights[5];
+
+        find = false;
+    }
+
+    return penalty;
 }

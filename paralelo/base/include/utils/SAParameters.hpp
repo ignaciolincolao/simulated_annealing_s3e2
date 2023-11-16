@@ -30,7 +30,7 @@ struct SimulatedParams {
     double alpha1;   // Alpha de distancia
     double alpha2;   // Alpha de segregación
     double alpha3;   // Alpha de costocupo
-    double alpha4;   // Alpha de costocupo
+    double alpha4;   // Alpha de penalty padres
     double max_dist;
     double min_dist;
     double init_dist;
