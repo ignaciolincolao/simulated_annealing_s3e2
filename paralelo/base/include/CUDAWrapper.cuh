@@ -36,7 +36,7 @@ using std::size_t;
 using std::uniform_int_distribution;
 using std::uniform_real_distribution;
 
-extern __constant__ double d_alpha[3];
+extern __constant__ double d_alpha[4];
 extern __constant__ int d_n_students;
 extern __constant__ int d_n_colegios;
 extern __constant__ double d_max_dist;
@@ -98,9 +98,7 @@ class CUDAWrapper{
             uniform_int_distribution<int> dist,
         uniform_int_distribution<int> dist2
         );
-        void newSolutionUpdate(
-            double& costCurrentSolution
-            );
+        void newSolutionUpdate(double& costCurrentSolution, std::size_t penalty);
         void getCurrentSolutionGpuToHost(double& costCurrentSolution);
         void synchronizeBucle();
         void copySolutionToHost(

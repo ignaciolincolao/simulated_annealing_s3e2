@@ -146,7 +146,7 @@ double SimulatedAnnealing::runGPU() {
         ///////////////////////////////////////////////////
         ///  Actualiza la nueva solución en la GPU
         //////////////////////////////////////////////////
-        cudaWrapper->newSolutionUpdate(costCurrentSolution);
+        cudaWrapper->newSolutionUpdate(costCurrentSolution, penaltyParents(currentSolution));
 
         ///////////////////////////////////////////////////
         ///  Verifica Error
@@ -172,16 +172,6 @@ double SimulatedAnnealing::runGPU() {
             costPreviousSolution = costCurrentSolution;
             saParams.c_accepta++;
             saParams.count_rechaso = 0;
-
-            // futures.push_back(std::async(std::launch::async,
-            //                   addInfoToSave,
-            //                   recordManager,
-            //                   costCurrentSolution,
-            //                   meanDist(currentSolution, distMat),
-            //                   S(currentSolution, alumnosSep, totalVuln),
-            //                   costCupo(currentSolution, cupoArray),
-            //                   &saParams
-            //                 ));
 #if SAVE_DATA
             cudaWrapper->copySolutionToHost(bestSolution, previousSolution);
             recordManager->vector_costCurrentSolution.emplace_back(costBestSolution);

@@ -112,7 +112,7 @@ void CUDAWrapper::memInit(
                     saParams.n_students); // Reserva memoria para la matriz de distancia
 
 
-    gpuErrchk( cudaMemcpyToSymbolAsync( d_alpha, alpha,  3 * sizeof(double),0,cudaMemcpyHostToDevice,streams[2]));
+    gpuErrchk( cudaMemcpyToSymbolAsync( d_alpha, alpha,  4 * sizeof(double),0,cudaMemcpyHostToDevice,streams[2]));
     
 
     gpuErrchk( cudaMemcpyToSymbolAsync( d_n_students, &saParams.n_students, sizeof(int),0,cudaMemcpyHostToDevice,streams[3]));
@@ -272,7 +272,7 @@ void CUDAWrapper::newSolutionRandomSelection(uniform_int_distribution<int> dist,
 
 }
 
-void CUDAWrapper::newSolutionUpdate(double& costCurrentSolution)
+void CUDAWrapper::newSolutionUpdate(double& costCurrentSolution, std::size_t penalty)
 {
         calculateSolution<<<1,1>>>(d_array_current_Solution,
         d_array_current_Solution_alu,
@@ -284,6 +284,7 @@ void CUDAWrapper::newSolutionUpdate(double& costCurrentSolution)
         d_currentSolution,
         d_distMat,
         pitch,
+        penalty,
         d_currentVars,
         d_costCurrentSolution);
         getCurrentSolutionGpuToHost(costCurrentSolution);
