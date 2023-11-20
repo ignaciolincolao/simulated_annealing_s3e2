@@ -85,7 +85,8 @@ double SimulatedAnnealing::runGPU() {
     cout << "Primer costo de solución: " << costBestSolution << "\n";
     cout << "Primer distancia: " << meanDist(currentSolution, distMat) << "\n";
     cout << "Primer Segregación: " << S(currentSolution, alumnosSep, totalVuln) << "\n";
-    cout << "Primer CostoCupo: " << costCupo(currentSolution, cupoArray) << "\n\n";
+    cout << "Primer CostoCupo: " << costCupo(currentSolution, cupoArray) << "\n";
+    cout << "Penalty inicial: " << penaltyParents(currentSolution) << "\n\n";
 #if SAVE_DATA
     recordManager->openRecordInfo();
     recordManager->openRecordGraphics();
@@ -231,6 +232,7 @@ double SimulatedAnnealing::runGPU() {
     cout << "distancia: " << meanDist(bestSolution, distMat) << "\n";
     cout << "Segregación: " << S(bestSolution, alumnosSep, totalVuln) << "\n";
     cout << "CostoCupo: " << costCupo(bestSolution, cupoArray) << "\n";
+    cout << "Penalty final: " << penaltyParents(bestSolution) << "\n";
     cout << "--------------- Finalizo con exito ----------------"
          << "\n";
 
@@ -298,7 +300,7 @@ void SimulatedAnnealing::inicializationValues(T *wrapper) {
 
     aluxcol = (int *)malloc(sizeof(int) * saParams.n_colegios);
     aluVulxCol = (int *)malloc(sizeof(int) * saParams.n_colegios);
-    choices_parents = (uint8_t **)malloc(saParams.n_students);
+    choices_parents = (uint8_t **)malloc(sizeof(uint8_t *) * saParams.n_students);
     previousAluxCol = (int *)malloc(sizeof(int) * saParams.n_colegios);
     previousAluVulxCol = (int *)malloc(sizeof(int) * saParams.n_colegios);
     bestAluxCol = (int *)malloc(sizeof(int) * saParams.n_colegios);
@@ -669,8 +671,7 @@ void SimulatedAnnealing::initializeArray(int *aluxcol, int *previousAluxCol, int
     for (int x = 0; x < saParams.n_students; x++) {
         alumnosSep[x] = students[x].sep;
         for (std::size_t i = 0; i < 5; i++)
-            // choices_parents[x][i] = students[x].choices[i];
-            students[x].choices[i];
+            choices_parents[x][i] = students[x].choices[i];
     }
 }
 
@@ -684,7 +685,7 @@ int SimulatedAnnealing::acceptanceCriterionApply() {
 }
 
 std::size_t SimulatedAnnealing::penaltyParents(int *currentSolution) {
-    std::array<uint8_t, 6> weights{0, 10, 20, 30, 40, 255};
+    std::array<std::size_t, 6> weights{0, 10, 20, 30, 40, 255};
 
     std::size_t penalty = 0;
     bool find = false;
@@ -692,7 +693,7 @@ std::size_t SimulatedAnnealing::penaltyParents(int *currentSolution) {
     for (std::size_t i = 0; i < saParams.n_students; i++) {
         for (std::size_t j = 0; j < 5; j++) {
             if (currentSolution[i] == choices_parents[i][j]) {
-                penalty += weights[j];
+                penalty += std::pow(weights[j], 2);
                 find = true;
                 break;
             }

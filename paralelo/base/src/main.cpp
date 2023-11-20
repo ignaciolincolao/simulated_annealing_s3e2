@@ -29,7 +29,7 @@ int main(int argc, char *argv[]) {
     double alp1 = 15.0;
     double alp2 = 30.0;
     double alp3 = 25.0;
-    double alp4 = 50.0;
+    double alp4 = 300.0;
 
     SimulatedParams *saParams = new SimulatedParams{
         .seed = 123456,
