@@ -58,6 +58,7 @@ class CUDAWrapper{
         int *d_aluVulxCol,*d_previousAluVulxCol;
         int *d_shuffle_students;
         int *d_shuffle_colegios;
+        uint8_t *d_choices;
         double *d_currentVars, *d_bestVars, *d_previousVars;
         double *d_costPreviousSolution, *d_costBestSolution, *d_costCurrentSolution;
         int deviceId;
@@ -87,6 +88,7 @@ class CUDAWrapper{
             int*& aluVulxCol,
             double*& matrestest,
             double*& alpha,
+            uint8_t* choices,
             double*& currentVars
         );
         void memCopyPrevToCurrent();
@@ -98,7 +100,7 @@ class CUDAWrapper{
             uniform_int_distribution<int> dist,
         uniform_int_distribution<int> dist2
         );
-        void newSolutionUpdate(double& costCurrentSolution, std::size_t penalty);
+        void newSolutionUpdate(double& costCurrentSolution);
         void getCurrentSolutionGpuToHost(double& costCurrentSolution);
         void synchronizeBucle();
         void copySolutionToHost(

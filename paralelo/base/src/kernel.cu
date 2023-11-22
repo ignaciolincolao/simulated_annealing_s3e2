@@ -1,4 +1,5 @@
 #include <kernel.cuh>
+#include <stdio.h>
 
 __constant__ double d_alpha[4];
 __constant__ int d_n_students;
@@ -19,8 +20,8 @@ __global__ void newSolution_kernel(
     const int *__restrict__ d_shuffle_students,
     const int *__restrict__ d_shuffle_colegios,
     const double *__restrict__ d_currentVars,
-    size_t pitch,
-    size_t penalty) {
+    uint8_t *d_choices,
+    size_t pitch) {
 
     /// Shared Memory
     extern __shared__ double sharedMem[];
@@ -104,9 +105,17 @@ __global__ void newSolution_kernel(
     // costcupo escuela antigua
     totalcostCupo += cu_round_n(((double)totalAluCol * fabs((double)d_cupoArray[newSchool] - totalAluCol) / pow(((double)d_cupoArray[newSchool] * 0.5), 2)));
 
+    ///// Costo total de la solución /////
+
     cost_solution = d_alpha[0] * (sumDist / (d_n_students * d_max_dist));
     cost_solution += d_alpha[1] * (totalSesc * 0.5);
     cost_solution += d_alpha[2] * (totalcostCupo / d_n_colegios);
+
+    size_t penalty = 0;
+
+    for (size_t x = 0; x < d_n_students; x++)
+        penalty += calcPenalty(d_currentSolution[x], &(d_choices[x * 5]));
+
     cost_solution += d_alpha[3] * penalty;
     // printf("%.16lf %d %d\n",solutions[myID], colchange,aluchange);
     __syncthreads();
@@ -387,9 +396,9 @@ __global__ void calculateSolution(
     int *d_currentSolution,
     const double *__restrict__ d_distMat,
     size_t pitch,
-    size_t penalty,
     double *d_currentVars,
-    double *d_costCurrentSolution) {
+    double *d_costCurrentSolution,
+    uint8_t *d_choices) {
 
     int aluchange,
         colchange,
@@ -499,10 +508,20 @@ __global__ void calculateSolution(
     // cout << var2 << "\n";
     var3 = (totalcostCupo / d_n_colegios);
     // std::cout << var4 << "\n";
-    var4 = penalty;
+
+    // size_t penalty = 0;
+
+    // for (size_t x = 0; x < d_n_students; x++) {
+    //     printf("%d\n", x);
+    //     penalty += calcPenalty(d_currentSolution[x], &(d_choices[x * 5]));
+    // }
+
+    // var4 = penalty;
+    var4 = 0;
 
     d_costCurrentSolution[0] = (double)((d_alpha[0] * var1) + (d_alpha[1] * var2) + (d_alpha[2] * var3) + (d_alpha[3] * var4));
     d_array_current_Solution[0] = d_costCurrentSolution[0];
+
     if (d_array_current_Solution[0] != d_costCurrentSolution[0]) {
         printf("ERRORRRRRRRRRRRR no son iguales!!!!!!!!!!!!!!!!!!\n");
         printf("%.10lf\n", d_array_current_Solution[0]);
@@ -544,10 +563,7 @@ __global__ void copyVars(
     var[threadIdx.x] = new_var[threadIdx.x];
 }
 
-__global__ void copyCost(
-    double *costCurrentSolution,
-    double *new_costCurrentSolution) {
-
+__global__ void copyCost(double *costCurrentSolution, double *new_costCurrentSolution) {
     costCurrentSolution[0] = new_costCurrentSolution[0];
 }
 
@@ -557,5 +573,11 @@ inline __device__ double cu_round_n(double x) {
     return trunc(x * digits) / digits;
 }
 
-__device__ size_t calcPenalty(double *currentSolution) {
+__device__ size_t calcPenalty(double currentCollege, uint8_t *choices) {
+    size_t weights[6] = {5000, 0, 100, 200, 300, 400};
+    uint8_t index = 0;
+    for (size_t i = 1; i < 6; i++)
+        index += (currentCollege == choices[i - 1]) * i;
+
+    return weights[index];
 }

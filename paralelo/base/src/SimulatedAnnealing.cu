@@ -79,7 +79,7 @@ double SimulatedAnnealing::runGPU() {
 
     cudaWrapper->memInit(previousSolution, bestSolution, currentSolution,
                          cupoArray, alumnosSep, totalVuln, aluxcol,
-                         aluVulxCol, matrestest, alpha, currentVars);
+                         aluVulxCol, matrestest, alpha, choices_parents, currentVars);
 
     cout << "--------------- Primeros datos -------------\n";
     cout << "Primer costo de solución: " << costBestSolution << "\n";
@@ -146,7 +146,8 @@ double SimulatedAnnealing::runGPU() {
         ///////////////////////////////////////////////////
         ///  Actualiza la nueva solución en la GPU
         //////////////////////////////////////////////////
-        cudaWrapper->newSolutionUpdate(costCurrentSolution, penaltyParents(currentSolution));
+        cudaWrapper->newSolutionUpdate(costCurrentSolution);
+        exit(0);
 
         ///////////////////////////////////////////////////
         ///  Verifica Error
@@ -271,7 +272,7 @@ double SimulatedAnnealing::runGPU() {
     recordManager->closeRecordRegister();
 #endif
     delete cudaWrapper;
-    // cout << "finalizo con :" << costBestSolution << endl;
+    cout << "finalizo con :" << costBestSolution << endl;
     return (costBestSolution);
 }
 
@@ -290,7 +291,7 @@ void SimulatedAnnealing::inicializationValues(T *wrapper) {
 
     aluxcol = (int *)malloc(sizeof(int) * saParams.n_colegios);
     aluVulxCol = (int *)malloc(sizeof(int) * saParams.n_colegios);
-    choices_parents = (uint8_t **)malloc(sizeof(uint8_t *) * saParams.n_students);
+    choices_parents = (uint8_t *)malloc(5 * saParams.n_students);
     previousAluxCol = (int *)malloc(sizeof(int) * saParams.n_colegios);
     previousAluVulxCol = (int *)malloc(sizeof(int) * saParams.n_colegios);
     bestAluxCol = (int *)malloc(sizeof(int) * saParams.n_colegios);
@@ -303,7 +304,6 @@ void SimulatedAnnealing::inicializationValues(T *wrapper) {
     distMat = (double **)malloc(sizeof(double) * saParams.n_students);
     for (x = 0; x < saParams.n_students; x++) {
         distMat[x] = (double *)malloc(sizeof(double) * saParams.n_colegios);
-        choices_parents[x] = (uint8_t *)malloc(5);
     }
 
     wrapper->mallocHost(
@@ -661,7 +661,7 @@ void SimulatedAnnealing::initializeArray(int *aluxcol, int *previousAluxCol, int
     for (int x = 0; x < saParams.n_students; x++) {
         alumnosSep[x] = students[x].sep;
         for (std::size_t i = 0; i < 5; i++)
-            choices_parents[x][i] = students[x].choices[i];
+            choices_parents[x * 5 + i] = students[x].choices[i];
     }
 }
 
@@ -682,7 +682,7 @@ std::size_t SimulatedAnnealing::penaltyParents(int *currentSolution) {
 
     for (std::size_t i = 0; i < saParams.n_students; i++) {
         for (std::size_t j = 0; j < 5; j++) {
-            if (currentSolution[i] == choices_parents[i][j]) {
+            if (currentSolution[i] == choices_parents[i * 5 + j]) {
                 penalty += std::pow(weights[j], 2);
                 find = true;
                 break;
