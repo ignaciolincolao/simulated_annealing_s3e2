@@ -6,6 +6,8 @@ __constant__ int d_n_students;
 __constant__ int d_n_colegios;
 __constant__ double d_max_dist;
 __constant__ int d_totalVuln;
+// __constant__ uint8_t d_choices[29853 * 5];
+// __constant__ size_t weights[] = {50000, 0, 1000, 2000, 3000, 4000};
 
 __global__ void newSolution_kernel(
     double *d_array_current_Solution,
@@ -19,8 +21,9 @@ __global__ void newSolution_kernel(
     const double *__restrict__ d_distMat,
     const int *__restrict__ d_shuffle_students,
     const int *__restrict__ d_shuffle_colegios,
-    const double *__restrict__ d_currentVars,
+    const double *d_currentVars,
     uint8_t *d_choices,
+    size_t *d_penalty,
     size_t pitch) {
 
     /// Shared Memory
@@ -44,7 +47,16 @@ __global__ void newSolution_kernel(
     /// Inicializa arrays
     int tid = blockIdx.x * blockDim.x + threadIdx.x;
     aluchange = d_shuffle_students[tid % d_n_students];
+    // printf("n student: %d\n", aluchange);
     // aluchange = d_shuffle_students[threadIdx.x];
+    uint8_t choices[5] = {
+        d_choices[aluchange * 5 + 0],
+        d_choices[aluchange * 5 + 1],
+        d_choices[aluchange * 5 + 2],
+        d_choices[aluchange * 5 + 3],
+        d_choices[aluchange * 5 + 4],
+    };
+
     newSchool = d_shuffle_colegios[blockIdx.x % d_n_colegios];
     currentSchool = d_currentSolution[aluchange];
     // printf("%d|%d|%d|%d\n",newSchool,currentSchool,aluchange,tid%d_n_students);
@@ -69,6 +81,8 @@ __global__ void newSolution_kernel(
     aluNoVulCol = totalAluCol - aluVulCol;
     totalSesc -= cu_round_n(fabs((aluVulCol / (double)d_totalVuln) - (aluNoVulCol / (double)(d_n_students - d_totalVuln))));
     // costcupo escuela actual
+    d_penalty[0] -= calcPenalty(currentSchool, choices);
+    // d_penalty[0] -= 90;
 
     totalcostCupo -= cu_round_n((double)totalAluCol * fabs((double)d_cupoArray[currentSchool] - totalAluCol) / pow(((double)d_cupoArray[currentSchool] * 0.5), 2));
 
@@ -105,18 +119,16 @@ __global__ void newSolution_kernel(
     // costcupo escuela antigua
     totalcostCupo += cu_round_n(((double)totalAluCol * fabs((double)d_cupoArray[newSchool] - totalAluCol) / pow(((double)d_cupoArray[newSchool] * 0.5), 2)));
 
+    d_penalty[0] += calcPenalty(newSchool, choices);
+    // d_penalty[0] += 90;
+
     ///// Costo total de la solución /////
 
     cost_solution = d_alpha[0] * (sumDist / (d_n_students * d_max_dist));
     cost_solution += d_alpha[1] * (totalSesc * 0.5);
     cost_solution += d_alpha[2] * (totalcostCupo / d_n_colegios);
+    cost_solution += d_alpha[3] * d_penalty[0];
 
-    size_t penalty = 0;
-
-    for (size_t x = 0; x < d_n_students; x++)
-        penalty += calcPenalty(d_currentSolution[x], &(d_choices[x * 5]));
-
-    cost_solution += d_alpha[3] * penalty;
     // printf("%.16lf %d %d\n",solutions[myID], colchange,aluchange);
     __syncthreads();
 
@@ -398,7 +410,7 @@ __global__ void calculateSolution(
     size_t pitch,
     double *d_currentVars,
     double *d_costCurrentSolution,
-    uint8_t *d_choices) {
+    size_t *d_penalty) {
 
     int aluchange,
         colchange,
@@ -471,9 +483,9 @@ __global__ void calculateSolution(
     d_aluxcol[newSchool] += 1;
     d_aluVulxCol[newSchool] += d_alumnosSep[aluchange];
 
-    ////////////////////////////////////////////////////////////////
-    ////// Calculó despues de mover
-    //////////////////////////////////////////////////////////////
+    // ////////////////////////////////////////////////////////////////
+    // ////// Calculó despues de mover
+    // //////////////////////////////////////////////////////////////
     sumDist += cu_round_n(d_distMat[aluchange * pitch / sizeof(double) + newSchool]);
 
     // seg de la escuela actual
@@ -509,17 +521,11 @@ __global__ void calculateSolution(
     var3 = (totalcostCupo / d_n_colegios);
     // std::cout << var4 << "\n";
 
-    // size_t penalty = 0;
-
-    // for (size_t x = 0; x < d_n_students; x++) {
-    //     printf("%d\n", x);
-    //     penalty += calcPenalty(d_currentSolution[x], &(d_choices[x * 5]));
-    // }
-
-    // var4 = penalty;
-    var4 = 0;
+    var4 = d_penalty[0];
+    //  var4 = 0;
 
     d_costCurrentSolution[0] = (double)((d_alpha[0] * var1) + (d_alpha[1] * var2) + (d_alpha[2] * var3) + (d_alpha[3] * var4));
+    // d_costCurrentSolution[0] = (double)((d_alpha[0] * var1) + (d_alpha[1] * var2) + (d_alpha[2] * var3));
     d_array_current_Solution[0] = d_costCurrentSolution[0];
 
     if (d_array_current_Solution[0] != d_costCurrentSolution[0]) {
@@ -573,7 +579,7 @@ inline __device__ double cu_round_n(double x) {
     return trunc(x * digits) / digits;
 }
 
-__device__ size_t calcPenalty(double currentCollege, uint8_t *choices) {
+__device__ size_t calcPenalty(double currentCollege, uint8_t choices[5]) {
     size_t weights[6] = {5000, 0, 100, 200, 300, 400};
     uint8_t index = 0;
     for (size_t i = 1; i < 6; i++)

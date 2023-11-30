@@ -56,6 +56,7 @@ private:
     int* previousSolution;
     int* bestSolution;
     uint8_t *choices_parents;
+    size_t *penalty;
     int* currentSolution;
     int* cupoArray;
     int* alumnosSep;

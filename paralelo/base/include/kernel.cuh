@@ -28,6 +28,7 @@ __global__ void newSolution_kernel(
     const int* __restrict__ d_shuffle_colegios,
     const double* __restrict__ d_currentVars,
     uint8_t *d_choices,
+    size_t *d_penalty,
     size_t pitch
 );
 
@@ -54,7 +55,7 @@ __global__ void calculateSolution(
     size_t pitch,
     double *d_currentVars,
     double *d_costCurrentSolution,
-    uint8_t *d_choices);
+    size_t *d_penalty);
 
 
 __global__ void copyMemSolution(

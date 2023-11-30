@@ -79,7 +79,8 @@ double SimulatedAnnealing::runGPU() {
 
     cudaWrapper->memInit(previousSolution, bestSolution, currentSolution,
                          cupoArray, alumnosSep, totalVuln, aluxcol,
-                         aluVulxCol, matrestest, alpha, choices_parents, currentVars);
+                         aluVulxCol, matrestest, alpha, choices_parents,
+                         penalty, currentVars);
 
     cout << "--------------- Primeros datos -------------\n";
     cout << "Primer costo de solución: " << costBestSolution << "\n";
@@ -296,6 +297,7 @@ void SimulatedAnnealing::inicializationValues(T *wrapper) {
     previousAluVulxCol = (int *)malloc(sizeof(int) * saParams.n_colegios);
     bestAluxCol = (int *)malloc(sizeof(int) * saParams.n_colegios);
     bestAluVulxCol = (int *)malloc(sizeof(int) * saParams.n_colegios);
+    penalty = (size_t *)malloc(sizeof(size_t));
     alpha = saParams.alpha;
     ptr_alpha = &saParams.alpha[0];
 
@@ -371,10 +373,11 @@ void SimulatedAnnealing::inicializationValues(T *wrapper) {
 
     // double costCurrentSolutionV2 = costCurrentSolution;
 
+    penalty[0] = penaltyParents(currentSolution);
     currentVars[0] = sumDist(currentSolution, distMat);
     currentVars[1] = sumS(currentSolution, alumnosSep, totalVuln);
     currentVars[2] = sumCostCupo(currentSolution, cupoArray);
-    currentVars[3] = penaltyParents(currentSolution);
+    currentVars[3] = penalty[0];
     previousVars[0] = currentVars[0];
     previousVars[1] = currentVars[1];
     previousVars[2] = currentVars[2];
@@ -390,7 +393,7 @@ void SimulatedAnnealing::inicializationValues(T *wrapper) {
 
     var4 = currentVars[3];
 
-    costBestSolution = (double)((ptr_alpha[0] * var1) + (ptr_alpha[1] * var2) + (ptr_alpha[2] * var3) + (ptr_alpha[4] * var4));
+    costBestSolution = (double)((ptr_alpha[0] * var1) + (ptr_alpha[1] * var2) + (ptr_alpha[2] * var3) + (ptr_alpha[3] * var4));
     costPreviousSolution = costBestSolution;
     costCurrentSolution = costBestSolution;
     auto start_compare = std::chrono::high_resolution_clock::now();
@@ -444,9 +447,8 @@ double SimulatedAnnealing::calCosto(int *currentSolution, double **distMat, cons
 ///////////////////////////////////////////////////
 double SimulatedAnnealing::meanDist(const int *currentSolution, double **distMat) {
     double sumDist = 0.0;
-    for (int i = 0; i < saParams.n_students; i++) {
+    for (int i = 0; i < saParams.n_students; i++)
         sumDist += round_n(distMat[i][currentSolution[i]]); // distMat[estudiante][escuela]
-    }
     // cout << "meanDist: " << sumDist << endl;
     // cout << "Numero de estudiantes: " << saParams.n_students << "  |  Suma de distancias:" << sumDist << "\n";
     return sumDist / saParams.n_students;
@@ -454,9 +456,8 @@ double SimulatedAnnealing::meanDist(const int *currentSolution, double **distMat
 
 double SimulatedAnnealing::sumDist(const int *currentSolution, double **distMat) {
     double sumDist = 0.0;
-    for (int i = 0; i < saParams.n_students; i++) {
+    for (int i = 0; i < saParams.n_students; i++)
         sumDist += round_n(distMat[i][currentSolution[i]]); // distMat[estudiante][escuela]
-    }
     // cout << "sumDist: " << sumDist << endl;
     // cout << "Numero de estudiantes: " << saParams.n_students << "  |  Suma de distancias:" << sumDist << "\n";
     return sumDist;
