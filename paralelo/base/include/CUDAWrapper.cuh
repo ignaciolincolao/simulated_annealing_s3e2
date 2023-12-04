@@ -99,7 +99,6 @@ public:
         double *&matrestest,
         double *&alpha,
         uint8_t *&choices,
-        size_t *&penalty,
         double *&currentVars);
     void memCopyPrevToCurrent();
     void uploadCurrentMemorySolution();

@@ -80,7 +80,7 @@ double SimulatedAnnealing::runGPU() {
     cudaWrapper->memInit(previousSolution, bestSolution, currentSolution,
                          cupoArray, alumnosSep, totalVuln, aluxcol,
                          aluVulxCol, matrestest, alpha, choices_parents,
-                         penalty, currentVars);
+                         currentVars);
 
     cout << "--------------- Primeros datos -------------\n";
     cout << "Primer costo de solución: " << costBestSolution << "\n";
@@ -373,11 +373,10 @@ void SimulatedAnnealing::inicializationValues(T *wrapper) {
 
     // double costCurrentSolutionV2 = costCurrentSolution;
 
-    penalty[0] = penaltyParents(currentSolution);
     currentVars[0] = sumDist(currentSolution, distMat);
     currentVars[1] = sumS(currentSolution, alumnosSep, totalVuln);
     currentVars[2] = sumCostCupo(currentSolution, cupoArray);
-    currentVars[3] = penalty[0];
+    currentVars[3] = penaltyParents(currentSolution);
     previousVars[0] = currentVars[0];
     previousVars[1] = currentVars[1];
     previousVars[2] = currentVars[2];
