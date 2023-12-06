@@ -14,6 +14,7 @@ inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort =
 
 CUDAWrapper::CUDAWrapper(CUDAParams &cuParams, SimulatedParams &saParams, mt19937 &mt)
     : cuParams(cuParams), saParams(saParams), mt(mt) {
+
     cudaDeviceProp deviceProp;
     cudaGetDevice(&deviceId);
 

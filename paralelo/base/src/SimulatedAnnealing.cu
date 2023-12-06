@@ -75,6 +75,7 @@ static void addInfoToSave(RecordManager *recordManager,
 double SimulatedAnnealing::runGPU() {
     CUDAWrapper *cudaWrapper = new CUDAWrapper(cuParams, saParams, mt);
     // cout << "test" << endl;
+
     inicializationValues(cudaWrapper);
 
     cudaWrapper->memInit(previousSolution, bestSolution, currentSolution,
@@ -148,7 +149,6 @@ double SimulatedAnnealing::runGPU() {
         ///  Actualiza la nueva solución en la GPU
         //////////////////////////////////////////////////
         cudaWrapper->newSolutionUpdate(costCurrentSolution);
-        exit(0);
 
         ///////////////////////////////////////////////////
         ///  Verifica Error
@@ -161,7 +161,7 @@ double SimulatedAnnealing::runGPU() {
             std::cout << "distancia: " << meanDist(currentSolution, distMat) << "\n";
             std::cout << "Segregación: " << S(currentSolution, alumnosSep, totalVuln) << "\n";
             std::cout << "CostoCupo: " << costCupo(currentSolution, cupoArray) << "\n";
-            std::cout << costCurrentSolution;
+            std::cout << costCurrentSolution << "\n";
             exit(1);
         }
 
@@ -675,7 +675,7 @@ int SimulatedAnnealing::acceptanceCriterionApply() {
 }
 
 std::size_t SimulatedAnnealing::penaltyParents(int *currentSolution) {
-    std::array<std::size_t, 6> weights{0, 10, 20, 30, 40, 255};
+    std::array<std::size_t, 6> weights{0, 100, 200, 300, 400, 5000};
 
     std::size_t penalty = 0;
     bool find = false;
@@ -683,7 +683,7 @@ std::size_t SimulatedAnnealing::penaltyParents(int *currentSolution) {
     for (std::size_t i = 0; i < saParams.n_students; i++) {
         for (std::size_t j = 0; j < 5; j++) {
             if (currentSolution[i] == choices_parents[i * 5 + j]) {
-                penalty += std::pow(weights[j], 2);
+                penalty += weights[j];
                 find = true;
                 break;
             }

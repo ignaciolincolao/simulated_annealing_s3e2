@@ -27,7 +27,7 @@ __global__ void newSolution_kernel(
     const int* __restrict__ d_shuffle_students,
     const int* __restrict__ d_shuffle_colegios,
     const double* __restrict__ d_currentVars,
-    uint8_t *d_choices,
+    const uint8_t *__restrict__ d_choices,
     size_t pitch
 );
 
@@ -75,6 +75,6 @@ __global__ void copyCost(
     );
 inline __device__ double cu_round_n(double x);
 
-__device__ size_t calcPenalty(double currentSolution, uint8_t *choices);
+inline __device__ double calcPenalty(double currentSolution, uint8_t *choices);
 
 #endif
