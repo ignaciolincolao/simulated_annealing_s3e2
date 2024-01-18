@@ -154,12 +154,85 @@ double SimulatedAnnealing::runGPU(){
         ///  Envia datos a GPU
         ///////////////////////////////////////////////////
         cudaWrapper->uploadCurrentMemorySolution();
+
+
+        ///////////////////////////////////////////////////
+        /// Upload Current Var
+        ///////////////////////////////////////////////////
+        /*
+        currentVars[0] = sumDist(currentSolution,distMat);
+        currentVars[1] = sumS(currentSolution, alumnosSep, totalVuln);
+        currentVars[2] = sumCostCupo(currentSolution,cupoArray);
+        cudaWrapper->UpdateCurrentVarsHostToGPU(currentVars);
+        */
+
+
         ///////////////////////////////////////////////////
         ///  Ejecuta los kernel
         //////////////////////////////////////////////////
         cudaWrapper->newSolution();
         
 
+        /////////////////////////////////////////////////
+        /// Aplica verificador
+        ////////////////////////////////////////////////
+        /*
+        cudaWrapper->UpdateSelectionDeviceToHost(currentSolution);
+        cudaWrapper->getCurrentSolutionGpuToHost(costCurrentSolution);  
+        cudaDeviceSynchronize();
+        int current_bestThread = -1;
+        int current_bestBlock = -1;
+        double current_bestSolution_compare = std::numeric_limits<double>::max();
+        double viewSolution = std::numeric_limits<double>::max();
+        int* solutionTest = (int*)malloc(saParams.n_students * sizeof(int));
+        int* solutionTest_origin = (int*)malloc(saParams.n_students * sizeof(int));
+        int tidx = 0;
+        std::copy(currentSolution,currentSolution+saParams.n_students,solutionTest_origin);
+        for(size_t blockidx = 0; blockidx < cuParams.n_block; blockidx++){
+            for (size_t threadidx = 0; threadidx < cuParams.n_thread; threadidx++){
+                tidx = blockidx * cuParams.n_thread + threadidx;
+                if(saParams.shuffle_colegios[blockidx%saParams.n_colegios] != solutionTest_origin[saParams.shuffle_student[tidx%saParams.n_students]]){
+                    std::copy(solutionTest_origin,solutionTest_origin+saParams.n_students,solutionTest);
+                    solutionTest[saParams.shuffle_student[tidx%saParams.n_students]]=saParams.shuffle_colegios[blockidx%saParams.n_colegios];
+                    viewSolution = calCosto(solutionTest,distMat,ptr_alpha, alumnosSep, totalVuln, cupoArray);
+                    */
+                    /*
+                    if(tidx == 182){
+                        cout << "aqui" << endl;
+                    }
+                    if(saParams.shuffle_student[tidx%saParams.n_students] == 11907 && saParams.shuffle_colegios[blockidx%saParams.n_colegios] == 69){
+                        cout << "CPU Valor de 11907 y 69 = " << viewSolution << endl;;
+                    }
+                    */
+                    /*
+                    if(viewSolution < current_bestSolution_compare){
+                        current_bestSolution_compare = viewSolution;
+                        // Indice del shuffle
+                        current_bestThread = saParams.shuffle_student[tidx%saParams.n_students];
+                        current_bestBlock = saParams.shuffle_colegios[blockidx%saParams.n_colegios];
+                    }
+
+                }
+            }
+
+        }
+        free(solutionTest);
+        free(solutionTest_origin);
+        if(current_bestThread != cuParams.selectThread || current_bestBlock != cuParams.selectBlock){
+            std::cout << std::fixed << std::setprecision(16);
+            cout << "Son distintos!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << endl;
+            cout << "Best Host: " << current_bestSolution_compare << "| Best GPU: " << costCurrentSolution << endl;
+            cout << "student Host: " << current_bestThread << "| student GPU: " << cuParams.selectThread << endl;
+            cout << "col Host: " << current_bestBlock << "| col GPU: " << cuParams.selectBlock << endl;
+            cudaWrapper->newSolutionUpdate(costCurrentSolution,current_bestThread,current_bestBlock);
+            cudaDeviceSynchronize();
+            cout << "cost current solution" << costCurrentSolution << endl;
+            cout << currentVars[0] << endl;
+            cout << currentVars[1] << endl;
+            cout << currentVars[2] << endl;
+            exit(0);
+        }
+        */
     
         ///////////////////////////////////////////////////
         ///  Metodo Nuevo
@@ -481,7 +554,7 @@ double SimulatedAnnealing::calCosto(int *currentSolution, double **distMat, cons
 double SimulatedAnnealing::meanDist(const int *currentSolution, double  **distMat){
     double sumDist=0.0;
     for(int i=0;i<saParams.n_students;i++){
-        sumDist+=round_n(distMat[i][currentSolution[i]]); // distMat[estudiante][escuela]
+        sumDist+=distMat[i][currentSolution[i]]; // distMat[estudiante][escuela]
     }
     //cout << "meanDist: " << sumDist << endl;
     //cout << "Numero de estudiantes: " << saParams.n_students << "  |  Suma de distancias:" << sumDist << "\n";
@@ -491,7 +564,7 @@ double SimulatedAnnealing::meanDist(const int *currentSolution, double  **distMa
 double SimulatedAnnealing::sumDist(const int *currentSolution, double  **distMat){
     double sumDist=0.0;
     for(int i=0;i<saParams.n_students;i++){
-        sumDist+=round_n(distMat[i][currentSolution[i]]); // distMat[estudiante][escuela]
+        sumDist+=distMat[i][currentSolution[i]]; // distMat[estudiante][escuela]
     }
     //cout << "sumDist: " << sumDist << endl;
     //cout << "Numero de estudiantes: " << saParams.n_students << "  |  Suma de distancias:" << sumDist << "\n";
@@ -518,7 +591,7 @@ double SimulatedAnnealing::S(const int *currentSolution,const int *alumnosSep, i
         }
         if(aluNoVulCol>0){
             aluNoVulCol =aluNoVulCol - aluVulCol;
-            totalSesc+=round_n(fabs((aluVulCol/(double)totalVuln)-(aluNoVulCol/(double)(saParams.n_students-totalVuln))));
+            totalSesc+=fabs((aluVulCol/(double)totalVuln)-(aluNoVulCol/(double)(saParams.n_students-totalVuln)));
         }
     }
     return totalSesc/2.0;
@@ -539,7 +612,7 @@ double SimulatedAnnealing::sumS(const int *currentSolution,const int *alumnosSep
         }
         if(aluNoVulCol>0){
             aluNoVulCol =aluNoVulCol - aluVulCol;
-            totalSesc+=round_n(fabs((aluVulCol/(double)totalVuln)-(aluNoVulCol/(double)(saParams.n_students-totalVuln))));
+            totalSesc+=fabs((aluVulCol/(double)totalVuln)-(aluNoVulCol/(double)(saParams.n_students-totalVuln)));
         }
     }
     return totalSesc;
@@ -561,7 +634,7 @@ double SimulatedAnnealing::costCupo(int *currentSolution,int *cupoArray){
                 totalAluCol++;
             }
         }
-        totalcostCupo+=round_n((double)totalAluCol*fabs(((double)cupoArray[j]-totalAluCol)/pow(((double)cupoArray[j]/2),2)));
+        totalcostCupo+=(double)totalAluCol*fabs(((double)cupoArray[j]-totalAluCol)/pow(((double)cupoArray[j]/2),2));
     }
     return totalcostCupo/saParams.n_colegios;
 }
@@ -578,7 +651,7 @@ double SimulatedAnnealing::sumCostCupo(int* currentSolution,int *cupoArray){
                 totalAluCol++;
             }
         }
-        totalcostCupo+= round_n((double)totalAluCol*fabs(((double)cupoArray[j]-totalAluCol)/pow(((double)cupoArray[j]/2),2)));
+        totalcostCupo+= (double)totalAluCol*fabs(((double)cupoArray[j]-totalAluCol)/pow(((double)cupoArray[j]/2),2));
     }
     return totalcostCupo;
 }

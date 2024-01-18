@@ -290,6 +290,24 @@ void CUDAWrapper::newSolutionUpdate(double& costCurrentSolution)
         synchronizeBucle();
 }
 
+void CUDAWrapper::newSolutionUpdate(double& costCurrentSolution,int aluchange, int colchange)
+{
+        calculateSolution<<<1,1>>>(d_array_current_Solution,
+        aluchange,
+        colchange,
+        d_cupoArray,
+        d_alumnosSep,
+        d_aluxcol,
+        d_aluVulxCol,
+        d_currentSolution,
+        d_distMat,
+        pitch,
+        d_currentVars,
+        d_costCurrentSolution);
+        getCurrentSolutionGpuToHost(costCurrentSolution);
+        synchronizeBucle();
+}
+
 void CUDAWrapper::getCurrentSolutionGpuToHost(double& costCurrentSolution)
 {
     cudaMemcpy(&costCurrentSolution,&d_array_current_Solution[0], sizeof(double),cudaMemcpyDeviceToHost);
@@ -318,6 +336,11 @@ void CUDAWrapper::copySolutionToHost(int* bestSolution, int* previousSolution){
     CUDAWrapper::synchronizeBucle();
 }
 
+void CUDAWrapper::UpdateSelectionDeviceToHost(int*&  currentSolution){
+    cudaMemcpy(&cuParams.selectThread,&d_array_current_Solution_alu[0], sizeof(int),cudaMemcpyDeviceToHost);
+    cudaMemcpy(&cuParams.selectBlock, d_array_current_Solution_col, sizeof(int),cudaMemcpyDeviceToHost);
+    cudaMemcpy(currentSolution,d_currentSolution, saParams.n_students * sizeof(int), cudaMemcpyDeviceToHost);
+}
 /*
 void CUDAWrapper::mallocHostInit(double* currentVars,double *previousVars,double* bestVars){
 
@@ -347,4 +370,15 @@ void CUDAWrapper::mallocHost(
     cudaMallocHost((void**)&bestVars,3 * sizeof(double)); 
     errSync  = cudaGetLastError();
     errAsync = cudaDeviceSynchronize();
+}
+
+void CUDAWrapper::UpdateCurrentVarsHostToGPU(double*& currentVars){
+    cudaMemcpy(d_currentVars, currentVars, 3 * sizeof(double),cudaMemcpyHostToDevice);
+    errSync  = cudaGetLastError();
+    errAsync = cudaDeviceSynchronize();
+    
+    if (errSync != cudaSuccess) 
+        printf("0 Sync kernel error: %s\n", cudaGetErrorString(errSync));
+    if (errAsync != cudaSuccess)
+        printf("0 Async kernel error: %s\n", cudaGetErrorString(errAsync));
 }

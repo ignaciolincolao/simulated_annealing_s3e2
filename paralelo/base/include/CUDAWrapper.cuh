@@ -52,12 +52,13 @@ class CUDAWrapper{
         int *d_alumnosSep; // Array que contendra a los estudiantes vulnerables
         int *d_cupoArray;
         double *d_array_current_Solution;
-        int *d_array_current_Solution_alu;
-        int *d_array_current_Solution_col;
+
         int *d_aluxcol,*d_previousAluxcol;
         int *d_aluVulxCol,*d_previousAluVulxCol;
         int *d_shuffle_students;
         int *d_shuffle_colegios;
+        int *d_array_current_Solution_alu;
+        int *d_array_current_Solution_col;
         double *d_currentVars, *d_bestVars, *d_previousVars;
         double *d_costPreviousSolution, *d_costBestSolution, *d_costCurrentSolution;
         int deviceId;
@@ -117,6 +118,9 @@ class CUDAWrapper{
             double*& currentVars,
             double*& previousVars,
             double*& bestVars);
+        void UpdateSelectionDeviceToHost(int*&  currentSolution);
+        void UpdateCurrentVarsHostToGPU(double*& currentVars);
+        void newSolutionUpdate(double& costCurrentSolution,int aluchange, int colchange);
 };
 
 

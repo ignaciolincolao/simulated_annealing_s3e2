@@ -70,5 +70,18 @@ __global__ void copyCost(
     double *costCurrentSolution,
     double *new_costCurrentSolution
     );
+__global__ void calculateSolution(
+    double *d_array_current_Solution,
+    int aluchange,
+    int colchange,
+    const int* __restrict__ d_cupoArray,
+    const int* __restrict__ d_alumnosSep,
+    int* d_aluxcol,
+    int* d_aluVulxCol,
+    int* d_currentSolution,
+    const double* __restrict__ d_distMat,
+    size_t pitch,
+    double *d_currentVars,
+    double *d_costCurrentSolution);
 inline __device__ double cu_round_n(double x);
 #endif
