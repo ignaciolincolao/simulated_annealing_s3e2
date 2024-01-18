@@ -35,14 +35,14 @@ int main(int argc, char *argv[])
     double alp2 = 30.0;
     double alp3 = 25.0;
     SimulatedParams* saParams = new SimulatedParams{
-        .seed = 123456,
+        .seed = 1574067955,
         .n_students = 0,
         .n_colegios = 0,
         .count_rechaso = 0,
         .count = 0,
         .c_cooling_temperature = 0,
         .c_accepta = 0,
-        .temp = 1.0,
+        .temp = 2830.09,
         .min_temp = 0.0000009,
         .alpha1 = alp1,
         .alpha2 = alp2,
@@ -57,10 +57,10 @@ int main(int argc, char *argv[])
     AcceptanceParams* acParams = new AcceptanceParams{
         .Th = 1.1};
     CoolingParams* csParams = new CoolingParams{
-        .coolingRate = 0.97};
+        .coolingRate = 0.904556};
     LengthParams* ltParams = new LengthParams{
-        .len1 = 1,
-        .len2 = 2,
+        .len1 = 3.03119,
+        .len2 = 8.3714,
         .len3 = 1.0,
         .len4 = 0.999};
     ReheatingParams* rtParams = new ReheatingParams{
@@ -71,7 +71,7 @@ int main(int argc, char *argv[])
         .k_reheating_init = 0};
 
     CUDAParams* cuParams = new CUDAParams{
-        .n_block = 32,
+        .n_block = 64,
         .n_thread = 32,
         .selectThread = 0,
         .selectBlock = 0};
