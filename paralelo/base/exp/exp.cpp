@@ -294,14 +294,15 @@ struct SeedObservation : public stat::StatBase<Params> {
         auto observations = bo.observations().back().transpose();
         auto lZ = afun(bo.observations().back());
 
+
         (*this->_log_file) << bo.total_iterations() << "," 
                            << seed << ",";
         for (auto& sample : samples){
-            (*this->_log_file) << sample << ",";
+            (*this->_log_file) << std::fixed << std::setprecision(15) << sample << ",";
         }
         (*this->_log_file) << lZ << ",";
         for (auto& observation : observations){
-            (*this->_log_file) << observation << ",";
+            (*this->_log_file) << std::defaultfloat << std::setprecision(6) << observation << ",";
         }
         (*this->_log_file) << n_block << ","
                             << n_thread << ","
