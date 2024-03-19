@@ -4,7 +4,7 @@
 #include <iostream>
 #include <sstream>
 #include <string>
-
+#include <math.h>
 #include <algorithm>
 #include <cstdint>
 #include <cstdlib>
@@ -20,6 +20,8 @@
 #include <sys/types.h>
 #include <limbo/limbo.hpp>
 #include <fstream>
+#include <limits>
+
 #include <limbo/kernel/exp.hpp>
 #include <limbo/kernel/squared_exp_ard.hpp>
 #include <limbo/mean/data.hpp>
@@ -34,24 +36,24 @@
 using namespace limbo;
 int seed = 0;
 int n_block_min = 1;
-int n_block_max = 3;
+int n_block_max = 32;
 int n_block_factor = 32;
 int n_block_idX = 4;
 int n_thread_min = 1;
-int n_thread_max = 3;
+int n_thread_max = 32;
 int n_thread_factor = 32;
 int n_thread_idX = 5;
-double temp_min = 100;
-double temp_max = 10000;
+double temp_min = 0.9;//100;
+double temp_max = 100000000//10000;
 int temp_idX = 0;
 double coolingRate_min = 0.9;
-double coolingRate_max = 0.92;
+double coolingRate_max = 0.999;
 int coolingRate_idX = 1;
 float len1_min = 1.f;
-float len1_max = 10.f;
+float len1_max = 100.f;
 int len1_idX = 2;
 float len2_min = 1.f;
-float len2_max = 10.f;
+float len2_max = 100.f;
 int len2_idX = 3;
 int n_block;
 int n_thread;
@@ -59,7 +61,15 @@ double temp;
 double coolingRate;
 float len1;
 float len2;
+/*
+    cuParams->n_block = n_block;//32*int(valRange(1,32,x,4));
+    cuParams->n_thread = n_thread;//32*int(valRange(1,32,x,5));
+    saParams->temp = temp;
+    csParams->coolingRate = coolingRate;//valRange(0.9,0.999,x,1);//valRange(0.9,0.99,x,1);//
+    ltParams->len1 = len1;//valRange(1,100,x,2);////
+    ltParams->len2 = len2;//valRange(1,100,x,3);//valRange(1,10,x,3);//
 
+*/
 
 
 
@@ -76,13 +86,13 @@ struct Params {
         BO_PARAM(int, stats_enabled, true);
     };
     struct stop_maxiterations {
-        BO_PARAM(int, iterations, 5);
+        BO_PARAM(int, iterations, 200);
     };
     struct acqui_ei {
         BO_PARAM(double, jitter, 0.0);
     };
     struct init_randomsampling {
-        BO_PARAM(int, samples, 2);
+        BO_PARAM(int, samples, 10);
     };
     struct kernel : public defaults::kernel {
         BO_PARAM(double, noise, 1e-10);
@@ -177,8 +187,8 @@ Eigen::VectorXd simAnnealing(const Eigen::VectorXd& x)
     /*
     Realiza los cambios de las variables
     */
-    n_block = n_block_factor*int(valRange(n_block_min,n_block_max,x,n_block_idX));
-    n_thread= n_thread_factor*int(valRange(n_thread_min,n_thread_max,x,n_thread_idX));
+    n_block = floor(x[n_block_idX]*6)+5-std::numeric_limits<float>::epsilon();//n_block_factor*int(valRange(n_block_min,n_block_max,x,n_block_idX));
+    n_thread= floor(x[n_thread_idX]*6)+5-std::numeric_limits<float>::epsilon();//n_thread_factor*int(valRange(n_thread_min,n_thread_max,x,n_thread_idX));
     temp= valRange(temp_min,temp_max,x,temp_idX);
     coolingRate= valRange(coolingRate_min,coolingRate_max,x,coolingRate_idX);
     len1= valRange(len1_min,len1_max,x,len1_idX);
@@ -351,9 +361,9 @@ int main()
     
     LinearWeighting<Params> aggregator(10000000);
     boptimizer.optimize(eval_func<Params>(), aggregator);
-    std::cout << "New target!" << std::endl;
-    aggregator = LinearWeighting<Params>(100000000);
-    boptimizer.optimize(eval_func<Params>(), aggregator, false);
+    //std::cout << "New target!" << std::endl;
+    //aggregator = LinearWeighting<Params>(100000000);
+    //boptimizer.optimize(eval_func<Params>(), aggregator, false);
     
     // Do not forget to pass `false` as the last parameter in `optimize`,
 
