@@ -141,7 +141,7 @@ double SimulatedAnnealing::runGPU(){
     /// Comienza a ejecutarse el algoritmo de SA
     ///////////////////////////////////////////////////
     saParams.count++;
-    while(saParams.temp > saParams.min_temp || saParams.count <= 100000){
+    while(saParams.temp > saParams.min_temp){
         ///////////////////////////////////////////////////
         /// Copia Solución Anterior a la actual
         ///////////////////////////////////////////////////

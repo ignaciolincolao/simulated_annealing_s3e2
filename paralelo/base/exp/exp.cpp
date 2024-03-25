@@ -38,25 +38,26 @@ int seed = 0;
 int n_block_min = 1;
 int n_block_max = 32;
 int n_block_factor = 32;
-int n_block_idX = 4;
+int n_block_idX = 3;//int n_block_idX = 4;
 int n_thread_min = 1;
 int n_thread_max = 32;
 int n_thread_factor = 32;
 int n_thread_idX = 5;
-double temp_min = 0.9;//100;
-double temp_max = 100000000//10000;
-int temp_idX = 0;
+double temp_min = 1000;//100;
+double temp_max = 4000;//10000;
+//int temp_idX = 0;
 double coolingRate_min = 0.9;
 double coolingRate_max = 0.999;
-int coolingRate_idX = 1;
+int coolingRate_idX = 0;//int coolingRate_idX = 1;
 float len1_min = 1.f;
 float len1_max = 100.f;
-int len1_idX = 2;
+int len1_idX = 1;//int len1_idX = 2;
 float len2_min = 1.f;
 float len2_max = 100.f;
-int len2_idX = 3;
+int len2_idX = 2;//int len2_idX = 3;
 int n_block;
 int n_thread;
+int it;
 double temp;
 double coolingRate;
 float len1;
@@ -86,7 +87,7 @@ struct Params {
         BO_PARAM(int, stats_enabled, true);
     };
     struct stop_maxiterations {
-        BO_PARAM(int, iterations, 200);
+        BO_PARAM(int, iterations, 10000);
     };
     struct acqui_ei {
         BO_PARAM(double, jitter, 0.0);
@@ -183,13 +184,28 @@ Eigen::VectorXd simAnnealing(const Eigen::VectorXd& x)
         .reheatingmethod = "TR0"
     };
 
+    int block_threads[10][2] = {{16,32},
+                                {32,32},
+                                {16,64},
+                                {64,32},
+                                {32,64},
+                                {16,128},
+                                {85,32},
+                                {64,64},
+                                {32,128},
+                                {16,256}
+                            };
 
     /*
     Realiza los cambios de las variables
     */
-    n_block = floor(x[n_block_idX]*6)+5-std::numeric_limits<float>::epsilon();//n_block_factor*int(valRange(n_block_min,n_block_max,x,n_block_idX));
-    n_thread= floor(x[n_thread_idX]*6)+5-std::numeric_limits<float>::epsilon();//n_thread_factor*int(valRange(n_thread_min,n_thread_max,x,n_thread_idX));
-    temp= valRange(temp_min,temp_max,x,temp_idX);
+    //n_block = pow(2,floor(x[n_block_idX]*7-std::numeric_limits<float>::epsilon()) +1);//n_block_factor*int(valRange(n_block_min,n_block_max,x,n_block_idX));
+    //n_thread= pow(2,floor(x[n_thread_idX]*6-std::numeric_limits<float>::epsilon()) +5);//n_thread_factor*int(valRange(n_thread_min,n_thread_max,x,n_thread_idX));
+    int indice= max(int(floor(x[n_block_idX]*10-std::numeric_limits<float>::epsilon())),0);
+    cout << floor(x[n_block_idX]*10-std::numeric_limits<float>::epsilon()) << endl;
+    n_block = block_threads[indice][0];
+    n_thread = block_threads[indice][1];
+    temp= pow(n_block*n_thread,1.5);
     coolingRate= valRange(coolingRate_min,coolingRate_max,x,coolingRate_idX);
     len1= valRange(len1_min,len1_max,x,len1_idX);
     len2= valRange(len2_min,len2_max,x,len2_idX);
@@ -199,12 +215,19 @@ Eigen::VectorXd simAnnealing(const Eigen::VectorXd& x)
     csParams->coolingRate = coolingRate;//valRange(0.9,0.999,x,1);//valRange(0.9,0.99,x,1);//
     ltParams->len1 = len1;//valRange(1,100,x,2);////
     ltParams->len2 = len2;//valRange(1,100,x,3);//valRange(1,10,x,3);//
-    cout << "valores de x: " << "temp= "<< saParams->temp 
+    cout << "valores de x: " << "temp (No cuenta como x)= "<< saParams->temp 
         <<" | coolingRate= " << csParams->coolingRate 
         << " | len1= " << ltParams->len1
         << " | len2= " << ltParams->len2
         << " | n_block= " << cuParams->n_block
         << " | n_thread= " << cuParams->n_thread
+        << endl;
+
+    cout << "valores de x: "  
+        <<" coolingRate= " << x[coolingRate_idX]
+        << " | len1= " << x[len1_idX]
+        << " | len2= " << x[len2_idX]
+        << " | n_block_thread= " << x[n_block_idX]
         << endl;
 
     SimulatedAnnealing *simulatedAnneling = SimulatedFactory::createSimulatedAnnealing(
@@ -217,11 +240,10 @@ Eigen::VectorXd simAnnealing(const Eigen::VectorXd& x)
             rtParams,
             cuParams,
             mt);
-
     double val = simulatedAnneling->runGPU();
-    Eigen::VectorXd res(2);
+    Eigen::VectorXd res(1);
     res[0] = val;
-    res[1] = simulatedAnneling->saParams.count;
+    it = simulatedAnneling->saParams.count;
     delete simulatedAnneling;
     delete simStruct;
     delete rMgrParams;
@@ -243,7 +265,7 @@ struct LinearWeighting {
 
     double operator()(const Eigen::VectorXd& x) const
     {
-        return -(1*x[0]+(x[1]/_weight));
+        return -(x[0]);
         //return -(1*x[0]+0.000001*x[1]);
     }
     protected:
@@ -253,8 +275,8 @@ struct LinearWeighting {
 
 template <typename Params>
 struct eval_func {
-    BO_PARAM(size_t, dim_in, 6);
-    BO_PARAM(size_t, dim_out, 2);
+    BO_PARAM(size_t, dim_in, 4);
+    BO_PARAM(size_t, dim_out, 1);
 
     eval_func() {}
 
@@ -285,8 +307,6 @@ struct SeedObservation : public stat::StatBase<Params> {
                                 <<  "x1," 
                                 <<  "x2," 
                                 <<  "x3," 
-                                <<  "x4," 
-                                <<  "x5,"
                                 <<  "lz," 
                                 <<  "z,"
                                 <<  "it,"
@@ -314,7 +334,8 @@ struct SeedObservation : public stat::StatBase<Params> {
         for (auto& observation : observations){
             (*this->_log_file) << std::defaultfloat << std::setprecision(6) << observation << ",";
         }
-        (*this->_log_file) << n_block << ","
+        (*this->_log_file)  << it << ","
+                            << n_block << ","
                             << n_thread << ","
                             << temp << ","
                             << coolingRate << ","
