@@ -132,7 +132,7 @@ __global__ void newSolution_kernel(
     int lane = threadIdx.x % 32;
     #define FULL_MASK 0xffffffff
     // Encuentra minimo a nivel de warp
-    for (int salto=32/2; salto>0; salto>>=1){ // salto>>=1 es igual a salto/2 
+    for (int salto=16; salto>0; salto>>=1){ // salto>>=1 es igual a salto/2 
         /*
         double neightbour_solutions[2] = {cost_solution, __shfl_down_sync(FULL_MASK,cost_solution,salto)};
         int cols_solutions[2] = {col_solution, __shfl_down_sync(FULL_MASK,col_solution,salto)};
@@ -175,7 +175,7 @@ __global__ void newSolution_kernel(
         col_solution = (myID < blockDim.x/32)?solutions_col[lane]:-1;
         alu_solution = (myID < blockDim.x/32)?solutions_alu[lane]:-1;
         //printf("laneID= %d blockIdx.x= %d | %.16lf %d %d\n",lane, blockIdx.x, cost_solution, alu_solution, col_solution);
-        for(int salto=32/2; salto >0; salto>>=1){
+        for(int salto=16; salto >0; salto>>=1){
             /*
             double neightbour_solutions[2] = {cost_solution, __shfl_down_sync(FULL_MASK,cost_solution,salto)};
             int cols_solutions[2] = {col_solution, __shfl_down_sync(FULL_MASK,col_solution,salto)};
@@ -219,7 +219,6 @@ __global__ void reduce_block_kernel(
     int* solutions_col = (int*)&solutions[blockDim.x/32+1];
     int* solutions_alu =  (int*)&solutions_col[blockDim.x/32+1];
     int myID = threadIdx.x;
-    int end = blockDim.x-1;
 
 
     double cost_solution = d_array_current_Solution[myID];
@@ -229,30 +228,8 @@ __global__ void reduce_block_kernel(
     int lane = threadIdx.x % 32;
     #define FULL_MASK 0xffffffff
     
-    if(myID==0){
-        if(d_array_current_Solution[end] < cost_solution){
-            cost_solution = d_array_current_Solution[end];
-            col_solution = d_array_current_Solution_col[end];
-            alu_solution = d_array_current_Solution_alu[end];
-        }
-    }
+    for(int salto=16; salto>0; salto>>=1){ // salto>>=1 es igual a salto/2 
 
-
-
-
-    
-    // Encuentra minimo a nivel de warp
-    //printf("%.16lf %d %d\n", cost_solution,col_solution,alu_solution);
-    for(int salto=32/2; salto>0; salto>>=1){ // salto>>=1 es igual a salto/2 
-        /*
-        double neightbour_solutions[2] = {cost_solution, __shfl_down_sync(FULL_MASK,cost_solution,salto)};
-        int cols_solutions[2] = {col_solution, __shfl_down_sync(FULL_MASK,col_solution,salto)};
-        int alus_solutions[2] = {alu_solution, __shfl_down_sync(FULL_MASK,alu_solution,salto)};
-        int pos = (neightbour_solutions[1] < neightbour_solutions[0]);
-        cost_solution = neightbour_solutions[pos];
-        col_solution = cols_solutions[pos];
-        alu_solution = alus_solutions[pos];
-        */
         
         double neighbour_solution = __shfl_down_sync(FULL_MASK,cost_solution,salto);
         int co = __shfl_down_sync(FULL_MASK,col_solution,salto);
@@ -262,8 +239,6 @@ __global__ void reduce_block_kernel(
             col_solution = co;
             alu_solution = al;
         }
-        
-   
 
     }
     if(lane==0){
@@ -275,30 +250,15 @@ __global__ void reduce_block_kernel(
 
 
     __syncthreads();
-    // Encuentra el minimo a nivel de bloque
+    // Encuentra entre los warps
     if(warpID == 0){
-        /*
-        int select= myID < blockDim.x/32;
-        double cost_solution_select[2] = {9999.9,solutions[lane]};
 
-        cost_solution = cost_solution_select[select];
-        col_solution = solutions_col[lane];
-        alu_solution = solutions_alu[lane];
-        */
         cost_solution = (myID < blockDim.x/32)?solutions[lane]:(double)(0xffffffffffffffff);
         col_solution = (myID < blockDim.x/32)?solutions_col[lane]:-1;
         alu_solution = (myID < blockDim.x/32)?solutions_alu[lane]:-1;
         //printf("laneID= %d %.16lf %d %d\n",lane, cost_solution, alu_solution, col_solution);
-        for(int salto=32/2; salto >0; salto>>=1){
-            /*
-            double neightbour_solutions[2] = {cost_solution, __shfl_down_sync(FULL_MASK,cost_solution,salto)};
-            int cols_solutions[2] = {col_solution, __shfl_down_sync(FULL_MASK,col_solution,salto)};
-            int alus_solutions[2] = {alu_solution, __shfl_down_sync(FULL_MASK,alu_solution,salto)};
-            int pos = (neightbour_solutions[1] < neightbour_solutions[0]);
-            cost_solution = neightbour_solutions[pos];
-            col_solution = cols_solutions[pos];
-            alu_solution = alus_solutions[pos];
-            */
+        for(int salto=16; salto >0; salto>>=1){
+
             double neighbour_solution = __shfl_down_sync(FULL_MASK,cost_solution,salto);
             int co = __shfl_down_sync(FULL_MASK,col_solution,salto);
             int al = __shfl_down_sync(FULL_MASK,alu_solution,salto);

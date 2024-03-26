@@ -42,8 +42,8 @@ int main(int argc, char *argv[])
         .count = 0,
         .c_cooling_temperature = 0,
         .c_accepta = 0,
-        .temp = 2830.09,
-        .min_temp = 0.0000009,
+        .temp = 26214400000000.0,
+        .min_temp = 0.0000000009,
         .alpha1 = alp1,
         .alpha2 = alp2,
         .alpha3 = alp3,
@@ -71,7 +71,7 @@ int main(int argc, char *argv[])
         .k_reheating_init = 0};
 
     CUDAParams* cuParams = new CUDAParams{
-        .n_block = 64,
+        .n_block = 128,
         .n_thread = 32,
         .selectThread = 0,
         .selectBlock = 0};

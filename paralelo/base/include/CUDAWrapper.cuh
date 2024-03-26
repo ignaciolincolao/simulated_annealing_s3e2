@@ -103,6 +103,8 @@ class CUDAWrapper{
             double& costCurrentSolution
             );
         void getCurrentSolutionGpuToHost(double& costCurrentSolution);
+        void getAllCurrentSolutionGpuToHost(double& costCurrentSolution);
+
         void synchronizeBucle();
         void copySolutionToHost(
             int* bestSolution,
@@ -121,6 +123,7 @@ class CUDAWrapper{
         void UpdateSelectionDeviceToHost(int*&  currentSolution);
         void UpdateCurrentVarsHostToGPU(double*& currentVars);
         void newSolutionUpdate(double& costCurrentSolution,int aluchange, int colchange);
+        std::tuple<int,int> getMovementDeviceToHost();
 };
 
 

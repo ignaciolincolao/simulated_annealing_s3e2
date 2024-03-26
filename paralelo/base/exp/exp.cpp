@@ -50,10 +50,10 @@ double coolingRate_min = 0.9;
 double coolingRate_max = 0.999;
 int coolingRate_idX = 0;//int coolingRate_idX = 1;
 float len1_min = 1.f;
-float len1_max = 100.f;
+float len1_max = 10.f;
 int len1_idX = 1;//int len1_idX = 2;
 float len2_min = 1.f;
-float len2_max = 100.f;
+float len2_max = 10.f;
 int len2_idX = 2;//int len2_idX = 3;
 int n_block;
 int n_thread;
@@ -184,16 +184,20 @@ Eigen::VectorXd simAnnealing(const Eigen::VectorXd& x)
         .reheatingmethod = "TR0"
     };
 
-    int block_threads[10][2] = {{16,32},
+    int block_threads[13][2] = {
+                                {1,32},
+                                {1,64},
+                                {1,128},
+                                {1,256},
+                                {1,512},
+                                {1,1024},
                                 {32,32},
-                                {16,64},
-                                {64,32},
                                 {32,64},
-                                {16,128},
-                                {85,32},
-                                {64,64},
+                                {64,32},
+                                {96,32},
                                 {32,128},
-                                {16,256}
+                                {64,64},
+                                {128,32}
                             };
 
     /*
@@ -201,8 +205,8 @@ Eigen::VectorXd simAnnealing(const Eigen::VectorXd& x)
     */
     //n_block = pow(2,floor(x[n_block_idX]*7-std::numeric_limits<float>::epsilon()) +1);//n_block_factor*int(valRange(n_block_min,n_block_max,x,n_block_idX));
     //n_thread= pow(2,floor(x[n_thread_idX]*6-std::numeric_limits<float>::epsilon()) +5);//n_thread_factor*int(valRange(n_thread_min,n_thread_max,x,n_thread_idX));
-    int indice= max(int(floor(x[n_block_idX]*10-std::numeric_limits<float>::epsilon())),0);
-    cout << floor(x[n_block_idX]*10-std::numeric_limits<float>::epsilon()) << endl;
+    int indice= max(int(floor(x[n_block_idX]*13-std::numeric_limits<float>::epsilon())),0);
+    //cout << floor(1.00*13-std::numeric_limits<float>::epsilon()) << endl;
     n_block = block_threads[indice][0];
     n_thread = block_threads[indice][1];
     temp= pow(n_block*n_thread,1.5);

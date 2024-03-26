@@ -236,10 +236,13 @@ void CUDAWrapper::newSolution(){
     printf("3 Sync kernel error: %s\n", cudaGetErrorString(errSync));
     if (errAsync != cudaSuccess)
     printf("3 Async kernel error: %s\n", cudaGetErrorString(errAsync));
-    reduce_block_kernel<<<1,cuParams.n_block,
-    (cuParams.n_block/nWarp+1)* sizeof(double)+ (cuParams.n_block/nWarp+1)* sizeof(int)+ (cuParams.n_block/nWarp+1)* sizeof(int)>>>(d_array_current_Solution,
+    if(cuParams.n_block > 1){
+            reduce_block_kernel<<<1,cuParams.n_block,
+            (cuParams.n_block/nWarp+1)* sizeof(double)+ (cuParams.n_block/nWarp+1)* sizeof(int)+ (cuParams.n_block/nWarp+1)* sizeof(int)>>>(d_array_current_Solution,
             d_array_current_Solution_alu,
             d_array_current_Solution_col);
+    }
+
     errSync  = cudaGetLastError();
     errAsync = cudaDeviceSynchronize();
     if (errSync != cudaSuccess) 
@@ -336,6 +339,14 @@ void CUDAWrapper::copySolutionToHost(int* bestSolution, int* previousSolution){
     CUDAWrapper::synchronizeBucle();
 }
 
+std::tuple<int,int> CUDAWrapper::getMovementDeviceToHost(){
+    int alu;
+    int col;
+    cudaMemcpy(&alu,&d_array_current_Solution_alu[0], sizeof(int),cudaMemcpyDeviceToHost);
+    cudaMemcpy(&col, d_array_current_Solution_col, sizeof(int),cudaMemcpyDeviceToHost);
+    return std::make_tuple(alu,col);
+}
+
 void CUDAWrapper::UpdateSelectionDeviceToHost(int*&  currentSolution){
     cudaMemcpy(&cuParams.selectThread,&d_array_current_Solution_alu[0], sizeof(int),cudaMemcpyDeviceToHost);
     cudaMemcpy(&cuParams.selectBlock, d_array_current_Solution_col, sizeof(int),cudaMemcpyDeviceToHost);
@@ -382,3 +393,5 @@ void CUDAWrapper::UpdateCurrentVarsHostToGPU(double*& currentVars){
     if (errAsync != cudaSuccess)
         printf("0 Async kernel error: %s\n", cudaGetErrorString(errAsync));
 }
+
+

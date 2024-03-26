@@ -238,18 +238,22 @@ double SimulatedAnnealing::runGPU(){
         ///////////////////////////////////////////////////
         ///  Metodo Nuevo
         //////////////////////////////////////////////////
-        cudaWrapper->getCurrentSolutionGpuToHost(costCurrentSolution);  
+        
+        cudaWrapper->getCurrentSolutionGpuToHost(costCurrentSolution);
+        //cout << "Costo de la nueva solución: "<<costCurrentSolution << " "<< saParams.temp << " " << (costCurrentSolution >= costPreviousSolution) << endl;   
+        
         if(costCurrentSolution >= costPreviousSolution){
             if(acceptanceCriterionApply() == 1){
                 cudaWrapper->newSolutionRandomSelection(dist,
                     dist2);
             }
         }
+        
         ///////////////////////////////////////////////////
         ///  Actualiza la nueva solución en la GPU
         //////////////////////////////////////////////////
         cudaWrapper->newSolutionUpdate(costCurrentSolution);
-            
+     
         ///////////////////////////////////////////////////
         ///  Verifica Error
         //////////////////////////////////////////////////
@@ -265,6 +269,13 @@ double SimulatedAnnealing::runGPU(){
             exit(1);
         }
         
+#if SAVE_DATA
+        auto move = cudaWrapper->getMovementDeviceToHost();
+        recordManager->vector_historyCostSolution.emplace_back(costCurrentSolution);
+        recordManager->vector_historyTemp.emplace_back(saParams.temp);
+        recordManager->vector_historystu.emplace_back(std::get<0>(move));
+        recordManager->vector_historycol.emplace_back(std::get<1>(move));
+#endif
         
         ///////////////////////////////////////////////////
         /// 
@@ -293,19 +304,30 @@ double SimulatedAnnealing::runGPU(){
             recordManager->vector_costoCupo.emplace_back(costCupo(bestSolution, cupoArray));
             recordManager->vector_temp.emplace_back(saParams.temp);
             recordManager->vector_count.emplace_back(saParams.count);
+            
 #endif
+#if SAVE_DATA
+    recordManager->vector_historyAcceptSolution.emplace_back(true);
+#endif
+
         }
         else {
             if(acceptanceCriterion->apply(costPreviousSolution,costCurrentSolution,dist_accepta ) == 1) {
 
                 cudaWrapper->AcceptanceSolution();
                 costPreviousSolution = costCurrentSolution;
-
+#if SAVE_DATA
+                recordManager->vector_historyAcceptSolution.emplace_back(true);
+#endif
                 saParams.count_rechaso = 0;
                 saParams.c_accepta++;
             }
             else {
                 saParams.count_rechaso++;
+
+#if SAVE_DATA
+                recordManager->vector_historyAcceptSolution.emplace_back(false);
+#endif
                 
             }
         }
@@ -314,7 +336,7 @@ double SimulatedAnnealing::runGPU(){
             coolingScheme->apply();
         }
         reheatingMethod->apply();
-        
+
 
         
         //cout << costCurrentSolution << costPreviousSolution << "| |" << saParams.temp << "| |" << saParams.count<< endl;
@@ -346,6 +368,7 @@ double SimulatedAnnealing::runGPU(){
     recordManager->openRecordGraphics();
     recordManager->openRecordGraphicsBestSolution();
     recordManager->openRecordRegister();
+    recordManager->openRecordMoveSolution();
 
     recordManager->SaveInfoFinish(costPreviousSolution,
                                   costBestSolution,
@@ -356,6 +379,7 @@ double SimulatedAnnealing::runGPU(){
                                   costCupo(bestSolution, cupoArray));
 
     recordManager->SaveGraphicsFinish();
+    recordManager->AllMovementFinish();
 
     recordManager->SaveGraphicsBestSolution(bestSolution);
     recordManager->SaveInfoRegister(
@@ -385,6 +409,7 @@ double SimulatedAnnealing::runGPU(){
     recordManager->closeRecordGraphics();
     recordManager->closeRecordGraphicsBestSolution();
     recordManager->closeRecordRegister();
+    recordManager->closeRecordMoveSolution();
 #endif
     delete cudaWrapper;
     // cout << "finalizo con :" << costBestSolution << endl;

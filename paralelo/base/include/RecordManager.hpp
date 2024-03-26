@@ -22,7 +22,8 @@ private:
     std::ofstream infoRegister;
     std::ofstream infoGraphics;
     std::ofstream infoGraphicsBestSolution;
-    std::array<std::string, 4> path_names;
+    std::ofstream infoMove;
+    std::array<std::string, 5> path_names;
     RecordParams &rMgrParams;
     SimulatedParams &saParams;
 
@@ -43,8 +44,8 @@ public:
     std::vector<double> vector_historySegregation;
     std::vector<double> vector_historycostoCupo;
     std::vector<bool> vector_historyAcceptSolution;
-    std::vector<int> vector_historyAsign;
-    std::vector<std::tuple<int, int>> vector_historyMove;
+    std::vector<int> vector_historystu;
+    std::vector<int> vector_historycol;
 
 public:
     RecordManager(SimulatedParams &saParams_, RecordParams &params_);
@@ -55,11 +56,13 @@ public:
     void openRecordRegister();
     void openRecordGraphics();
     void openRecordGraphicsBestSolution();
+    void openRecordMoveSolution();
 
     void closeRecordInfo();
     void closeRecordRegister();
     void closeRecordGraphics();
     void closeRecordGraphicsBestSolution();
+    void closeRecordMoveSolution();
 
     void SaveInfoInit(double costBestSolution,
                       double meanDist,
@@ -102,6 +105,8 @@ public:
                           double costCurrentSolution);
 
     void SaveGraphicsFinish();
+    void AllGraphicsFinish();
+    void AllMovementFinish();
 
     void SaveGraphicsBestSolution(int *solution);
 
