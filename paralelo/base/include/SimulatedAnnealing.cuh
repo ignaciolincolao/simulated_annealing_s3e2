@@ -43,6 +43,8 @@ using std::uniform_int_distribution;
 using std::uniform_real_distribution;
 
 
+
+
 class SimulatedAnnealing {
 
 private:

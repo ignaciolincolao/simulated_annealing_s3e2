@@ -2,6 +2,7 @@
 #define CUDA_WRAPPER_CUH
 
 #include <iostream>
+#include <tuple>
 #include <cmath>
 #include <ctime>
 #include <cstdlib>

@@ -17,7 +17,6 @@ CUDAWrapper::CUDAWrapper(CUDAParams& cuParams,SimulatedParams& saParams, mt19937
 {
     cudaDeviceProp deviceProp;
     cudaGetDevice(&deviceId);
-    
     cudaDeviceGetAttribute(&numberOfSMs, cudaDevAttrMultiProcessorCount, deviceId); // Calcula el numero de SMstream 
     cudaGetDeviceProperties(&deviceProp, 0);
     threadsPerBlock = 256;
@@ -27,7 +26,6 @@ CUDAWrapper::CUDAWrapper(CUDAParams& cuParams,SimulatedParams& saParams, mt19937
     for (int i = 0; i < NUM_STREAMS; ++i) { cudaStreamCreate(&streams[i]); }
     cudaEventCreate(&start_cuda);
     cudaEventCreate(&stop_cuda);
-
 }
 CUDAWrapper::~CUDAWrapper(){
     
@@ -344,6 +342,7 @@ std::tuple<int,int> CUDAWrapper::getMovementDeviceToHost(){
     int col;
     cudaMemcpy(&alu,&d_array_current_Solution_alu[0], sizeof(int),cudaMemcpyDeviceToHost);
     cudaMemcpy(&col, d_array_current_Solution_col, sizeof(int),cudaMemcpyDeviceToHost);
+    CUDAWrapper::synchronizeBucle();
     return std::make_tuple(alu,col);
 }
 

@@ -3,9 +3,19 @@
 
 #include <iostream>
 #include <stdio.h>
-#include <cuda.h>
+#include <cuda_runtime.h>
 
 using std::size_t;
+
+struct DataResult {
+    double costSolution; 
+    int col;
+    int stu;
+
+    __host__ __device__ DataResult() : costSolution(0), col(-1), stu(-1) {}
+   __host__ __device__ DataResult(double val, int c, int s) : costSolution(val), col(c), stu(s) {}
+};
+
 
 extern __constant__ double d_alpha[3];
 extern __constant__ int d_n_students;
@@ -15,6 +25,22 @@ extern __constant__ int d_totalVuln;
 
 
 __global__ void newSolution_kernel(
+    double *d_array_current_Solution,
+    int *d_array_current_Solution_alu,
+    int *d_array_current_Solution_col,
+    const int* __restrict__ d_cupoArray,
+    const int* __restrict__ d_alumnosSep,
+    const int* __restrict__ d_aluxcol,
+    const int* __restrict__ d_aluVulxCol,
+    const int* __restrict__ d_currentSolution,
+    const double* __restrict__ d_distMat,
+    const int* __restrict__ d_shuffle_students,
+    const int* __restrict__ d_shuffle_colegios,
+    const double* __restrict__ d_currentVars,
+    size_t pitch);
+
+
+__global__ void all_solution_kernel(
     double *d_array_current_Solution,
     int *d_array_current_Solution_alu,
     int *d_array_current_Solution_col,
