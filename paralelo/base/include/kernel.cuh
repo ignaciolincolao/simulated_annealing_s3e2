@@ -4,17 +4,9 @@
 #include <iostream>
 #include <stdio.h>
 #include <cuda_runtime.h>
+#include <structData.cuh>
 
 using std::size_t;
-
-struct DataResult {
-    double costSolution; 
-    int col;
-    int stu;
-
-    __host__ __device__ DataResult() : costSolution(0), col(-1), stu(-1) {}
-   __host__ __device__ DataResult(double val, int c, int s) : costSolution(val), col(c), stu(s) {}
-};
 
 
 extern __constant__ double d_alpha[3];
@@ -25,9 +17,7 @@ extern __constant__ int d_totalVuln;
 
 
 __global__ void newSolution_kernel(
-    double *d_array_current_Solution,
-    int *d_array_current_Solution_alu,
-    int *d_array_current_Solution_col,
+    DataResult *d_array_current_Solution,
     const int* __restrict__ d_cupoArray,
     const int* __restrict__ d_alumnosSep,
     const int* __restrict__ d_aluxcol,
@@ -41,9 +31,7 @@ __global__ void newSolution_kernel(
 
 
 __global__ void all_solution_kernel(
-    double *d_array_current_Solution,
-    int *d_array_current_Solution_alu,
-    int *d_array_current_Solution_col,
+    DataResult *d_array_current_Solution,
     const int* __restrict__ d_cupoArray,
     const int* __restrict__ d_alumnosSep,
     const int* __restrict__ d_aluxcol,
@@ -55,20 +43,8 @@ __global__ void all_solution_kernel(
     const double* __restrict__ d_currentVars,
     size_t pitch);
 
-__global__ void reduce_block_kernel(
-    double *d_array_current_Solution,
-    int *d_array_current_Solution_alu,
-    int *d_array_current_Solution_col);
-
-__global__ void reduce_block_max(
-    double *d_array_current_Solution,
-    int *d_array_current_Solution_alu,
-    int *d_array_current_Solution_col);
-
 __global__ void calculateSolution(
-    double *d_array_current_Solution,
-    int *d_array_current_Solution_alu,
-    int *d_array_current_Solution_col,
+    DataResult *d_array_current_Solution,
     const int* __restrict__ d_cupoArray,
     const int* __restrict__ d_alumnosSep,
     int* d_aluxcol,
@@ -97,9 +73,7 @@ __global__ void copyCost(
     double *new_costCurrentSolution
     );
 __global__ void calculateSolution(
-    double *d_array_current_Solution,
-    int aluchange,
-    int colchange,
+    DataResult *d_array_current_Solution,
     const int* __restrict__ d_cupoArray,
     const int* __restrict__ d_alumnosSep,
     int* d_aluxcol,

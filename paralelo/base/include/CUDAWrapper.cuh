@@ -18,7 +18,11 @@
 #include <cuda_runtime.h>
 #include <utils/SAParameters.hpp>
 #include <structure/AcceptanceCriterion/AcceptanceCriterion.hpp>
-
+#include <kernel.cuh>
+#include <thrust/device_vector.h>
+#include <thrust/host_vector.h>
+#include <thrust/sort.h>
+#include <structData.cuh>
 
 using std::string;
 using std::stof;
@@ -52,14 +56,12 @@ class CUDAWrapper{
         int *d_currentSolution, *d_bestSolution, *d_previousSolution;
         int *d_alumnosSep; // Array que contendra a los estudiantes vulnerables
         int *d_cupoArray;
-        double *d_array_current_Solution;
+        DataResult *d_array_current_Solution;
 
         int *d_aluxcol,*d_previousAluxcol;
         int *d_aluVulxCol,*d_previousAluVulxCol;
         int *d_shuffle_students;
         int *d_shuffle_colegios;
-        int *d_array_current_Solution_alu;
-        int *d_array_current_Solution_col;
         double *d_currentVars, *d_bestVars, *d_previousVars;
         double *d_costPreviousSolution, *d_costBestSolution, *d_costCurrentSolution;
         int deviceId;
@@ -121,10 +123,11 @@ class CUDAWrapper{
             double*& currentVars,
             double*& previousVars,
             double*& bestVars);
-        void UpdateSelectionDeviceToHost(int*&  currentSolution);
+        //void UpdateSelectionDeviceToHost(int*&  currentSolution);
         void UpdateCurrentVarsHostToGPU(double*& currentVars);
-        void newSolutionUpdate(double& costCurrentSolution,int aluchange, int colchange);
+        //void newSolutionUpdate(double& costCurrentSolution,int aluchange, int colchange);
         std::tuple<int,int> getMovementDeviceToHost();
+        void sortSolutions();
 };
 
 

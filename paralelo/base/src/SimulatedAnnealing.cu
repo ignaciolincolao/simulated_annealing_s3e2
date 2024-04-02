@@ -71,25 +71,7 @@ SimulatedAnnealing::~SimulatedAnnealing(){
     cudaFreeHost(saParams.shuffle_student);
     cudaFreeHost(saParams.shuffle_colegios);
 }   
-/*
-static std::mutex addInfoMutex;
 
-static void addInfoToSave(RecordManager *recordManager,
-                          double costCurrentSolution,
-                          double meanDist,
-                          double S,
-                          double costCupo,
-                          SimulatedParams *saParams)
-{
-    std::lock_guard<std::mutex> lock(addInfoMutex);
-    recordManager->vector_costCurrentSolution.push_back(costCurrentSolution);
-    recordManager->vector_meanDist.push_back(meanDist);
-    recordManager->vector_segregation.push_back(S);
-    recordManager->vector_costoCupo.push_back(costCupo);
-    recordManager->vector_temp.push_back(saParams->temp);
-    recordManager->vector_count.push_back(saParams->count);
-}
-*/
 double SimulatedAnnealing::runGPU(){
     CUDAWrapper* cudaWrapper = new CUDAWrapper(cuParams, saParams, mt);
     // cout << "test" << endl;
@@ -136,6 +118,7 @@ double SimulatedAnnealing::runGPU(){
     ///////////////////////////////////////////////////
     /// Inicio el contador de tiempo antes de iniciar el algortimo
     ///////////////////////////////////////////////////
+
     auto start = std::chrono::high_resolution_clock::now();
     ///////////////////////////////////////////////////
     /// Comienza a ejecutarse el algoritmo de SA
@@ -156,104 +139,19 @@ double SimulatedAnnealing::runGPU(){
         ///////////////////////////////////////////////////
         cudaWrapper->uploadCurrentMemorySolution();
 
-
-        ///////////////////////////////////////////////////
-        /// Upload Current Var
-        ///////////////////////////////////////////////////
-        /*
-        currentVars[0] = sumDist(currentSolution,distMat);
-        currentVars[1] = sumS(currentSolution, alumnosSep, totalVuln);
-        currentVars[2] = sumCostCupo(currentSolution,cupoArray);
-        cudaWrapper->UpdateCurrentVarsHostToGPU(currentVars);
-        */
-
-
         ///////////////////////////////////////////////////
         ///  Ejecuta los kernel
         //////////////////////////////////////////////////
         cudaWrapper->newSolution();
+
+        cudaWrapper->sortSolutions();
+
         
-
-        /////////////////////////////////////////////////
-        /// Aplica verificador
-        ////////////////////////////////////////////////
-        /*
-        cudaWrapper->UpdateSelectionDeviceToHost(currentSolution);
-        cudaWrapper->getCurrentSolutionGpuToHost(costCurrentSolution);  
-        cudaDeviceSynchronize();
-        int current_bestThread = -1;
-        int current_bestBlock = -1;
-        double current_bestSolution_compare = std::numeric_limits<double>::max();
-        double viewSolution = std::numeric_limits<double>::max();
-        int* solutionTest = (int*)malloc(saParams.n_students * sizeof(int));
-        int* solutionTest_origin = (int*)malloc(saParams.n_students * sizeof(int));
-        int tidx = 0;
-        std::copy(currentSolution,currentSolution+saParams.n_students,solutionTest_origin);
-        for(size_t blockidx = 0; blockidx < cuParams.n_block; blockidx++){
-            for (size_t threadidx = 0; threadidx < cuParams.n_thread; threadidx++){
-                tidx = blockidx * cuParams.n_thread + threadidx;
-                if(saParams.shuffle_colegios[blockidx%saParams.n_colegios] != solutionTest_origin[saParams.shuffle_student[tidx%saParams.n_students]]){
-                    std::copy(solutionTest_origin,solutionTest_origin+saParams.n_students,solutionTest);
-                    solutionTest[saParams.shuffle_student[tidx%saParams.n_students]]=saParams.shuffle_colegios[blockidx%saParams.n_colegios];
-                    viewSolution = calCosto(solutionTest,distMat,ptr_alpha, alumnosSep, totalVuln, cupoArray);
-                    */
-                    /*
-                    if(tidx == 182){
-                        cout << "aqui" << endl;
-                    }
-                    if(saParams.shuffle_student[tidx%saParams.n_students] == 11907 && saParams.shuffle_colegios[blockidx%saParams.n_colegios] == 69){
-                        cout << "CPU Valor de 11907 y 69 = " << viewSolution << endl;;
-                    }
-                    */
-                    /*
-                    if(viewSolution < current_bestSolution_compare){
-                        current_bestSolution_compare = viewSolution;
-                        // Indice del shuffle
-                        current_bestThread = saParams.shuffle_student[tidx%saParams.n_students];
-                        current_bestBlock = saParams.shuffle_colegios[blockidx%saParams.n_colegios];
-                    }
-
-                }
-            }
-
-        }
-        free(solutionTest);
-        free(solutionTest_origin);
-        if(current_bestThread != cuParams.selectThread || current_bestBlock != cuParams.selectBlock){
-            std::cout << std::fixed << std::setprecision(16);
-            cout << "Son distintos!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << endl;
-            cout << "Best Host: " << current_bestSolution_compare << "| Best GPU: " << costCurrentSolution << endl;
-            cout << "student Host: " << current_bestThread << "| student GPU: " << cuParams.selectThread << endl;
-            cout << "col Host: " << current_bestBlock << "| col GPU: " << cuParams.selectBlock << endl;
-            cudaWrapper->newSolutionUpdate(costCurrentSolution,current_bestThread,current_bestBlock);
-            cudaDeviceSynchronize();
-            cout << "cost current solution" << costCurrentSolution << endl;
-            cout << currentVars[0] << endl;
-            cout << currentVars[1] << endl;
-            cout << currentVars[2] << endl;
-            exit(0);
-        }
-        */
     
-        ///////////////////////////////////////////////////
-        ///  Metodo Nuevo
-        //////////////////////////////////////////////////
-        
-        cudaWrapper->getCurrentSolutionGpuToHost(costCurrentSolution);
-        //cout << "Costo de la nueva solución: "<<costCurrentSolution << " "<< saParams.temp << " " << (costCurrentSolution >= costPreviousSolution) << endl;   
-        
-        if(costCurrentSolution >= costPreviousSolution){
-            if(acceptanceCriterionApply() == 1){
-                cudaWrapper->newSolutionRandomSelection(dist,
-                    dist2);
-            }
-        }
-        
         ///////////////////////////////////////////////////
         ///  Actualiza la nueva solución en la GPU
         //////////////////////////////////////////////////
         cudaWrapper->newSolutionUpdate(costCurrentSolution);
-     
         ///////////////////////////////////////////////////
         ///  Verifica Error
         //////////////////////////////////////////////////
@@ -277,9 +175,6 @@ double SimulatedAnnealing::runGPU(){
         recordManager->vector_historycol.emplace_back(std::get<1>(move));
 #endif
         
-        ///////////////////////////////////////////////////
-        /// 
-        //////////////////////////////////////////////////
         if(costCurrentSolution < costBestSolution){
             cudaWrapper->AcceptanceBestSolution();
             costBestSolution = costCurrentSolution;
@@ -287,15 +182,6 @@ double SimulatedAnnealing::runGPU(){
             saParams.c_accepta++;
             saParams.count_rechaso = 0;
 
-            // futures.push_back(std::async(std::launch::async,
-            //                   addInfoToSave,
-            //                   recordManager,
-            //                   costCurrentSolution,
-            //                   meanDist(currentSolution, distMat),
-            //                   S(currentSolution, alumnosSep, totalVuln),
-            //                   costCupo(currentSolution, cupoArray),
-            //                   &saParams
-            //                 ));
 #if SAVE_DATA
             cudaWrapper->copySolutionToHost(bestSolution, previousSolution);
             recordManager->vector_costCurrentSolution.emplace_back(costBestSolution);
@@ -336,10 +222,6 @@ double SimulatedAnnealing::runGPU(){
             coolingScheme->apply();
         }
         reheatingMethod->apply();
-
-
-        
-        //cout << costCurrentSolution << costPreviousSolution << "| |" << saParams.temp << "| |" << saParams.count<< endl;
         cudaWrapper->synchronizeBucle();
         saParams.count_trials++;
         saParams.count++;

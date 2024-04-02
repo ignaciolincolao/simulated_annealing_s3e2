@@ -37,8 +37,6 @@ CUDAWrapper::~CUDAWrapper(){
     cudaFree(d_currentVars);
     cudaFree(d_bestVars);
     cudaFree(d_previousVars);
-    cudaFree(d_array_current_Solution_alu);
-    cudaFree(d_array_current_Solution_col);
     cudaFree(d_shuffle_colegios);
     cudaFree(d_shuffle_students);
     cudaFree(d_aluxcol);
@@ -70,15 +68,14 @@ void CUDAWrapper::memInit(
     double*& currentVars
 
 ){
-    cudaMalloc((void **) &d_array_current_Solution, cuParams.n_block * sizeof(double));
+    cudaMalloc(&d_array_current_Solution, (cuParams.n_block*cuParams.n_thread) * sizeof(DataResult));
+    std::cout << cuParams.n_block*cuParams.n_thread << std::endl;
     cudaMalloc((void **) &d_costCurrentSolution, 1 * sizeof(double));
     cudaMalloc((void **) &d_costBestSolution, 1 * sizeof(double));
     cudaMalloc((void **) &d_costPreviousSolution, 1 * sizeof(double));
     cudaMalloc((void **) &d_currentVars, 3 * sizeof(double));
     cudaMalloc((void **) &d_bestVars, 3 * sizeof(double));
     cudaMalloc((void **) &d_previousVars, 3 * sizeof(double));
-    cudaMalloc((void **) &d_array_current_Solution_alu, cuParams.n_block * sizeof(int)); 
-    cudaMalloc((void **) &d_array_current_Solution_col, cuParams.n_block * sizeof(int));
     cudaMalloc((void **) &d_shuffle_colegios, saParams.max_changes_school  * sizeof(int));
     cudaMalloc((void **) &d_shuffle_students, saParams.max_changes_students * sizeof(int));
     cudaMalloc((void **) &d_aluxcol,saParams.n_colegios * sizeof(int));
@@ -213,11 +210,8 @@ void CUDAWrapper::AcceptanceSolution(){
 }
 
 void CUDAWrapper::newSolution(){
-    newSolution_kernel<<<cuParams.n_block, cuParams.n_thread,
-        (cuParams.n_thread/nWarp+1) * sizeof(double)+ (cuParams.n_thread/nWarp+1)* sizeof(int) + (cuParams.n_thread/nWarp+1)* sizeof(int)>>>(
+    newSolution_kernel<<<cuParams.n_block, cuParams.n_thread>>>(
                         d_array_current_Solution,
-                                d_array_current_Solution_alu,
-                                d_array_current_Solution_col,
                                 d_cupoArray,
                                 d_alumnosSep,
                                 d_aluxcol,
@@ -228,37 +222,17 @@ void CUDAWrapper::newSolution(){
                                 d_shuffle_colegios,
                                 d_currentVars,
                                 pitch);
-    errSync  = cudaGetLastError();
-    errAsync = cudaDeviceSynchronize();
-    if (errSync != cudaSuccess) 
-    printf("3 Sync kernel error: %s\n", cudaGetErrorString(errSync));
-    if (errAsync != cudaSuccess)
-    printf("3 Async kernel error: %s\n", cudaGetErrorString(errAsync));
-    if(cuParams.n_block > 1){
-            reduce_block_kernel<<<1,cuParams.n_block,
-            (cuParams.n_block/nWarp+1)* sizeof(double)+ (cuParams.n_block/nWarp+1)* sizeof(int)+ (cuParams.n_block/nWarp+1)* sizeof(int)>>>(d_array_current_Solution,
-            d_array_current_Solution_alu,
-            d_array_current_Solution_col);
-    }
-
-    errSync  = cudaGetLastError();
-    errAsync = cudaDeviceSynchronize();
-    if (errSync != cudaSuccess) 
-    printf("4 Sync kernel error: %s\n", cudaGetErrorString(errSync));
-    if (errAsync != cudaSuccess)
-    printf("4 Async kernel error: %s\n", cudaGetErrorString(errAsync));
+    CUDAWrapper::synchronizeBucle();
 
 
 
 }
 
+/*
 void CUDAWrapper::newSolutionRandomSelection(uniform_int_distribution<int> dist,
     uniform_int_distribution<int> dist2)
 {
 
-    /********************************
-    /* Metodo Nuevo
-    */
     cuParams.selectThread = dist(mt);
     cuParams.selectBlock = dist2(mt);
     cudaMemcpy(&d_array_current_Solution_alu[0],&cuParams.selectThread, sizeof(int),cudaMemcpyHostToDevice);
@@ -272,12 +246,12 @@ void CUDAWrapper::newSolutionRandomSelection(uniform_int_distribution<int> dist,
 
 
 }
+*/
+
 
 void CUDAWrapper::newSolutionUpdate(double& costCurrentSolution)
 {
         calculateSolution<<<1,1>>>(d_array_current_Solution,
-        d_array_current_Solution_alu,
-        d_array_current_Solution_col,
         d_cupoArray,
         d_alumnosSep,
         d_aluxcol,
@@ -291,27 +265,11 @@ void CUDAWrapper::newSolutionUpdate(double& costCurrentSolution)
         synchronizeBucle();
 }
 
-void CUDAWrapper::newSolutionUpdate(double& costCurrentSolution,int aluchange, int colchange)
-{
-        calculateSolution<<<1,1>>>(d_array_current_Solution,
-        aluchange,
-        colchange,
-        d_cupoArray,
-        d_alumnosSep,
-        d_aluxcol,
-        d_aluVulxCol,
-        d_currentSolution,
-        d_distMat,
-        pitch,
-        d_currentVars,
-        d_costCurrentSolution);
-        getCurrentSolutionGpuToHost(costCurrentSolution);
-        synchronizeBucle();
-}
+
 
 void CUDAWrapper::getCurrentSolutionGpuToHost(double& costCurrentSolution)
 {
-    cudaMemcpy(&costCurrentSolution,&d_array_current_Solution[0], sizeof(double),cudaMemcpyDeviceToHost);
+    cudaMemcpy(&costCurrentSolution,&d_costCurrentSolution[0], sizeof(double),cudaMemcpyDeviceToHost);
     errSync  = cudaGetLastError();
     errAsync = cudaDeviceSynchronize();
     if (errSync != cudaSuccess) 
@@ -337,20 +295,29 @@ void CUDAWrapper::copySolutionToHost(int* bestSolution, int* previousSolution){
     CUDAWrapper::synchronizeBucle();
 }
 
+
 std::tuple<int,int> CUDAWrapper::getMovementDeviceToHost(){
     int alu;
     int col;
-    cudaMemcpy(&alu,&d_array_current_Solution_alu[0], sizeof(int),cudaMemcpyDeviceToHost);
-    cudaMemcpy(&col, d_array_current_Solution_col, sizeof(int),cudaMemcpyDeviceToHost);
+    cudaMemcpy(&alu,&d_array_current_Solution[0].stu, sizeof(int),cudaMemcpyDeviceToHost);
+    cudaMemcpy(&col, &d_array_current_Solution[0].col, sizeof(int),cudaMemcpyDeviceToHost);
     CUDAWrapper::synchronizeBucle();
     return std::make_tuple(alu,col);
 }
 
+void CUDAWrapper::sortSolutions(){
+    int size  = cuParams.n_block * cuParams.n_thread;
+    thrust::sort(thrust::device, d_array_current_Solution, d_array_current_Solution + size);
+    CUDAWrapper::synchronizeBucle();
+}
+
+/*
 void CUDAWrapper::UpdateSelectionDeviceToHost(int*&  currentSolution){
     cudaMemcpy(&cuParams.selectThread,&d_array_current_Solution_alu[0], sizeof(int),cudaMemcpyDeviceToHost);
     cudaMemcpy(&cuParams.selectBlock, d_array_current_Solution_col, sizeof(int),cudaMemcpyDeviceToHost);
     cudaMemcpy(currentSolution,d_currentSolution, saParams.n_students * sizeof(int), cudaMemcpyDeviceToHost);
 }
+*/
 /*
 void CUDAWrapper::mallocHostInit(double* currentVars,double *previousVars,double* bestVars){
 
