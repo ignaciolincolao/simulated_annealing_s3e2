@@ -24,6 +24,10 @@ struct SimulatedParams {
     int c_accepta;
     int max_changes_school;
     int max_changes_students;
+    double p;
+    double k;
+    double pMax;
+    double pInit;
     double temp; // Temperatura Inicial
     double temp_init;
     double min_temp;// 0.00000009; // Minima temperatura que puede llegar

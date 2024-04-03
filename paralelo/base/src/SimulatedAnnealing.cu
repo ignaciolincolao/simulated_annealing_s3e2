@@ -40,6 +40,8 @@ SimulatedAnnealing::SimulatedAnnealing(AcceptanceCriterion* AC,
     dist_accepta(0.0, 1.0)
     {      
         mt.seed(saParams->seed);
+        probSelection = (double *)malloc(sizeof(double)*cuParams->n_block*cuParams->n_thread);
+        UpdateProb(0);
     }
 SimulatedAnnealing::~SimulatedAnnealing(){
     delete acceptanceCriterion;
@@ -118,7 +120,7 @@ double SimulatedAnnealing::runGPU(){
     ///////////////////////////////////////////////////
     /// Inicio el contador de tiempo antes de iniciar el algortimo
     ///////////////////////////////////////////////////
-
+    int id_select;
     auto start = std::chrono::high_resolution_clock::now();
     ///////////////////////////////////////////////////
     /// Comienza a ejecutarse el algoritmo de SA
@@ -145,13 +147,17 @@ double SimulatedAnnealing::runGPU(){
         cudaWrapper->newSolution();
 
         cudaWrapper->sortSolutions();
+        UpdateProb(saParams.count);
+        id_select= selecSolution();
 
+        
         
     
         ///////////////////////////////////////////////////
         ///  Actualiza la nueva solución en la GPU
         //////////////////////////////////////////////////
-        cudaWrapper->newSolutionUpdate(costCurrentSolution);
+        cudaWrapper->newSolutionUpdate(costCurrentSolution, id_select);
+        cout << costCurrentSolution << endl;
         ///////////////////////////////////////////////////
         ///  Verifica Error
         //////////////////////////////////////////////////
@@ -168,7 +174,7 @@ double SimulatedAnnealing::runGPU(){
         }
         
 #if SAVE_DATA
-        auto move = cudaWrapper->getMovementDeviceToHost();
+        auto move = cudaWrapper->getMovementDeviceToHost(id_select);
         recordManager->vector_historyCostSolution.emplace_back(costCurrentSolution);
         recordManager->vector_historyTemp.emplace_back(saParams.temp);
         recordManager->vector_historystu.emplace_back(std::get<0>(move));
@@ -710,3 +716,37 @@ int SimulatedAnnealing::acceptanceCriterionApply() {
 }
 
 
+int SimulatedAnnealing::selecSolution(){
+    
+    size_t size = cuParams.n_block*cuParams.n_thread;
+    for (size_t x = 0; x < size; x++){
+        double select = dist_accepta(mt);
+        if (select<probSelection[x]) return x;
+    }
+    return size-1;
+   
+}
+
+void SimulatedAnnealing::UpdateProb(int it){
+        saParams.p = saParams.pMax - (saParams.pMax - saParams.pInit) * exp(-saParams.k*it);
+
+        int size = cuParams.n_block*cuParams.n_thread;
+        probSelection[0] = saParams.p;
+        double sum = saParams.p; 
+
+        for (int x = 1; x < size; x++) {
+            probSelection[x] = probSelection[x - 1] * (1 - saParams.p);
+            sum += probSelection[x];
+        }
+
+        // Normalización y cálculo acumulativo en un paso
+        double acumulado = 0.0;
+        for (int x = 0; x < size; x++) {
+            probSelection[x] /= sum; // Normaliza
+            acumulado += probSelection[x]; // Acumula
+            probSelection[x] = acumulado;
+        }
+
+        // Asegurar que el último elemento sea 1
+        probSelection[size - 1] = 1;
+}

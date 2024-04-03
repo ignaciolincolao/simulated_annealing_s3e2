@@ -53,7 +53,8 @@ __global__ void calculateSolution(
     const double* __restrict__ d_distMat,
     size_t pitch,
     double *d_currentVars,
-    double *d_costCurrentSolution);
+    double *d_costCurrentSolution,
+    int idx);
 
 
 __global__ void copyMemSolution(

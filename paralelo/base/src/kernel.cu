@@ -117,7 +117,8 @@ __global__ void calculateSolution(
     const double* __restrict__ d_distMat,
     size_t pitch,
     double *d_currentVars,
-    double *d_costCurrentSolution){
+    double *d_costCurrentSolution,
+    int id_select){
 
     int aluchange,
     colchange,
@@ -135,8 +136,8 @@ __global__ void calculateSolution(
             sumDist = 0.0;
     /// Inicializa arrays
 
-    aluchange = d_array_current_Solution[0].stu;
-    colchange = d_array_current_Solution[0].col;
+    aluchange = d_array_current_Solution[id_select].stu;
+    colchange = d_array_current_Solution[id_select].col;
     currentSchool = d_currentSolution[aluchange];
     //printf("%d \t %.20lf | %d %d %d \n",blockIdx.x,d_array_current_Solution[0],d_array_current_Solution_alu[0],d_array_current_Solution_col[0],currentSchool);
     newSchool = colchange;

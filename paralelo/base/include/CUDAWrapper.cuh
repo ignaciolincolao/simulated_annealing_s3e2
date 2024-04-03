@@ -103,7 +103,8 @@ class CUDAWrapper{
         uniform_int_distribution<int> dist2
         );
         void newSolutionUpdate(
-            double& costCurrentSolution
+            double& costCurrentSolution,
+            int idx
             );
         void getCurrentSolutionGpuToHost(double& costCurrentSolution);
         void getAllCurrentSolutionGpuToHost(double& costCurrentSolution);
@@ -126,7 +127,7 @@ class CUDAWrapper{
         //void UpdateSelectionDeviceToHost(int*&  currentSolution);
         void UpdateCurrentVarsHostToGPU(double*& currentVars);
         //void newSolutionUpdate(double& costCurrentSolution,int aluchange, int colchange);
-        std::tuple<int,int> getMovementDeviceToHost();
+        std::tuple<int,int> getMovementDeviceToHost(int idx);
         void sortSolutions();
 };
 

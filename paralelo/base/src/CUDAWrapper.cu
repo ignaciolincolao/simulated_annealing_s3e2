@@ -249,7 +249,7 @@ void CUDAWrapper::newSolutionRandomSelection(uniform_int_distribution<int> dist,
 */
 
 
-void CUDAWrapper::newSolutionUpdate(double& costCurrentSolution)
+void CUDAWrapper::newSolutionUpdate(double& costCurrentSolution, int id_select)
 {
         calculateSolution<<<1,1>>>(d_array_current_Solution,
         d_cupoArray,
@@ -260,7 +260,8 @@ void CUDAWrapper::newSolutionUpdate(double& costCurrentSolution)
         d_distMat,
         pitch,
         d_currentVars,
-        d_costCurrentSolution);
+        d_costCurrentSolution,
+        id_select);
         getCurrentSolutionGpuToHost(costCurrentSolution);
         synchronizeBucle();
 }
@@ -296,11 +297,11 @@ void CUDAWrapper::copySolutionToHost(int* bestSolution, int* previousSolution){
 }
 
 
-std::tuple<int,int> CUDAWrapper::getMovementDeviceToHost(){
+std::tuple<int,int> CUDAWrapper::getMovementDeviceToHost(int idx){
     int alu;
     int col;
-    cudaMemcpy(&alu,&d_array_current_Solution[0].stu, sizeof(int),cudaMemcpyDeviceToHost);
-    cudaMemcpy(&col, &d_array_current_Solution[0].col, sizeof(int),cudaMemcpyDeviceToHost);
+    cudaMemcpy(&alu,&d_array_current_Solution[idx].stu, sizeof(int),cudaMemcpyDeviceToHost);
+    cudaMemcpy(&col, &d_array_current_Solution[idx].col, sizeof(int),cudaMemcpyDeviceToHost);
     CUDAWrapper::synchronizeBucle();
     return std::make_tuple(alu,col);
 }
