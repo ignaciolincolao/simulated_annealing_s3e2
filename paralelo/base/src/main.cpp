@@ -42,12 +42,12 @@ int main(int argc, char *argv[])
         .count = 0,
         .c_cooling_temperature = 0,
         .c_accepta = 0,
-        .p = 0.0002,
-        .k = 0.00001,
-        .pMax = 0.4,
-        .pInit = 0.0001,
-        .temp = 26214400000000.0,
-        .min_temp = 0.0000000009,
+        .p = 0.00010,
+        .k = 0.01,
+        .pMax = 0.3,
+        .pInit = 0.01,
+        .temp = 32768.0,
+        .min_temp = 0.00000009,
         .alpha1 = alp1,
         .alpha2 = alp2,
         .alpha3 = alp3,
@@ -61,10 +61,10 @@ int main(int argc, char *argv[])
     AcceptanceParams* acParams = new AcceptanceParams{
         .Th = 1.1};
     CoolingParams* csParams = new CoolingParams{
-        .coolingRate = 0.904556};
+        .coolingRate = 0.94};
     LengthParams* ltParams = new LengthParams{
-        .len1 = 3.03119,
-        .len2 = 8.3714,
+        .len1 = 3.5194,
+        .len2 = 8.26639,
         .len3 = 1.0,
         .len4 = 0.999};
     ReheatingParams* rtParams = new ReheatingParams{
@@ -75,8 +75,8 @@ int main(int argc, char *argv[])
         .k_reheating_init = 0};
 
     CUDAParams* cuParams = new CUDAParams{
-        .n_block = 512,
-        .n_thread = 512,
+        .n_block = 1024,
+        .n_thread = 1024,
         .selectThread = 0,
         .selectBlock = 0};
 

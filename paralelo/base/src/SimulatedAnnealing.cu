@@ -157,7 +157,7 @@ double SimulatedAnnealing::runGPU(){
         ///  Actualiza la nueva solución en la GPU
         //////////////////////////////////////////////////
         cudaWrapper->newSolutionUpdate(costCurrentSolution, id_select);
-        cout << costCurrentSolution << endl;
+        
         ///////////////////////////////////////////////////
         ///  Verifica Error
         //////////////////////////////////////////////////
@@ -187,6 +187,7 @@ double SimulatedAnnealing::runGPU(){
             costPreviousSolution = costCurrentSolution;
             saParams.c_accepta++;
             saParams.count_rechaso = 0;
+            cout << costCurrentSolution << " | " << saParams.count << " | " << id_select <<  endl;
 
 #if SAVE_DATA
             cudaWrapper->copySolutionToHost(bestSolution, previousSolution);
@@ -718,10 +719,10 @@ int SimulatedAnnealing::acceptanceCriterionApply() {
 
 int SimulatedAnnealing::selecSolution(){
     
-    size_t size = cuParams.n_block*cuParams.n_thread;
+    size_t size = 16;//cuParams.n_block*cuParams.n_thread;
     for (size_t x = 0; x < size; x++){
         double select = dist_accepta(mt);
-        if (select<probSelection[x]) return x;
+        if (select<probSelection[x]) return x* ((cuParams.n_block*cuParams.n_thread)/16);
     }
     return size-1;
    
@@ -730,7 +731,7 @@ int SimulatedAnnealing::selecSolution(){
 void SimulatedAnnealing::UpdateProb(int it){
         saParams.p = saParams.pMax - (saParams.pMax - saParams.pInit) * exp(-saParams.k*it);
 
-        int size = cuParams.n_block*cuParams.n_thread;
+        int size = 16;//cuParams.n_block*cuParams.n_thread;
         probSelection[0] = saParams.p;
         double sum = saParams.p; 
 
