@@ -19,9 +19,11 @@
 #include <utils/SAParameters.hpp>
 #include <structure/AcceptanceCriterion/AcceptanceCriterion.hpp>
 #include <kernel.cuh>
-#include <thrust/device_vector.h>
-#include <thrust/host_vector.h>
 #include <thrust/sort.h>
+#include <thrust/gather.h>
+#include <thrust/device_vector.h>
+#include <thrust/device_ptr.h>
+#include <thrust/execution_policy.h>
 #include <structData.cuh>
 
 using std::string;
@@ -128,7 +130,7 @@ class CUDAWrapper{
         void UpdateCurrentVarsHostToGPU(double*& currentVars);
         //void newSolutionUpdate(double& costCurrentSolution,int aluchange, int colchange);
         std::tuple<int,int> getMovementDeviceToHost(int idx);
-        void sortSolutions();
+        void sortSolutions(uniform_real_distribution<double> dist_accepta,double *probSelection);
 };
 
 

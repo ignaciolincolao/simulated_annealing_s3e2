@@ -145,10 +145,10 @@ double SimulatedAnnealing::runGPU(){
         ///  Ejecuta los kernel
         //////////////////////////////////////////////////
         cudaWrapper->newSolution();
-
-        cudaWrapper->sortSolutions();
         UpdateProb(saParams.count);
-        id_select= selecSolution();
+        cudaWrapper->sortSolutions(dist_accepta,probSelection);
+        //UpdateProb(saParams.count);
+        id_select= 0;//elecSolution();
 
         
         
@@ -182,12 +182,13 @@ double SimulatedAnnealing::runGPU(){
 #endif
         
         if(costCurrentSolution < costBestSolution){
+            
             cudaWrapper->AcceptanceBestSolution();
             costBestSolution = costCurrentSolution;
             costPreviousSolution = costCurrentSolution;
             saParams.c_accepta++;
             saParams.count_rechaso = 0;
-            cout << costCurrentSolution << " | " << saParams.count << " | " << id_select <<  endl;
+            cout << costCurrentSolution << " | " << saParams.count << " | " << id_select << " | " << saParams.temp  << endl;
 
 #if SAVE_DATA
             cudaWrapper->copySolutionToHost(bestSolution, previousSolution);
@@ -206,7 +207,7 @@ double SimulatedAnnealing::runGPU(){
         }
         else {
             if(acceptanceCriterion->apply(costPreviousSolution,costCurrentSolution,dist_accepta ) == 1) {
-
+                
                 cudaWrapper->AcceptanceSolution();
                 costPreviousSolution = costCurrentSolution;
 #if SAVE_DATA
@@ -722,7 +723,9 @@ int SimulatedAnnealing::selecSolution(){
     size_t size = 16;//cuParams.n_block*cuParams.n_thread;
     for (size_t x = 0; x < size; x++){
         double select = dist_accepta(mt);
-        if (select<probSelection[x]) return x* ((cuParams.n_block*cuParams.n_thread)/16);
+        if (select<probSelection[x]) {
+            return x* ((cuParams.n_block*cuParams.n_thread)/16);
+        }
     }
     return size-1;
    
@@ -730,7 +733,7 @@ int SimulatedAnnealing::selecSolution(){
 
 void SimulatedAnnealing::UpdateProb(int it){
         saParams.p = saParams.pMax - (saParams.pMax - saParams.pInit) * exp(-saParams.k*it);
-
+        //cout << "prob init: " << saParams.p << endl;
         int size = 16;//cuParams.n_block*cuParams.n_thread;
         probSelection[0] = saParams.p;
         double sum = saParams.p; 

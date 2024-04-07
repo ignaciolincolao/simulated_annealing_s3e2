@@ -306,11 +306,85 @@ std::tuple<int,int> CUDAWrapper::getMovementDeviceToHost(int idx){
     return std::make_tuple(alu,col);
 }
 
-void CUDAWrapper::sortSolutions(){
-    int size  = cuParams.n_block * cuParams.n_thread;
-    thrust::sort(thrust::device, d_array_current_Solution, d_array_current_Solution + size);
+void CUDAWrapper::sortSolutions(uniform_real_distribution<double> dist_accepta,double *probSelection){
+
+    //thrust::sort(thrust::device, d_array_current_Solution, d_array_current_Solution + cuParams.n_block * cuParams.n_thread);
+
+    DataResult* h_array_current_Solution = new DataResult;
+    cudaMemcpy(h_array_current_Solution, d_array_current_Solution, sizeof(DataResult), cudaMemcpyDeviceToHost);
+    //std::cout << "Primer antes: " << h_array_current_Solution->costSolution << std::endl;
+    thrust::device_ptr<DataResult> dev_ptr(d_array_current_Solution);
+    int segment = (cuParams.n_block * cuParams.n_thread)/16;
+    for (int i = 1; i <= segment; i++) {
+        thrust::sort(thrust::cuda::par.on(streams[i%8]), dev_ptr + ((i - 1) * 16), dev_ptr + (16 * i));
+    }
+    std::vector<int> select_tournament(segment);
+    for (int i = 0; i < segment; i++) {
+        for (size_t x = 0; x < 16; x++) { 
+            double select = dist_accepta(mt);
+            if (select < probSelection[x]) {
+                select_tournament[i] = x + (i * 16);
+                break;
+            }
+        }
+    }
+    thrust::device_vector<DataResult> selected_solution(segment);
+    for (int i = 0; i < segment; ++i) {
+        selected_solution[i] = d_array_current_Solution[select_tournament[i]]; 
+    }
     CUDAWrapper::synchronizeBucle();
+
+
+    /// En caso que aun sean mas de 16 de segmentos
+    for (int reduce = selected_solution.size()/16; selected_solution.size() >= 16; reduce/=16){
+
+        for (int i = 1; i <= reduce; i++) {
+            thrust::sort(thrust::cuda::par.on(streams[i%8]), 
+                selected_solution.begin() + ((i - 1) * 16), 
+                selected_solution.begin() + (16 * i));
+        }
+        select_tournament.resize(reduce);
+        for (int i = 0; i < reduce; i++) {
+            for (size_t x = 0; x < 16; x++) { 
+                double select = dist_accepta(mt);
+                if (select < probSelection[x]) {
+                    select_tournament[i] = x;
+                    break;
+                }
+            }
+        }
+        selected_solution.resize(reduce);
+        for (int i = 0; i < reduce; i++) {
+            selected_solution[i] = selected_solution[select_tournament[i]];
+        }
+    }
+
+    CUDAWrapper::synchronizeBucle();
+    /// Final
+    int solution_selected = 0;
+
+    thrust::sort(thrust::device, 
+            selected_solution.begin(), 
+            selected_solution.begin() + selected_solution.size());
+    select_tournament.resize(selected_solution.size());
+    for (size_t x = 0; x < selected_solution.size(); x++) {
+        double select = dist_accepta(mt);
+        if (select < probSelection[x]){
+            solution_selected = x;
+            break;
+        }
+
+    }
+    thrust::copy_n(thrust::device, 
+        selected_solution.begin() + solution_selected, 
+        1, 
+        thrust::device_pointer_cast(d_array_current_Solution));
+
+    //std::cout << "Primer despues: " << h_array_current_Solution->costSolution << std::endl;
+    delete[] h_array_current_Solution;
 }
+
+
 
 /*
 void CUDAWrapper::UpdateSelectionDeviceToHost(int*&  currentSolution){
