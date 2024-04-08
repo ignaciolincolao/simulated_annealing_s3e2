@@ -180,7 +180,7 @@ double SimulatedAnnealing::runGPU(){
         recordManager->vector_historystu.emplace_back(std::get<0>(move));
         recordManager->vector_historycol.emplace_back(std::get<1>(move));
 #endif
-        
+        cout << costCurrentSolution << " | " << saParams.count << " | " << id_select << " | " << saParams.temp  << endl;
         if(costCurrentSolution < costBestSolution){
             
             cudaWrapper->AcceptanceBestSolution();
@@ -188,7 +188,7 @@ double SimulatedAnnealing::runGPU(){
             costPreviousSolution = costCurrentSolution;
             saParams.c_accepta++;
             saParams.count_rechaso = 0;
-            cout << costCurrentSolution << " | " << saParams.count << " | " << id_select << " | " << saParams.temp  << endl;
+            
 
 #if SAVE_DATA
             cudaWrapper->copySolutionToHost(bestSolution, previousSolution);
@@ -228,6 +228,7 @@ double SimulatedAnnealing::runGPU(){
 
         if(lengthTemperature->apply()){
             coolingScheme->apply();
+            saParams.c_cooling_temperature++;
         }
         reheatingMethod->apply();
         cudaWrapper->synchronizeBucle();

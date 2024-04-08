@@ -44,8 +44,8 @@ int main(int argc, char *argv[])
         .c_accepta = 0,
         .p = 0.00010,
         .k = 0.000010,
-        .pMax = 0.65,
-        .pInit =0.5,
+        .pMax = 0.9,
+        .pInit =0.6,
         .temp = 32768.0,
         .min_temp = 0.00000009,
         .alpha1 = alp1,
@@ -61,7 +61,7 @@ int main(int argc, char *argv[])
     AcceptanceParams* acParams = new AcceptanceParams{
         .Th = 1.1};
     CoolingParams* csParams = new CoolingParams{
-        .coolingRate = 0.94};
+        .coolingRate = 0.99};
     LengthParams* ltParams = new LengthParams{
         .len1 = 3.5194,
         .len2 = 8.26639,
@@ -70,13 +70,13 @@ int main(int argc, char *argv[])
     ReheatingParams* rtParams = new ReheatingParams{
         .e_const = 0.01,
         .max_temp = std::numeric_limits<double>::max(),
-        .k_reheating = 30,
-        .n_reheating = 1,
+        .k_reheating = 0.5,
+        .n_reheating = 1000,
         .k_reheating_init = 0};
 
     CUDAParams* cuParams = new CUDAParams{
-        .n_block = 85,
-        .n_thread = 1024,
+        .n_block = 10,
+        .n_thread = 256,
         .selectThread = 0,
         .selectBlock = 0};
 
