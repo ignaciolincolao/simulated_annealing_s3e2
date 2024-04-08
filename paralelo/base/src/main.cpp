@@ -43,8 +43,8 @@ int main(int argc, char *argv[])
         .c_cooling_temperature = 0,
         .c_accepta = 0,
         .p = 0.00010,
-        .k = 0.00010,
-        .pMax = 0.9,
+        .k = 0.000010,
+        .pMax = 0.65,
         .pInit =0.5,
         .temp = 32768.0,
         .min_temp = 0.00000009,
@@ -75,7 +75,7 @@ int main(int argc, char *argv[])
         .k_reheating_init = 0};
 
     CUDAParams* cuParams = new CUDAParams{
-        .n_block = 1024,
+        .n_block = 85,
         .n_thread = 1024,
         .selectThread = 0,
         .selectBlock = 0};

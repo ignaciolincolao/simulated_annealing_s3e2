@@ -35,8 +35,8 @@ __global__ void newSolution_kernel(
             
     /// Inicializa arrays
     int tid = blockIdx.x * blockDim.x + threadIdx.x;
-    aluchange = d_shuffle_students[tid%d_n_students]; 
-    //aluchange = d_shuffle_students[threadIdx.x]; 
+    //aluchange = d_shuffle_students[tid%d_n_students]; 
+    aluchange = d_shuffle_students[threadIdx.x]; 
     newSchool = d_shuffle_colegios[blockIdx.x%d_n_colegios];
     currentSchool = d_currentSolution[aluchange];
     //printf("%d|%d|%d|%d\n",newSchool,currentSchool,aluchange,tid%d_n_students);
