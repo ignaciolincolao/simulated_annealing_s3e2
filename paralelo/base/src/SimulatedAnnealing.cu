@@ -147,8 +147,8 @@ double SimulatedAnnealing::runGPU(){
         cudaWrapper->newSolution();
 
         cudaWrapper->sortSolutions();
-        UpdateProb(saParams.count);
-        id_select= selecSolution();
+        //UpdateProb(saParams.count);
+        id_select= 0;//selecSolution();
 
         
         
@@ -187,7 +187,7 @@ double SimulatedAnnealing::runGPU(){
             costPreviousSolution = costCurrentSolution;
             saParams.c_accepta++;
             saParams.count_rechaso = 0;
-            cout << costCurrentSolution << " | " << saParams.count << " | " << id_select <<  endl;
+            //cout << costCurrentSolution << " | " << saParams.count << " | " << id_select <<  endl;
 
 #if SAVE_DATA
             cudaWrapper->copySolutionToHost(bestSolution, previousSolution);
@@ -425,7 +425,7 @@ void SimulatedAnnealing::inicializationValues(T* wrapper){
     //double vector_time1 =0;
     // double vector_time2=0;
     saParams.max_changes_students = min(cuParams.n_thread*cuParams.n_block, saParams.n_students);
-    saParams.max_changes_school = min(cuParams.n_block, saParams.n_colegios);
+    saParams.max_changes_school = saParams.n_colegios;//min(cuParams.n_block, saParams.n_colegios);
 
     double *array_costCurrentSolution = (double *) malloc(sizeof(double) * cuParams.n_block * cuParams.n_thread);
     for (x = 0; x < cuParams.n_block; x++){
