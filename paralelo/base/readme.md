@@ -18,8 +18,11 @@ flag
 
 cmake -DENABLE_SAVE_DATA=OFF .. 
 cmake -DENABLE_SAVE_DATA=ON ..
-cmake -DBUILD_SHARED_LIB=ON ..
+cmake -BUILD_SHARED_LIB=OFF ..
+cmake -BUILD_SHARED_LIB=ON ..
 
+
+cmake -BUILD_SHARED_LIB=OFF -DENABLE_SAVE_DATA=OFF .. 
 // Instalación de libreria
 
 1-  entrar al build

@@ -42,10 +42,10 @@ int n_block_idX = 3;//int n_block_idX = 4;
 int n_thread_min = 1;
 int n_thread_max = 32;
 int n_thread_factor = 32;
-int n_thread_idX = 5;
+int n_thread_idX;
 double temp_min = 1000;//100;
-double temp_max = 4000;//10000;
-//int temp_idX = 0;
+double temp_max = 100000;//10000;
+int temp_idX = 4;
 double coolingRate_min = 0.9;
 double coolingRate_max = 0.999;
 int coolingRate_idX = 0;//int coolingRate_idX = 1;
@@ -87,7 +87,7 @@ struct Params {
         BO_PARAM(int, stats_enabled, true);
     };
     struct stop_maxiterations {
-        BO_PARAM(int, iterations, 10000);
+        BO_PARAM(int, iterations, 1000);
     };
     struct acqui_ei {
         BO_PARAM(double, jitter, 0.0);
@@ -184,20 +184,33 @@ Eigen::VectorXd simAnnealing(const Eigen::VectorXd& x)
         .reheatingmethod = "TR0"
     };
 
-    int block_threads[13][2] = {
+    int block_threads[26][2] = {
                                 {1,32},
+                                {2,32},
                                 {1,64},
-                                {1,128},
+                                {8,32},
+                                {4,64},
+                                {2,128},
                                 {1,256},
+                                {8,64},
+                                {4,128},
+                                {2,256},
                                 {1,512},
-                                {1,1024},
                                 {32,32},
-                                {32,64},
+                                {8,128},
+                                {4,256},
+                                {2,512},
+                                {1,1024},
                                 {64,32},
-                                {96,32},
-                                {32,128},
+                                {32,64},
+                                {8,256},
+                                {4,512},
+                                {2,1024},
+                                {128,32},
                                 {64,64},
-                                {128,32}
+                                {32,128},
+                                {8,512},
+                                {4,1024}
                             };
 
     /*
@@ -205,11 +218,11 @@ Eigen::VectorXd simAnnealing(const Eigen::VectorXd& x)
     */
     //n_block = pow(2,floor(x[n_block_idX]*7-std::numeric_limits<float>::epsilon()) +1);//n_block_factor*int(valRange(n_block_min,n_block_max,x,n_block_idX));
     //n_thread= pow(2,floor(x[n_thread_idX]*6-std::numeric_limits<float>::epsilon()) +5);//n_thread_factor*int(valRange(n_thread_min,n_thread_max,x,n_thread_idX));
-    int indice= max(int(floor(x[n_block_idX]*13-std::numeric_limits<float>::epsilon())),0);
+    int indice= max(int(floor(x[n_block_idX]*26-std::numeric_limits<float>::epsilon())),0);
     //cout << floor(1.00*13-std::numeric_limits<float>::epsilon()) << endl;
     n_block = block_threads[indice][0];
     n_thread = block_threads[indice][1];
-    temp= pow(n_block*n_thread,1.5);
+    temp= valRange(temp_min,temp_max,x,temp_idX);//pow(n_block*n_thread,1.5);
     coolingRate= valRange(coolingRate_min,coolingRate_max,x,coolingRate_idX);
     len1= valRange(len1_min,len1_max,x,len1_idX);
     len2= valRange(len2_min,len2_max,x,len2_idX);
@@ -279,7 +292,7 @@ struct LinearWeighting {
 
 template <typename Params>
 struct eval_func {
-    BO_PARAM(size_t, dim_in, 4);
+    BO_PARAM(size_t, dim_in, 5);
     BO_PARAM(size_t, dim_out, 1);
 
     eval_func() {}
@@ -311,7 +324,8 @@ struct SeedObservation : public stat::StatBase<Params> {
                                 <<  "x1," 
                                 <<  "x2," 
                                 <<  "x3," 
-                                <<  "lz," 
+                                <<  "x4,"
+                                <<  "lz,"
                                 <<  "z,"
                                 <<  "it,"
                                 <<  "n_block,"

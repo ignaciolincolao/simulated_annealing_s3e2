@@ -33,12 +33,16 @@ file(GLOB_RECURSE all_SRCS
     "${PROJECT_SOURCE_DIR}/src/*.cpp"
     "${PROJECT_SOURCE_DIR}/src/*.c"
     "${PROJECT_SOURCE_DIR}/src/*.cu"
+
+   
 )
+list(REMOVE_ITEM all_SRCS "${PROJECT_SOURCE_DIR}/src/main.cpp")
+list(REMOVE_ITEM all_SRCS "${PROJECT_SOURCE_DIR}/src/test/grid.cpp")
 
 option(BUILD_SHARED_LIB "Build Shared Library" OFF)
 
 if (BUILD_SHARED_LIB)
-    add_library(paralelo SHARED ${all_SRCS})
+    add_library(paralelo SHARED src/main.cpp ${all_SRCS})
     install(TARGETS paralelo LIBRARY DESTINATION /usr/local/lib)
     install(DIRECTORY include/
             DESTINATION /usr/local/include/paralelo
@@ -47,14 +51,35 @@ if (BUILD_SHARED_LIB)
             PATTERN "*.hpp"
             PATTERN "*.cuh")
 else()
-    add_executable(paralelo ${all_SRCS} alumnos_utm.txt colegios_utm.txt)
+    add_executable(paralelo src/main.cpp ${all_SRCS} alumnos_utm.txt colegios_utm.txt)
+    add_executable(grid_executable src/test/grid.cpp ${all_SRCS}  alumnos_utm.txt colegios_utm.txt)
     configure_file(${CMAKE_CURRENT_SOURCE_DIR}/data/alumnos_utm.txt ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
     configure_file(${CMAKE_CURRENT_SOURCE_DIR}/data/colegios_utm.txt ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
+
+    
+    set_target_properties(grid_executable PROPERTIES LINKER_LANGUAGE CXX)
+    set_property(TARGET grid_executable PROPERTY CUDA_ARCHITECTURES native)
+    set_property(TARGET grid_executable PROPERTY CUDA_SEPARABLE_COMPILATION ON)
+
+
+    target_compile_options(grid_executable PRIVATE $<$<COMPILE_LANGUAGE:CUDA>: 
+        -lineinfo --default-stream per-thread 
+        --expt-relaxed-constexpr
+        -maxrregcount=64
+        -Xptxas 
+        -dlcm=cg
+        -ftz=true 
+        -prec-div=false 
+        -prec-sqrt=false
+    >) 
 endif()
 
 set_target_properties(paralelo PROPERTIES LINKER_LANGUAGE CXX)
 set_property(TARGET paralelo PROPERTY CUDA_ARCHITECTURES native)
 set_property(TARGET paralelo PROPERTY CUDA_SEPARABLE_COMPILATION ON)
+
+
+
 
 target_compile_options(paralelo PRIVATE $<$<COMPILE_LANGUAGE:CUDA>: 
     -lineinfo --default-stream per-thread 
