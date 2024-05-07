@@ -7,7 +7,7 @@ endif (WIN32)
 
 if (UNIX)
     set(CMAKE_CUDA_COMPILER /usr/local/cuda/bin/nvcc)
-    set(CMAKE_CUDA_ARCHITECTURES 52 60 61 75 86)
+    set(CMAKE_CUDA_ARCHITECTURES 52 60 61 75 86 89)
 endif (UNIX)
 
 project(paralelo LANGUAGES CUDA CXX)
