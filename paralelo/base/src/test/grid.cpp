@@ -143,10 +143,10 @@ void algorithm_sample(int indice, string timestr, string pathSave){
 
     n_block = block_threads[indice][0];
     n_thread = block_threads[indice][1];
-    temp= 2000;
+    temp= 1602.26;
     coolingRate= 0.999;
-    len1= 3;
-    len2= 10;
+    len1= 2.78021;
+    len2= 9.89461;
     cuParams->n_block = n_block;
     cuParams->n_thread = n_thread;
     saParams->temp = temp;
@@ -176,6 +176,7 @@ void algorithm_sample(int indice, string timestr, string pathSave){
     it = simulatedAnneling->saParams.count;
 
     fileData << seed << ","
+            << val << ","
             << it << ","
             << n_block << ","
             << n_thread << ","
@@ -208,14 +209,7 @@ random_device rd;
     strftime(timestr, sizeof(timestr), "%Y-%m-%d T:%H-%M", time_info);
     const std::string file_name = "../save/"+string(timestr)+"seed_iteration.csv";
     std::ofstream fileData(file_name, std::ios::app);
-    fileData << "id,"
-        << "seed,"
-        <<  "x0,"
-        <<  "x1," 
-        <<  "x2," 
-        <<  "x3," 
-        <<  "x4,"
-        <<  "lz,"
+    fileData << "seed,"
         <<  "z,"
         <<  "it,"
         <<  "n_block,"

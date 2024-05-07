@@ -22,6 +22,8 @@ cmake -BUILD_SHARED_LIB=OFF ..
 cmake -BUILD_SHARED_LIB=ON ..
 
 
+
+
 cmake -BUILD_SHARED_LIB=OFF -DENABLE_SAVE_DATA=OFF .. 
 // Instalación de libreria
 
