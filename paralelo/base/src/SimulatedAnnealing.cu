@@ -467,6 +467,7 @@ double SimulatedAnnealing::calCosto(int *currentSolution, double **distMat, cons
 /// Distancia promedio que recorreran los estudiantes
 ///////////////////////////////////////////////////
 double SimulatedAnnealing::meanDist(const int *currentSolution, double  **distMat){
+    /*
     double sumDist=0.0;
     for(int i=0;i<saParams.n_students;i++){
         sumDist+=distMat[i][currentSolution[i]]; // distMat[estudiante][escuela]
@@ -474,6 +475,14 @@ double SimulatedAnnealing::meanDist(const int *currentSolution, double  **distMa
     //cout << "meanDist: " << sumDist << endl;
     //cout << "Numero de estudiantes: " << saParams.n_students << "  |  Suma de distancias:" << sumDist << "\n";
     return sumDist/saParams.n_students;
+    */
+    double max = 0.0;
+    for(int i=0;i<saParams.n_students;i++){
+        max=fmax(max,distMat[i][currentSolution[i]]); // distMat[estudiante][escuela]
+    }
+    return max;
+
+
 }
 
 double SimulatedAnnealing::sumDist(const int *currentSolution, double  **distMat){

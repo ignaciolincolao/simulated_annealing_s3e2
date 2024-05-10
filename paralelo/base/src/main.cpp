@@ -61,7 +61,7 @@ int main(int argc, char *argv[])
     AcceptanceParams* acParams = new AcceptanceParams{
         .Th = 1.1};
     CoolingParams* csParams = new CoolingParams{
-        .coolingRate = 0.94};
+        .coolingRate = 0.98};
     LengthParams* ltParams = new LengthParams{
         .len1 = 3.5194,
         .len2 = 8.26639,
@@ -75,7 +75,7 @@ int main(int argc, char *argv[])
         .k_reheating_init = 0};
 
     CUDAParams* cuParams = new CUDAParams{
-        .n_block = 32,
+        .n_block = 128,
         .n_thread = 32,
         .selectThread = 0,
         .selectBlock = 0};

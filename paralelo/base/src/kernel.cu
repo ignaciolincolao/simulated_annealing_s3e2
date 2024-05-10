@@ -55,7 +55,7 @@ __global__ void newSolution_kernel(
     ////////////////////////////////////////////////////////////////
     // Distancia
 
-    sumDist -= d_distMat[aluchange * pitch / sizeof(double) + currentSchool];
+    //sumDist -= d_distMat[aluchange * pitch / sizeof(double) + currentSchool];
     // seg de la escuela actual
     totalAluCol = d_aluxcol[currentSchool];
     //cout << "Alumnos actual escuela "<< totalAluCol << " " << endl;
@@ -80,7 +80,7 @@ __global__ void newSolution_kernel(
     ////////////////////////////////////////////////////////////////
     ////// Calculó despues de mover
     //////////////////////////////////////////////////////////////
-    sumDist += d_distMat[aluchange * pitch / sizeof(double) + newSchool];
+    //sumDist += d_distMat[aluchange * pitch / sizeof(double) + newSchool];
     // seg de la escuela actual
     totalAluCol = d_aluxcol[currentSchool]-1;
     aluVulCol = d_aluVulxCol[currentSchool];
@@ -100,7 +100,11 @@ __global__ void newSolution_kernel(
     // costcupo escuela antigua
     totalcostCupo += ((double)totalAluCol * fabs((double)d_cupoArray[newSchool] - totalAluCol) / pow(((double)d_cupoArray[newSchool] * 0.5), 2));
 
-    cost_solution = d_alpha[0] * (sumDist / (d_n_students * d_max_dist));
+    int maximo = d_distMat[0 * pitch / sizeof(double) + d_currentSolution[0]];
+    for (int i = 1; i < d_n_students; ++i) {
+        maximo =fmax(maximo,d_distMat[i * pitch / sizeof(double) + d_currentSolution[i]]);
+    }
+    cost_solution = d_alpha[0] * maximo; //(sumDist / (d_n_students * d_max_dist));
     cost_solution += d_alpha[1] * (totalSesc * 0.5);
     cost_solution += d_alpha[2] * (totalcostCupo / d_n_colegios);
 
@@ -153,7 +157,7 @@ __global__ void calculateSolution(
     /////// Descuenta antes de mover
     ////////////////////////////////////////////////////////////////
     // Distancia
-    sumDist-=d_distMat[aluchange * pitch / sizeof(double) + currentSchool];
+    //sumDist-=d_distMat[aluchange * pitch / sizeof(double) + currentSchool];
     //printf("%lf \n",sumDist);
     // seg de la escuela actual
     totalAluCol = d_aluxcol[currentSchool];
@@ -194,7 +198,7 @@ __global__ void calculateSolution(
     ////////////////////////////////////////////////////////////////
     ////// Calculó despues de mover
     //////////////////////////////////////////////////////////////
-    sumDist+=d_distMat[aluchange * pitch / sizeof(double) + newSchool];
+    //sumDist+=d_distMat[aluchange * pitch / sizeof(double) + newSchool];
     
     // seg de la escuela actual
     totalAluCol = d_aluxcol[currentSchool];
@@ -216,8 +220,13 @@ __global__ void calculateSolution(
     // costcupo escuela antigua
 
     totalcostCupo+=((double)totalAluCol*fabs((double)d_cupoArray[newSchool]-totalAluCol)/pow(((double)d_cupoArray[newSchool]*0.5),2));
+
+    int maximo = d_distMat[0 * pitch / sizeof(double) + d_currentSolution[0]];
+    for (int i = 1; i < d_n_students; ++i) {
+        maximo =fmax(maximo,d_distMat[i * pitch / sizeof(double) + d_currentSolution[i]]);
+    }
     //printf("%lf %lf %lf %d %d %d\n",sumDist,totalSesc,totalcostCupo,aluchange,colchange,currentSchool);
-    d_currentVars[0] = sumDist;
+    d_currentVars[0] = maximo;
     d_currentVars[1] = totalSesc;
     d_currentVars[2] = totalcostCupo;
     //printf("%lf %lf %lf %d %d %d\n",sumDist,totalSesc,totalcostCupo,aluchange,colchange,currentSchool);
