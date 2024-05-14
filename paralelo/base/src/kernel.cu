@@ -100,9 +100,15 @@ __global__ void newSolution_kernel(
     // costcupo escuela antigua
     totalcostCupo += ((double)totalAluCol * fabs((double)d_cupoArray[newSchool] - totalAluCol) / pow(((double)d_cupoArray[newSchool] * 0.5), 2));
 
-    int maximo = d_distMat[0 * pitch / sizeof(double) + d_currentSolution[0]];
-    for (int i = 1; i < d_n_students; ++i) {
-        maximo =fmax(maximo,d_distMat[i * pitch / sizeof(double) + d_currentSolution[i]]);
+    double maximo = d_distMat[0 * pitch / sizeof(double) + d_currentSolution[0]];
+    for (int i = 0; i < d_n_students; i++) {
+        if(aluchange==i){
+            maximo = fmax(maximo,d_distMat[i * pitch / sizeof(double) + newSchool]);
+        }
+        else{
+            maximo =fmax(maximo,d_distMat[i * pitch / sizeof(double) + d_currentSolution[i]]);
+        }
+        
     }
     cost_solution = d_alpha[0] * maximo; //(sumDist / (d_n_students * d_max_dist));
     cost_solution += d_alpha[1] * (totalSesc * 0.5);
@@ -221,17 +227,22 @@ __global__ void calculateSolution(
 
     totalcostCupo+=((double)totalAluCol*fabs((double)d_cupoArray[newSchool]-totalAluCol)/pow(((double)d_cupoArray[newSchool]*0.5),2));
 
-    int maximo = d_distMat[0 * pitch / sizeof(double) + d_currentSolution[0]];
-    for (int i = 1; i < d_n_students; ++i) {
-        maximo =fmax(maximo,d_distMat[i * pitch / sizeof(double) + d_currentSolution[i]]);
+    double maximo = d_distMat[0 * pitch / sizeof(double) + d_currentSolution[0]];
+    for (int i = 0; i < d_n_students; i++) {
+        if(aluchange==i){
+            maximo = fmax(maximo,d_distMat[i * pitch / sizeof(double) + newSchool]);
+        }
+        else{
+            maximo =fmax(maximo,d_distMat[i * pitch / sizeof(double) + d_currentSolution[i]]);
+        }
+        
     }
     //printf("%lf %lf %lf %d %d %d\n",sumDist,totalSesc,totalcostCupo,aluchange,colchange,currentSchool);
     d_currentVars[0] = maximo;
     d_currentVars[1] = totalSesc;
     d_currentVars[2] = totalcostCupo;
     //printf("%lf %lf %lf %d %d %d\n",sumDist,totalSesc,totalcostCupo,aluchange,colchange,currentSchool);
-    var1 = (sumDist/d_n_students);
-    var1= (var1/d_max_dist);
+    var1 = maximo;
     //cout << var1 << "\n";
     var2 = (totalSesc*0.5);
     //cout << var2 << "\n";

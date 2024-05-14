@@ -36,3 +36,5 @@ build/
 
 save/
 .vscode/
+
+R/*.pdf

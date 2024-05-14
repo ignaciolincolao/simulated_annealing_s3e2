@@ -269,6 +269,8 @@ datos <- read_csv("ultimo.csv")
 
 datos <- read_csv("finalfinal.csv")
 
+
+
 datos <- rbind(datos,datos2)
 
 datos <- cbind(datos, block_x_thread=c((datos$n_block*datos$n_thread)))
@@ -638,7 +640,7 @@ dev.off()
 ###################################################################
 
 
-position_solution <- read.csv("./info-graphicsBestSolution.txt", sep=",", dec=".", header = FALSE)
+position_solution <- read.csv("./result_max_dist/2024-05-13 T:18-29-info-graphicsBestSolution.txt", sep=",", dec=".", header = FALSE)
 cromosoma1 <- position_solution[1,]
 cromosoma2 <- as.numeric(position_solution[2,])
 
@@ -692,60 +694,49 @@ ggplot() + geom_polygon(data = hull, alpha = 1,
 
 
 
+matrix_dist <- read.csv("./matriz_dist.csv", sep=",", dec=".", header = FALSE)
+matrix <- as.matrix(matrix_dist)
+minimos_filas <- apply(matrix, 1, max)
+minimo_ordenados <- sort(minimos_filas, decreasing = TRUE)
+top_100_minimos <- head(minimo_ordenados, 100)
+print(top_100_minimos)
+maximo_de_minimos <- max(minimos_filas)
+print(maximo_de_minimos)
 
 
-plot.esc<-function(cromosoma,escuelas,color=T){
-  #  browser()
-  require(RColorBrewer)
-  cromosoma_orig<-cromosoma
-  cualesEsc<-as.numeric(names(table(cromosoma))) #identificar escuelas abiertas
-  #  cromosoma<-cromosomas[[1]]
-  cuales<-cromosoma %in% escuelas #Filtrar estudiantes según escuelas
-  cromosoma<-factor(cromosoma[cuales],cualesEsc)
-  vulni<-factor(vuln[cuales],0:1) #Ver estudiantes vulnerables
-  #  posEstEsc<-as.data.frame(posEst[cromosomas[[1]] %in% escuelas,])
-  posEstEsc<-as.data.frame(posEst[cromosoma_orig %in% escuelas,])
-  posEstEsc<-cbind(posEstEsc,Esc=cromosoma,Vuln=vulni)
-  posEsci<-cbind(as.data.frame(posEsc[cualesEsc,]),id=factor(cualesEsc,cualesEsc))
-  posEsci<-posEsci[posEsci$id %in% escuelas,]
-  posEsci<-cbind(posEsci,Si=unlist(lapply(cualesEsc,function(i) Sesc(cromosoma_orig,i))))
-  
-  rayos<-data.frame(X=0,Y=0,Esc=factor(unlist(lapply(1:nest,function(i) return(c(cromosoma_orig[i],cromosoma_orig[i])))),cualesEsc))
-  
-  for(i in unique(posEsci$id)){
-    cualesEstEsc<-which(posEstEsc$Esc==i)
-    rayos[2*cualesEstEsc-1,1:2]<-posEsci[i,1:2]
-    rayos[2*cualesEstEsc,1:2]<-posEstEsc[cualesEstEsc,1:2]
-    if(i==unique(posEsci$id)[1]){
-      findhull<-posEstEsc[cualesEstEsc[chull(posEstEsc$X[cualesEstEsc],
-                                             posEstEsc$Y[cualesEstEsc])],]
-    } else {
-      findhull<-rbind(findhull,posEstEsc[cualesEstEsc[chull(posEstEsc$X[cualesEstEsc],
-                                                            posEstEsc$Y[cualesEstEsc])],])
-    }
-  }
-  #browser()
-  posEstEsc$Esc<-factor(posEstEsc$Esc,escuelas)
-  posEsci$id<-factor(posEsci$id,escuelas)
-  myColors <- colorRampPalette(brewer.pal(8, "Dark2"))(nesc)
-  names(myColors) <- levels(posEsci$id)
-  
-  p<-ggplot()
-  p<-p+geom_polygon(data=findhull,aes(x=X,y=Y,fill=Esc),alpha=0.1)
-  p<-p+geom_polygon(data=findhull,aes(x=X,y=Y,col=Esc),alpha=0)
-  #p<-p+geom_path(data=rayos,aes(x=X,y=Y,color=Esc))
-  p<-p+geom_point(data=posEsci,aes(x=X,y=Y,size=Si,fill=id),shape=25,color="black")
-  p<-p+scale_size(limits = c(0,1),breaks=c(0,0.3,0.6,1),labels=c("Nula","Alta","Aberrante","Absoluta"))
-  #p<-p+scale_color_manual(values=c("lightred","pink","lightblue","lightgreen","orange"))
-  #p<-p+scale_fill_manual(values=c("lightred","pink","lightblue","lightgreen","orange"))
-  p<-p+scale_color_manual(values=myColors)
-  p<-p+scale_fill_manual(values=myColors)
-  p<-p+geom_point(data=posEstEsc,aes(x=X,y=Y,color=Esc,shape=Vuln),size=3)
-  #p<-p+theme(legend.position="bottom",legend.box="horizontal")
-  p<-p+annotate("text",label=paste("S=",round(S(cromosoma),3),sep=""),
-                x=min(posEstEsc$X),y=min(posEstEsc$Y),size=3,hjust = 0)
-  if(!color) p<-p+scale_color_grey()+scale_fill_grey()
-  p
-}
 
 
+datos <- read_csv("./result_max_dist/2024-05-13 T:18-29-info-graphics.txt")
+moves <- read_csv("./result_max_dist/2024-05-13 T:18-29-info-graphicMoveSolution.txt")
+
+# Crear un gráfico de dispersión para 'it' y 'z'
+ggplot(data = datos, aes(x = it, y = z)) +
+  geom_line() +
+  geom_smooth(method = "lm") +
+  labs(title = "Relación entre 'it' y 'z'",
+       x = "'it'",
+       y = "'z'")+
+
+ggplot(data = datos, aes(x = it, y = max_dist)) +
+  geom_line() +
+  geom_smooth(method = "lm") +
+  labs(title = "Relación entre 'it' y 'max_dist'",
+       x = "'it'",
+       y = "'z'")+
+
+
+ggplot(data = datos, aes(x = it, y = s)) +
+  geom_line() +
+  geom_smooth(method = "lm") +
+  labs(title = "Relación entre 'it' y 's'",
+       x = "'it'",
+       y = "'z'")
+
+ggplot(data = datos, aes(x = it, y = costcupo)) +
+  geom_line() +
+  geom_smooth(method = "lm") +
+  labs(title = "Relación entre 'it' y 'costcupo'",
+       x = "'it'",
+       y = "'z'")+
+  scale_x_continuous(trans= "log")+
+  scale_y_continuous(trans= "log")

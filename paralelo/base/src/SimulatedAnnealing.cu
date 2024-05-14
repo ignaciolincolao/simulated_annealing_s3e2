@@ -179,6 +179,7 @@ double SimulatedAnnealing::runGPU(){
         recordManager->vector_historyTemp.emplace_back(saParams.temp);
         recordManager->vector_historystu.emplace_back(std::get<0>(move));
         recordManager->vector_historycol.emplace_back(std::get<1>(move));
+        //cout << "Student move:" << recordManager->vector_historystu.back() << " Col move: " << recordManager->vector_historycol.back() << endl;
 #endif
         
         if(costCurrentSolution < costBestSolution){
@@ -187,7 +188,7 @@ double SimulatedAnnealing::runGPU(){
             costPreviousSolution = costCurrentSolution;
             saParams.c_accepta++;
             saParams.count_rechaso = 0;
-            //cout << costCurrentSolution << " | " << saParams.count << " | " << id_select <<  endl;
+            //cout << costCurrentSolution << " | " << saParams.count << " | " << saParams.temp <<  endl;
 
 #if SAVE_DATA
             cudaWrapper->copySolutionToHost(bestSolution, previousSolution);
@@ -197,6 +198,11 @@ double SimulatedAnnealing::runGPU(){
             recordManager->vector_costoCupo.emplace_back(costCupo(bestSolution, cupoArray));
             recordManager->vector_temp.emplace_back(saParams.temp);
             recordManager->vector_count.emplace_back(saParams.count);
+            cout << recordManager->vector_costCurrentSolution.back() 
+            << " | max_dist: " << recordManager->vector_meanDist.back()  
+            << " | Segregación: " << recordManager->vector_segregation.back()
+            << " |  costocupo: " << recordManager->vector_costoCupo.back() 
+            << saParams.count << " | " << saParams.temp <<  endl;
             
 #endif
 #if SAVE_DATA
@@ -408,9 +414,30 @@ void SimulatedAnnealing::inicializationValues(T* wrapper){
     previousVars[1] = currentVars[1];
     previousVars[2] = currentVars[2];
     
+    /*
+    std::ofstream archivo("matriz_dist.csv");
+
+    // Recorre las filas de la matriz
+    for (int i = 0; i < saParams.n_students; ++i) {
+        // Recorre los elementos de la fila
+        for (int j = 0; j < saParams.n_colegios; ++j) {
+            archivo << distMat[i][j]; // Escribe el elemento en el archivo
+            if (j < saParams.n_colegios - 1) {
+                archivo << ","; // Añade una coma si no es el último elemento
+            }
+        }
+        archivo << "\n"; // Añade un salto de línea al final de cada fila
+    }
+
+    // Cierra el archivo
+    archivo.close();
+    */
     double var1,var2,var3;
+    var1 = currentVars[0];
+    /*
     var1 = (currentVars[0]/saParams.n_students);
     var1= (var1/saParams.max_dist);
+    */
     //cout << var1 << "\n";
     var2 = (currentVars[1]/2.0);
     //cout << var2 << "\n";
@@ -454,7 +481,8 @@ void SimulatedAnnealing::inicializationValues(T* wrapper){
 /// Calcula el costo
 ///////////////////////////////////////////////////
 double SimulatedAnnealing::calCosto(int *currentSolution, double **distMat, const double *ptr_alpha, int *alumnosSep, int totalVuln, int *cupoArray){
-    double var1 = meanDist(currentSolution,distMat)/saParams.max_dist;
+    double var1 = meanDist(currentSolution,distMat);///saParams.max_dist;
+    cout << saParams.max_dist << endl;
     //cout << "distancia: " << var1 << "\n";
     double var2 = S(currentSolution, alumnosSep, totalVuln);
     //cout << "Segregación: " << var2 << "\n";
@@ -487,11 +515,17 @@ double SimulatedAnnealing::meanDist(const int *currentSolution, double  **distMa
 
 double SimulatedAnnealing::sumDist(const int *currentSolution, double  **distMat){
     double sumDist=0.0;
+    int idxl = 0;
     for(int i=0;i<saParams.n_students;i++){
-        sumDist+=distMat[i][currentSolution[i]]; // distMat[estudiante][escuela]
+        if(distMat[i][currentSolution[i]]>sumDist){
+            sumDist=fmax(sumDist,distMat[i][currentSolution[i]]);
+            idxl = i;
+        }
+         // distMat[estudiante][escuela]
     }
     //cout << "sumDist: " << sumDist << endl;
     //cout << "Numero de estudiantes: " << saParams.n_students << "  |  Suma de distancias:" << sumDist << "\n";
+    cout << "el idxl es: " << idxl << endl; 
     return sumDist;
 }
 

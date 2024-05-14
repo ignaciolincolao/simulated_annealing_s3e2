@@ -31,7 +31,7 @@ int main(int argc, char *argv[])
                 .ruta_save = "../save/",
                 .name_exp = "base"};
 
-    double alp1 =  15.0;
+    double alp1 =  150.0;
     double alp2 = 30.0;
     double alp3 = 25.0;
     SimulatedParams* saParams = new SimulatedParams{
@@ -61,7 +61,7 @@ int main(int argc, char *argv[])
     AcceptanceParams* acParams = new AcceptanceParams{
         .Th = 1.1};
     CoolingParams* csParams = new CoolingParams{
-        .coolingRate = 0.98};
+        .coolingRate = 0.96};
     LengthParams* ltParams = new LengthParams{
         .len1 = 3.5194,
         .len2 = 8.26639,
