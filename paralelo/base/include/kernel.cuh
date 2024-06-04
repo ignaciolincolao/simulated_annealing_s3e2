@@ -3,9 +3,11 @@
 
 #include <iostream>
 #include <stdio.h>
-#include <cuda.h>
+#include <cuda_runtime.h>
+#include <structData.cuh>
 
 using std::size_t;
+
 
 extern __constant__ double d_alpha[3];
 extern __constant__ int d_n_students;
@@ -15,9 +17,7 @@ extern __constant__ int d_totalVuln;
 
 
 __global__ void newSolution_kernel(
-    double *d_array_current_Solution,
-    int *d_array_current_Solution_alu,
-    int *d_array_current_Solution_col,
+    DataResult *d_array_current_Solution,
     const int* __restrict__ d_cupoArray,
     const int* __restrict__ d_alumnosSep,
     const int* __restrict__ d_aluxcol,
@@ -29,20 +29,25 @@ __global__ void newSolution_kernel(
     const double* __restrict__ d_currentVars,
     size_t pitch);
 
-__global__ void reduce_block_kernel(
-    double *d_array_current_Solution,
-    int *d_array_current_Solution_alu,
-    int *d_array_current_Solution_col);
+__global__ void reduce_kernel(
+    DataResult *d_array_current_Solution, 
+    int N);
 
-__global__ void reduce_block_max(
-    double *d_array_current_Solution,
-    int *d_array_current_Solution_alu,
-    int *d_array_current_Solution_col);
+__global__ void all_solution_kernel(
+    DataResult *d_array_current_Solution,
+    const int* __restrict__ d_cupoArray,
+    const int* __restrict__ d_alumnosSep,
+    const int* __restrict__ d_aluxcol,
+    const int* __restrict__ d_aluVulxCol,
+    const int* __restrict__ d_currentSolution,
+    const double* __restrict__ d_distMat,
+    const int* __restrict__ d_shuffle_students,
+    const int* __restrict__ d_shuffle_colegios,
+    const double* __restrict__ d_currentVars,
+    size_t pitch);
 
 __global__ void calculateSolution(
-    double *d_array_current_Solution,
-    int *d_array_current_Solution_alu,
-    int *d_array_current_Solution_col,
+    DataResult *d_array_current_Solution,
     const int* __restrict__ d_cupoArray,
     const int* __restrict__ d_alumnosSep,
     int* d_aluxcol,
@@ -51,7 +56,8 @@ __global__ void calculateSolution(
     const double* __restrict__ d_distMat,
     size_t pitch,
     double *d_currentVars,
-    double *d_costCurrentSolution);
+    double *d_costCurrentSolution,
+    int idx);
 
 
 __global__ void copyMemSolution(
@@ -71,9 +77,7 @@ __global__ void copyCost(
     double *new_costCurrentSolution
     );
 __global__ void calculateSolution(
-    double *d_array_current_Solution,
-    int aluchange,
-    int colchange,
+    DataResult *d_array_current_Solution,
     const int* __restrict__ d_cupoArray,
     const int* __restrict__ d_alumnosSep,
     int* d_aluxcol,

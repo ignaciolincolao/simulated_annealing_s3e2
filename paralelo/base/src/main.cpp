@@ -31,7 +31,7 @@ int main(int argc, char *argv[])
                 .ruta_save = "../save/",
                 .name_exp = "base"};
 
-    double alp1 =  15.0;
+    double alp1 =  10.0;
     double alp2 = 30.0;
     double alp3 = 25.0;
     SimulatedParams* saParams = new SimulatedParams{
@@ -42,8 +42,12 @@ int main(int argc, char *argv[])
         .count = 0,
         .c_cooling_temperature = 0,
         .c_accepta = 0,
-        .temp = 2830.09,
-        .min_temp = 0.0000009,
+        .p = 0.00010,
+        .k = 0.01,
+        .pMax = 0.3,
+        .pInit = 0.01,
+        .temp = 32768.0,
+        .min_temp = 0.00000009,
         .alpha1 = alp1,
         .alpha2 = alp2,
         .alpha3 = alp3,
@@ -57,10 +61,10 @@ int main(int argc, char *argv[])
     AcceptanceParams* acParams = new AcceptanceParams{
         .Th = 1.1};
     CoolingParams* csParams = new CoolingParams{
-        .coolingRate = 0.904556};
+        .coolingRate = 0.92};
     LengthParams* ltParams = new LengthParams{
-        .len1 = 3.03119,
-        .len2 = 8.3714,
+        .len1 = 5,
+        .len2 = 5,
         .len3 = 1.0,
         .len4 = 0.999};
     ReheatingParams* rtParams = new ReheatingParams{
@@ -71,7 +75,7 @@ int main(int argc, char *argv[])
         .k_reheating_init = 0};
 
     CUDAParams* cuParams = new CUDAParams{
-        .n_block = 64,
+        .n_block = 32,
         .n_thread = 32,
         .selectThread = 0,
         .selectBlock = 0};

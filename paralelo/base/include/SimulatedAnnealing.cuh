@@ -43,6 +43,8 @@ using std::uniform_int_distribution;
 using std::uniform_real_distribution;
 
 
+
+
 class SimulatedAnnealing {
 
 private:
@@ -71,6 +73,7 @@ private:
     double* ptr_alpha;
     double *matrestest;
     double **distMat;
+    double *probSelection;
     mt19937& mt;
     
 
@@ -123,6 +126,8 @@ public:
     void initializeArray(int *aluxcol, int *previousAluxCol, int *bestAluxCol, int *aluVulxCol, int *previousAluVulxCol, int *bestAluVulxCol, int *alumnosSep, vector<Info_alu> &students,vector<Info_colegio> &colegios);
     double round_n(double x);
     int acceptanceCriterionApply();
+    int selecSolution();
+    void UpdateProb(int it);
 };
 
 #endif

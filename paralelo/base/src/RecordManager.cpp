@@ -10,6 +10,10 @@ RecordManager::RecordManager(SimulatedParams &saParams_, RecordParams &params_)
     path_names[1] = rMgrParams.ruta_save + rMgrParams.prefijo_save + "-info-register.txt";
     path_names[2] = rMgrParams.ruta_save + rMgrParams.prefijo_save + "-info-graphics.txt";
     path_names[3] = rMgrParams.ruta_save + rMgrParams.prefijo_save + "-info-graphicsBestSolution.txt";
+    path_names[4] = rMgrParams.ruta_save + rMgrParams.prefijo_save + "-info-graphicMoveSolution.txt";
+
+    vector_percentage = {75, 50, 25, 10, 5, 1,0.75,.5,.25,.1,.05,0};
+    vector_it_percentage.resize(vector_percentage.size(), 0);
 }
 
 RecordManager::~RecordManager()
@@ -22,6 +26,8 @@ RecordManager::~RecordManager()
         infoGraphics.close();
     if (infoGraphicsBestSolution.is_open())
         infoGraphicsBestSolution.close();
+    if (infoMove.is_open())
+        infoMove.close();
 }
 
 void RecordManager::open_file(const std::size_t n_file, std::ofstream &file)
@@ -60,6 +66,12 @@ void RecordManager::openRecordGraphicsBestSolution()
     open_file(3, infoGraphicsBestSolution);
 }
 
+void RecordManager::openRecordMoveSolution()
+{
+    open_file(4, infoMove);
+}
+
+
 void RecordManager::closeRecordInfo()
 {
     info.close();
@@ -79,6 +91,12 @@ void RecordManager::closeRecordGraphicsBestSolution()
 {
     infoGraphicsBestSolution.close();
 }
+
+void RecordManager::closeRecordMoveSolution()
+{
+    infoMove.close();
+}
+
 
 /*
  * Escribe la información en los archivos previamente generados
@@ -151,6 +169,19 @@ void RecordManager::SaveGraphicsFinish()
     }
 }
 
+void RecordManager::AllMovementFinish()
+{
+    for (std::size_t x = 0; x < vector_historyCostSolution.size(); x++)
+    {
+        infoMove << vector_historyCostSolution.at(x) << ","
+        << vector_historyTemp.at(x)  << ","
+        << vector_historystu.at(x)  << ","
+        << vector_historycol.at(x)  << ","
+        << vector_historyAcceptSolution.at(x)  << "\n";
+    }
+}
+
+
 void RecordManager::SaveInfoRegister(
     double time_taken,
     double costBestSolution,
@@ -205,5 +236,9 @@ void RecordManager::SaveInfoRegister(
                  << "," << Th
                  << "," << n_block
                  << "," << n_thread
-                 << "," << rMgrParams.name_exp << "\n";
+                 << "," << rMgrParams.name_exp;
+    for (int i=0; i < vector_percentage.size(); i++){
+        infoRegister << "," << vector_it_percentage.at(i);
+    }
+    infoRegister << "\n";
 }
