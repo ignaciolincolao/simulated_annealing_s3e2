@@ -55,9 +55,9 @@ void algorithm_sample(int indice, string timestr, string pathSave){
     RecordParams* rMgrParams = new RecordParams{
                 .prefijo_save = string(timestr),
                 .ruta_save = "../save/",
-                .name_exp = "base_alpha"};
+                .name_exp = "base"};
 
-    double alp1 =  15.0+100.0*indice;
+    double alp1 =  15.0;
     double alp2 = 30.0;
     double alp3 = 25.0;
     seed = mt();
@@ -84,7 +84,7 @@ void algorithm_sample(int indice, string timestr, string pathSave){
     AcceptanceParams* acParams = new AcceptanceParams{
         .Th = 1.1};
     CoolingParams* csParams = new CoolingParams{
-        .coolingRate = 0.88};
+        .coolingRate = 0.97};
     LengthParams* ltParams = new LengthParams{
         .len1 = 1,
         .len2 = 2,
@@ -112,8 +112,46 @@ void algorithm_sample(int indice, string timestr, string pathSave){
     };
 
 
-    n_block = 512;
-    n_thread = 32;
+    int block_threads[36][2] = {
+                                {1,32}, // 32
+                                {2,32}, // 64
+                                {1,64}, 
+                                {8,32}, // 256
+                                {4,64},
+                                {2,128},
+                                {1,256},
+                                {16,32}, // 512
+                                {8,64},
+                                {4,128},
+                                {2,256},
+                                {1,512},
+                                {32,32}, // 1024
+                                {16,64},
+                                {8,128},
+                                {4,256},
+                                {2,512},
+                                {1,1024},
+                                {64,32},  // 2048
+                                {32,64},
+                                {16,128},
+                                {8,256},
+                                {4,512},
+                                {2,1024},
+                                {128,32}, // 4096
+                                {64,64},
+                                {32,128},
+                                {16,256},
+                                {8,512},
+                                {4,1024},
+                                {256,32}, // 8192
+                                {128,64},
+                                {64,128},
+                                {32,256},
+                                {16,512},
+                                {8,1024}
+                            };
+    n_block = block_threads[indice][0];
+    n_thread = block_threads[indice][1];
     temp= 1602.26;
     coolingRate= 0.98;
     len1= 2.78021;
@@ -193,7 +231,7 @@ random_device rd;
     fileData.close();
 
     
-    for (int x=0; x < 30; x++){
+    for (int x=0; x < 36; x++){
         for(int y=0;y < 30; y++){
         algorithm_sample(x, timestr, file_name);
         }
