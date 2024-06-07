@@ -96,26 +96,28 @@ double SimulatedAnnealing::runGPU(){
     cout << "Primer Segregación: " << S(currentSolution, alumnosSep, totalVuln) << "\n";
     cout << "Primer CostoCupo: " << costCupo(currentSolution, cupoArray) << "\n\n";
 #if SAVE_DATA
+    #if ENABLE_OPEN_RECORD_INFO
     recordManager->openRecordInfo();
-    recordManager->openRecordGraphics();
-    recordManager->openRecordGraphicsBestSolution();
-
     recordManager->SaveInfoInit(costBestSolution,
-                                meanDist(currentSolution, distMat),
-                                S(currentSolution, alumnosSep, totalVuln),
-                                costCupo(currentSolution, cupoArray));
-
-    recordManager->SaveGraphicsInit(meanDist(currentSolution, distMat),
-                                    S(currentSolution, alumnosSep, totalVuln),
-                                    costCupo(currentSolution, cupoArray),
-                                    costCurrentSolution);
-
-    recordManager->SaveGraphicsBestSolution(currentSolution);
-
-
+        meanDist(currentSolution, distMat),
+        S(currentSolution, alumnosSep, totalVuln),
+        costCupo(currentSolution, cupoArray));
     recordManager->closeRecordInfo();
+    #endif
+    #ifdef ENABLE_OPEN_RECORD_GRAPHICS
+    recordManager->openRecordGraphics();
+    recordManager->SaveGraphicsInit(meanDist(currentSolution, distMat),
+    S(currentSolution, alumnosSep, totalVuln),
+    costCupo(currentSolution, cupoArray),
+    costCurrentSolution);
     recordManager->closeRecordGraphics();
+    #endif
+
+    #ifdef ENABLE_OPEN_RECORD_GRAPHICS_BEST_SOLUTION
+    recordManager->openRecordGraphicsBestSolution();
+    recordManager->SaveGraphicsBestSolution(currentSolution);
     recordManager->closeRecordGraphicsBestSolution();
+    #endif 
 #endif
     ///////////////////////////////////////////////////
     /// Inicio el contador de tiempo antes de iniciar el algortimo
@@ -127,10 +129,13 @@ double SimulatedAnnealing::runGPU(){
     ///////////////////////////////////////////////////
 
     #if SAVE_DATA
+    #ifdef ENABLE_OPEN_RECORD_REGISTER
     float diff_temp = saParams.temp - saParams.min_temp;
     for(int i=0; i < recordManager->vector_percentage.size();i++){
-        recordManager->vector_percentage[i] = diff_temp * (recordManager->vector_percentage[i]/100) + saParams.min_temp;
+        recordManager->vector_temp_percentage[i] = diff_temp * (recordManager->vector_percentage[i]/100) + saParams.min_temp;
     }
+    #endif
+
     #endif
     saParams.count++;
     while(saParams.temp > saParams.min_temp){
@@ -181,15 +186,20 @@ double SimulatedAnnealing::runGPU(){
         }
         
 #if SAVE_DATA
+    #ifdef ENABLE_OPEN_RECORD_MOVE_SOLUTION
         auto move = cudaWrapper->getMovementDeviceToHost(id_select);
         recordManager->vector_historyCostSolution.emplace_back(costCurrentSolution);
         recordManager->vector_historyTemp.emplace_back(saParams.temp);
         recordManager->vector_historystu.emplace_back(std::get<0>(move));
         recordManager->vector_historycol.emplace_back(std::get<1>(move));
-        if (saParams.temp < recordManager->vector_percentage[recordManager->threshold_count]){
+    #endif
+
+    #ifdef ENABLE_OPEN_RECORD_REGISTER
+        if (saParams.temp < recordManager->vector_temp_percentage[recordManager->threshold_count]){
             recordManager->vector_it_percentage[recordManager->threshold_count] = saParams.count++;
             recordManager->threshold_count+=1;
         }
+    #endif
         
 #endif
         
@@ -202,6 +212,7 @@ double SimulatedAnnealing::runGPU(){
             //cout << costCurrentSolution << " | " << saParams.count << " | " << id_select <<  endl;
 
 #if SAVE_DATA
+    #ifdef ENABLE_OPEN_RECORD_REGISTER       
             cudaWrapper->copySolutionToHost(bestSolution, previousSolution);
             recordManager->vector_costCurrentSolution.emplace_back(costBestSolution);
             recordManager->vector_meanDist.emplace_back(meanDist(bestSolution, distMat));
@@ -209,10 +220,10 @@ double SimulatedAnnealing::runGPU(){
             recordManager->vector_costoCupo.emplace_back(costCupo(bestSolution, cupoArray));
             recordManager->vector_temp.emplace_back(saParams.temp);
             recordManager->vector_count.emplace_back(saParams.count);
-            
-#endif
-#if SAVE_DATA
-    recordManager->vector_historyAcceptSolution.emplace_back(true);
+    #endif
+    #ifdef ENABLE_OPEN_RECORD_MOVE_SOLUTION
+        recordManager->vector_historyAcceptSolution.emplace_back(true);
+    #endif
 #endif
 
         }
@@ -222,7 +233,9 @@ double SimulatedAnnealing::runGPU(){
                 cudaWrapper->AcceptanceSolution();
                 costPreviousSolution = costCurrentSolution;
 #if SAVE_DATA
+    #ifdef ENABLE_OPEN_RECORD_MOVE_SOLUTION
                 recordManager->vector_historyAcceptSolution.emplace_back(true);
+    #endif
 #endif
                 saParams.count_rechaso = 0;
                 saParams.c_accepta++;
@@ -231,7 +244,9 @@ double SimulatedAnnealing::runGPU(){
                 saParams.count_rechaso++;
 
 #if SAVE_DATA
+    #ifdef ENABLE_OPEN_RECORD_MOVE_SOLUTION
                 recordManager->vector_historyAcceptSolution.emplace_back(false);
+    #endif
 #endif
                 
             }
@@ -265,24 +280,29 @@ double SimulatedAnnealing::runGPU(){
     cout << "--------------- Finalizo con exito ----------------" << "\n";
 
 #if SAVE_DATA
+    #ifdef ENABLE_OPEN_RECORD_INFO
     recordManager->openRecordInfo();
-    recordManager->openRecordGraphics();
-    recordManager->openRecordGraphicsBestSolution();
-    recordManager->openRecordRegister();
-    recordManager->openRecordMoveSolution();
-
     recordManager->SaveInfoFinish(costPreviousSolution,
-                                  costBestSolution,
-                                  costCurrentSolution,
-                                  time_taken,
-                                  meanDist(bestSolution, distMat),
-                                  S(bestSolution, alumnosSep, totalVuln),
-                                  costCupo(bestSolution, cupoArray));
-
+        costBestSolution,
+        costCurrentSolution,
+        time_taken,
+        meanDist(bestSolution, distMat),
+        S(bestSolution, alumnosSep, totalVuln),
+        costCupo(bestSolution, cupoArray));
+    recordManager->closeRecordInfo();
+    #endif
+    #ifdef ENABLE_OPEN_RECORD_GRAPHICS
+    recordManager->openRecordGraphics();
     recordManager->SaveGraphicsFinish();
-    recordManager->AllMovementFinish();
-
+    recordManager->closeRecordGraphics();
+    #endif
+    #ifdef ENABLE_OPEN_RECORD_GRAPHICS_BEST_SOLUTION
+    recordManager->openRecordGraphicsBestSolution();
     recordManager->SaveGraphicsBestSolution(bestSolution);
+    recordManager->closeRecordGraphicsBestSolution();
+    #endif
+    #ifdef ENABLE_OPEN_RECORD_REGISTER
+    recordManager->openRecordRegister();
     recordManager->SaveInfoRegister(
         time_taken,
         costBestSolution,
@@ -305,12 +325,13 @@ double SimulatedAnnealing::runGPU(){
         cuParams.n_block,
         cuParams.n_thread
     );
-
-    recordManager->closeRecordInfo();
-    recordManager->closeRecordGraphics();
-    recordManager->closeRecordGraphicsBestSolution();
     recordManager->closeRecordRegister();
+    #endif
+    #ifdef ENABLE_OPEN_RECORD_MOVE_SOLUTION
+    recordManager->openRecordMoveSolution();
+    recordManager->AllMovementFinish();
     recordManager->closeRecordMoveSolution();
+    #endif
 #endif
     delete cudaWrapper;
     // cout << "finalizo con :" << costBestSolution << endl;

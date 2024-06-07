@@ -13,6 +13,7 @@ struct RecordParams
     std::string prefijo_save;
     std::string ruta_save;
     std::string name_exp;
+    std::vector <bool> activated_files;
 };
 
 class RecordManager
@@ -24,6 +25,7 @@ private:
     std::ofstream infoGraphicsBestSolution;
     std::ofstream infoMove;
     std::array<std::string, 5> path_names;
+    std::vector<bool> empty_files;
     RecordParams &rMgrParams;
     SimulatedParams &saParams;
 
@@ -46,8 +48,10 @@ public:
     std::vector<bool> vector_historyAcceptSolution;
     std::vector<int> vector_historystu;
     std::vector<int> vector_historycol;
+    std::vector<double> vector_temp_percentage;
     std::vector<double> vector_percentage;
     std::vector<int> vector_it_percentage;
+    std::vector<bool> vector_activated_files;
     int threshold_count = 0;
 
 public:

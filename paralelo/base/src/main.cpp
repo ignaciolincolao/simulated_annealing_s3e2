@@ -29,7 +29,8 @@ int main(int argc, char *argv[])
     RecordParams* rMgrParams = new RecordParams{
                 .prefijo_save = string(timestr),
                 .ruta_save = "../save/",
-                .name_exp = "base"};
+                .name_exp = "base",
+                .activated_files = {true,true,true,true,true}};
 
     double alp1 =  10.0;
     double alp2 = 30.0;

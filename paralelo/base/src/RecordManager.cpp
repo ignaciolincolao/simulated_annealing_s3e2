@@ -14,6 +14,10 @@ RecordManager::RecordManager(SimulatedParams &saParams_, RecordParams &params_)
 
     vector_percentage = {75, 50, 25, 10, 5, 1,0.75,.5,.25,.1,.05,0};
     vector_it_percentage.resize(vector_percentage.size(), 0);
+    vector_temp_percentage.resize(vector_percentage.size(),0);
+    empty_files.resize(5,true);
+    vector_activated_files.resize(5,true);
+    vector_activated_files = rMgrParams.activated_files;
 }
 
 RecordManager::~RecordManager()
@@ -34,6 +38,19 @@ void RecordManager::open_file(const std::size_t n_file, std::ofstream &file)
 {
     try
     {
+        std::ifstream file_test(path_names[n_file], std::ios::binary);
+        
+        if (!file_test) {
+            empty_files[n_file] = true;
+        }
+        else{
+            file_test.seekg(0, std::ios::end);
+        
+            empty_files[n_file] = (file_test.tellg() == 0 || file_test.tellg() == -1);
+           
+            file_test.close();
+        }
+        
         file.open(path_names[n_file], std::ios::out | std::ios::app);
     }
     catch (const std::ofstream::failure &error)
@@ -204,6 +221,46 @@ void RecordManager::SaveInfoRegister(
     int n_block,
     int n_thread)
 {
+    if(empty_files[1]){
+        infoRegister << "time" << ","
+                 << "costBestSolution" << ","
+                 << "meanDist_max_dist"
+                 << "," << "meanDist"
+                 << "," << "S"
+                 << "," << "costCupo"
+                 << "," << "saParams.count"
+                 << "," << "saParams.temp_init"
+                 << "," << "saParams.temp"
+                 << "," << "saParams.min_temp"
+                 << "," << "saParams.seed"
+                 << "," << "saParams.alpha1"
+                 << "," << "saParams.alpha2"
+                 << "," << "saParams.alpha3"
+                 << "," << "saParams.alpha[0]"
+                 << "," << "saParams.alpha[1]"
+                 << "," << "saParams.alpha[2]"
+                 << "," << "coolingRate"
+                 << "," << "k_reheating_init"
+                 << "," << "e_const"
+                 << "," << "n_reheating"
+                 << "," << "len1_init"
+                 << "," << "len2_init"
+                 << "," << "len3_init"
+                 << "," << "len4_init"
+                 << "," << "len1"
+                 << "," << "len2"
+                 << "," << "len3"
+                 << "," << "len4"
+                 << "," << "Th"
+                 << "," << "n_block"
+                 << "," << "n_thread"
+                 << "," << "rMgrParams.name_exp";
+        for (int i=0; i < vector_percentage.size(); i++){
+            infoRegister << "," << "percentage_" << vector_percentage[i];
+        }
+        infoRegister << "\n";
+
+    }
     infoRegister << std::fixed << time_taken << std::setprecision(9) << ","
                  << costBestSolution << ","
                  << meanDist / saParams.max_dist
@@ -241,4 +298,6 @@ void RecordManager::SaveInfoRegister(
         infoRegister << "," << vector_it_percentage.at(i);
     }
     infoRegister << "\n";
+
+
 }

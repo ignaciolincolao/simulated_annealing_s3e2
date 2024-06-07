@@ -46,16 +46,13 @@ float len2;
 void algorithm_sample(int indice, string timestr, string pathSave){
     random_device rd;
     mt19937 mt(rd());
-    std::ofstream fileData(pathSave, std::ios::app);
-    if (!fileData.is_open()) {
-        std::cerr << "Error al abrir el archivo para escritura." << std::endl;
-        exit(1);
-    }
+
 
     RecordParams* rMgrParams = new RecordParams{
                 .prefijo_save = string(timestr),
                 .ruta_save = "../save/",
-                .name_exp = "base"};
+                .name_exp = "base",
+                .activated_files = {false,true,false,false,false}};
 
     double alp1 =  15.0;
     double alp2 = 30.0;
@@ -153,7 +150,7 @@ void algorithm_sample(int indice, string timestr, string pathSave){
     n_block = block_threads[indice][0];
     n_thread = block_threads[indice][1];
     temp= 1602.26;
-    coolingRate= 0.98;
+    coolingRate= 0.5;
     len1= 2.78021;
     len2= 9.89461;
     cuParams->n_block = n_block;
@@ -184,15 +181,54 @@ void algorithm_sample(int indice, string timestr, string pathSave){
     double val = simulatedAnneling->runGPU();
     it = simulatedAnneling->saParams.count;
 
-    fileData << seed << ","
-            << val << ","
-            << it << ","
-            << n_block << ","
-            << n_thread << ","
-            << temp << ","
-            << coolingRate << ","
-            << len1 << ","
-            << len2 << endl;
+
+    std::ifstream inFile(pathSave);
+    bool isEmpty = inFile.peek() == std::ifstream::traits_type::eof();
+    inFile.close();
+    std::ofstream fileData(pathSave, std::ios::app);
+    if (!fileData.is_open()) {
+        std::cerr << "Error al abrir el archivo para escritura." << std::endl;
+        exit(1);
+    }
+    if (fileData.is_open()) {
+        if (isEmpty) {
+            fileData << "seed,"
+                <<  "z,"
+                <<  "it,"
+                <<  "n_block,"
+                <<  "n_thread,"
+                <<  "temp,"
+                <<  "coolingRate,"
+                <<  "len1,"
+                <<  "len2";
+                for (int i=0; i < simulatedAnneling->recordManager->vector_percentage.size(); i++){
+                    fileData << "," << simulatedAnneling->recordManager->vector_percentage.at(i);
+                }
+                fileData << endl;
+        }
+        fileData << seed << ","
+                    << val << ","
+                    << it << ","
+                    << n_block << ","
+                    << n_thread << ","
+                    << temp << ","
+                    << coolingRate << ","
+                    << len1 << ","
+                    << len2;
+        for (int i=0; i < simulatedAnneling->recordManager->vector_percentage.size(); i++){
+            fileData << "," << simulatedAnneling->recordManager->vector_it_percentage.at(i);
+        }
+        fileData << endl;
+    }
+    else{
+        std::cerr << "No se pudo abrir el archivo " << pathSave << std::endl;
+        }
+
+
+
+
+
+    
     delete simulatedAnneling;
     delete simStruct;
     delete rMgrParams;
@@ -217,18 +253,7 @@ random_device rd;
     char timestr[20];
     strftime(timestr, sizeof(timestr), "%Y-%m-%d T:%H-%M", time_info);
     const std::string file_name = "../save/"+string(timestr)+"seed_iteration.csv";
-    std::ofstream fileData(file_name, std::ios::app);
-    fileData << "seed,"
-        <<  "z,"
-        <<  "it,"
-        <<  "n_block,"
-        <<  "n_thread,"
-        <<  "temp,"
-        <<  "coolingRate,"
-        <<  "len1,"
-        <<  "len2"
-        << std::endl;
-    fileData.close();
+
 
     
     for (int x=0; x < 36; x++){

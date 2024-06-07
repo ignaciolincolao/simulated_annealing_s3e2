@@ -27,6 +27,34 @@ else()
     add_compile_options(-DSAVE_DATA=0)
 endif()
 
+
+
+option(ENABLE_OPEN_RECORD_INFO "Enable openRecordInfo" ON)
+option(ENABLE_OPEN_RECORD_GRAPHICS "Enable openRecordGraphics" ON)
+option(ENABLE_OPEN_RECORD_GRAPHICS_BEST_SOLUTION "Enable openRecordGraphicsBestSolution" ON)
+option(ENABLE_OPEN_RECORD_REGISTER "Enable openRecordRegister" ON)
+option(ENABLE_OPEN_RECORD_MOVE_SOLUTION "Enable openRecordMoveSolution" ON)
+if (ENABLE_OPEN_RECORD_INFO)
+    add_definitions(-DENABLE_OPEN_RECORD_INFO)
+endif()
+
+if (ENABLE_OPEN_RECORD_GRAPHICS)
+    add_definitions(-DENABLE_OPEN_RECORD_GRAPHICS)
+endif()
+
+if (ENABLE_OPEN_RECORD_GRAPHICS_BEST_SOLUTION)
+    add_definitions(-DENABLE_OPEN_RECORD_GRAPHICS_BEST_SOLUTION)
+endif()
+
+if (ENABLE_OPEN_RECORD_REGISTER)
+    add_definitions(-DENABLE_OPEN_RECORD_REGISTER)
+endif()
+
+if (ENABLE_OPEN_RECORD_MOVE_SOLUTION)
+    add_definitions(-DENABLE_OPEN_RECORD_MOVE_SOLUTION)
+endif()
+
+
 include_directories(${PROJECT_SOURCE_DIR}/include)
 
 file(GLOB_RECURSE all_SRCS

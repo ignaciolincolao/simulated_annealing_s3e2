@@ -53,7 +53,7 @@ private:
     LengthTemperature* lengthTemperature;
     ReheatingMethod* reheatingMethod;
     Dataset* dataSet;
-    RecordManager* recordManager;
+    
 
     int* previousSolution;
     int* bestSolution;
@@ -85,6 +85,7 @@ public:
     RecordParams& rmgrParams;
     SimulatedParams& saParams;
     CUDAParams& cuParams;
+    RecordManager* recordManager;
     int totalVuln;
     double costCurrentSolution;
     double costBestSolution;
