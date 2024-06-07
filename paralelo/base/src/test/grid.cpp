@@ -150,7 +150,7 @@ void algorithm_sample(int indice, string timestr, string pathSave){
     n_block = block_threads[indice][0];
     n_thread = block_threads[indice][1];
     temp= 1602.26;
-    coolingRate= 0.5;
+    coolingRate= 0.98;
     len1= 2.78021;
     len2= 9.89461;
     cuParams->n_block = n_block;
