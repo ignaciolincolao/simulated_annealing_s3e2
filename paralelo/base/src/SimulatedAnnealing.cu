@@ -1,7 +1,9 @@
 #include <SimulatedAnnealing.cuh>
 #include <CUDAWrapper.cuh>
+#include <MaxHeap.hpp>
 
-#include <limits>
+
+
 
 #ifndef SAVE_DATA
 #define SAVE_DATA 0
@@ -9,6 +11,7 @@
 #define DECIMAL 16
 
 typedef std::numeric_limits<double> dbl;
+
 
 
 SimulatedAnnealing::SimulatedAnnealing(AcceptanceCriterion* AC,
