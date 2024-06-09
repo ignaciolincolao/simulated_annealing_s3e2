@@ -50,6 +50,7 @@ CUDAWrapper::~CUDAWrapper(){
     cudaFree(d_cupoArray);
     cudaFree(d_distMat);
     cudaFree(d_alpha);
+    cudaFree(d_max_values);
     cudaEventDestroy(start_cuda);
     cudaEventDestroy(stop_cuda);
 }
@@ -87,6 +88,7 @@ void CUDAWrapper::memInit(
     cudaMalloc((void **) &d_previousSolution, saParams.n_students * sizeof(int));
     cudaMalloc((void **) &d_alumnosSep, saParams.n_students * sizeof(int)); // arreglo que contiene la id de cada usuario vulnerable
     cudaMalloc((void **) &d_cupoArray, saParams.n_colegios * sizeof(int));
+    cudaMalloc((void **) &d_max_values, 2 * sizeof(structDist));
 
     
 
@@ -209,7 +211,9 @@ void CUDAWrapper::AcceptanceSolution(){
 
 }
 
-void CUDAWrapper::newSolution(){
+void CUDAWrapper::newSolution(std::vector<structDist> twoMax){
+    cudaMemcpy(d_max_values, twoMax.data(), 2 * sizeof(structDist), cudaMemcpyHostToDevice);
+    cudaDeviceSynchronize();
     newSolution_kernel<<<cuParams.n_block, cuParams.n_thread>>>(
                         d_array_current_Solution,
                                 d_cupoArray,
@@ -221,6 +225,7 @@ void CUDAWrapper::newSolution(){
                                 d_shuffle_students,
                                 d_shuffle_colegios,
                                 d_currentVars,
+                                d_max_values,
                                 pitch);
     CUDAWrapper::synchronizeBucle();
 
@@ -269,7 +274,8 @@ void CUDAWrapper::newSolutionUpdate(double& costCurrentSolution, int id_select)
         pitch,
         d_currentVars,
         d_costCurrentSolution,
-        id_select);
+        id_select,
+        d_max_values);
         getCurrentSolutionGpuToHost(costCurrentSolution);
         synchronizeBucle();
 }

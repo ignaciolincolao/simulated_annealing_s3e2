@@ -52,7 +52,9 @@ public:
     std::vector<double> vector_percentage;
     std::vector<int> vector_it_percentage;
     std::vector<bool> vector_activated_files;
+    std::vector<double> vector_max_dist;
     int threshold_count = 0;
+    
 
 public:
     RecordManager(SimulatedParams &saParams_, RecordParams &params_);
@@ -104,12 +106,14 @@ public:
         double len4,
         double Th,
         int n_block,
-        int n_thread);
+        int n_thread,
+        double max_distance);
 
     void SaveGraphicsInit(double meanDist,
                           double S,
                           double costCupo,
-                          double costCurrentSolution);
+                          double costCurrentSolution,
+                          double max_dist);
 
     void SaveGraphicsFinish();
     void AllGraphicsFinish();

@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <cuda_runtime.h>
 #include <structData.cuh>
+#include <structDist.hpp>
 
 using std::size_t;
 
@@ -27,6 +28,7 @@ __global__ void newSolution_kernel(
     const int* __restrict__ d_shuffle_students,
     const int* __restrict__ d_shuffle_colegios,
     const double* __restrict__ d_currentVars,
+    const structDist* __restrict__ d_max_values,
     size_t pitch);
 
 __global__ void reduce_kernel(
@@ -57,7 +59,8 @@ __global__ void calculateSolution(
     size_t pitch,
     double *d_currentVars,
     double *d_costCurrentSolution,
-    int idx);
+    int idx,
+    const structDist* __restrict__ d_max_values);
 
 
 __global__ void copyMemSolution(

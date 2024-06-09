@@ -23,6 +23,9 @@
 #include <structure/ReheatingMethod/ReheatingMethod.hpp>
 #include <RecordManager.hpp>
 #include <Dataset.hpp>
+#include <MaxHeap.hpp>
+#include <structDist.hpp>
+
 
 using std::string;
 using std::stof;
@@ -75,7 +78,7 @@ private:
     double **distMat;
     double *probSelection;
     mt19937& mt;
-    
+    MaxHeap maxHeap;
 
 public:
     AcceptanceParams& acParams;
@@ -129,6 +132,8 @@ public:
     int acceptanceCriterionApply();
     int selecSolution();
     void UpdateProb(int it);
+    void load_distance(MaxHeap& maxheap, double **distMat, int *currentSolution,int n_student);
+    double currentMaxDist();
 };
 
 #endif

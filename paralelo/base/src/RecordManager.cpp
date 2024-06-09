@@ -160,7 +160,7 @@ void RecordManager::SaveGraphicsBestSolution(int *solution)
     infoGraphicsBestSolution << "\n";
 }
 
-void RecordManager::SaveGraphicsInit(double meanDist, double S, double costCupo, double costCurrentSolution)
+void RecordManager::SaveGraphicsInit(double meanDist, double S, double costCupo, double costCurrentSolution, double max_dist)
 {
     infoGraphics << std::setprecision(13);
     infoGraphics << saParams.count << ","
@@ -169,7 +169,8 @@ void RecordManager::SaveGraphicsInit(double meanDist, double S, double costCupo,
                  << S << ","                                        // Indice de duncan
                  << costCupo << ","                                 // Costo cupo de las escuelas
                  << costCurrentSolution << ","                      // Solución actual
-                 << saParams.temp << std::setprecision(13) << "\n"; // Temperatura actual
+                 << saParams.temp << ","
+                 << max_dist << std::setprecision(13) << "\n"; // Temperatura actual
 }
 
 void RecordManager::SaveGraphicsFinish()
@@ -182,7 +183,8 @@ void RecordManager::SaveGraphicsFinish()
                      << vector_segregation.at(x) << ","
                      << vector_costoCupo.at(x) << ","
                      << vector_costCurrentSolution.at(x) << ","
-                     << std::fixed << vector_temp.at(x) << std::setprecision(13) << "\n";
+                     << std::fixed << vector_temp.at(x) << std::setprecision(13) << ","
+                     << vector_max_dist.at(x) << "\n";
     }
 }
 
@@ -219,7 +221,8 @@ void RecordManager::SaveInfoRegister(
     double len4,
     double Th,
     int n_block,
-    int n_thread)
+    int n_thread,
+    double max_distance)
 {
     if(empty_files[1]){
         infoRegister << "time" << ","
@@ -254,7 +257,8 @@ void RecordManager::SaveInfoRegister(
                  << "," << "Th"
                  << "," << "n_block"
                  << "," << "n_thread"
-                 << "," << "rMgrParams.name_exp";
+                 << "," << "rMgrParams.name_exp"
+                 << "," << "max_distance";
         for (int i=0; i < vector_percentage.size(); i++){
             infoRegister << "," << "percentage_" << vector_percentage[i];
         }
@@ -293,7 +297,8 @@ void RecordManager::SaveInfoRegister(
                  << "," << Th
                  << "," << n_block
                  << "," << n_thread
-                 << "," << rMgrParams.name_exp;
+                 << "," << rMgrParams.name_exp
+                 << ',' << max_distance;
     for (int i=0; i < vector_percentage.size(); i++){
         infoRegister << "," << vector_it_percentage.at(i);
     }

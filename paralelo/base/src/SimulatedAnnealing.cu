@@ -1,6 +1,6 @@
 #include <SimulatedAnnealing.cuh>
 #include <CUDAWrapper.cuh>
-#include <MaxHeap.hpp>
+
 
 
 
@@ -92,27 +92,30 @@ double SimulatedAnnealing::runGPU(){
         matrestest,
         alpha,
         currentVars);
-
+    auto twoMax = maxHeap.getTwoMax();
+    double max_dist = twoMax.data()[0].distance;
     cout << "--------------- Primeros datos -------------\n";
     cout << "Primer costo de solución: " << costBestSolution << "\n";
-    cout << "Primer distancia: " << meanDist(currentSolution, distMat) << "\n";
+    cout << "Primer maxima_distancia: " << max_dist << "\n";
     cout << "Primer Segregación: " << S(currentSolution, alumnosSep, totalVuln) << "\n";
     cout << "Primer CostoCupo: " << costCupo(currentSolution, cupoArray) << "\n\n";
+    
 #if SAVE_DATA
     #if ENABLE_OPEN_RECORD_INFO
     recordManager->openRecordInfo();
     recordManager->SaveInfoInit(costBestSolution,
-        meanDist(currentSolution, distMat),
+        meanDist(currentSolution,distMat),
         S(currentSolution, alumnosSep, totalVuln),
         costCupo(currentSolution, cupoArray));
     recordManager->closeRecordInfo();
     #endif
     #ifdef ENABLE_OPEN_RECORD_GRAPHICS
     recordManager->openRecordGraphics();
-    recordManager->SaveGraphicsInit(meanDist(currentSolution, distMat),
+    recordManager->SaveGraphicsInit(meanDist(currentSolution,distMat),
     S(currentSolution, alumnosSep, totalVuln),
     costCupo(currentSolution, cupoArray),
-    costCurrentSolution);
+    costCurrentSolution,
+    max_dist);
     recordManager->closeRecordGraphics();
     #endif
 
@@ -141,6 +144,7 @@ double SimulatedAnnealing::runGPU(){
 
     #endif
     saParams.count++;
+
     while(saParams.temp > saParams.min_temp){
         ///////////////////////////////////////////////////
         /// Copia Solución Anterior a la actual
@@ -159,7 +163,9 @@ double SimulatedAnnealing::runGPU(){
         ///////////////////////////////////////////////////
         ///  Ejecuta los kernel
         //////////////////////////////////////////////////
-        cudaWrapper->newSolution();
+
+        twoMax = maxHeap.getTwoMax();
+        cudaWrapper->newSolution(twoMax);
         cudaWrapper->find_minimum();
         //cudaWrapper->sortSolutions();
         //UpdateProb(saParams.count);
@@ -172,7 +178,7 @@ double SimulatedAnnealing::runGPU(){
         ///  Actualiza la nueva solución en la GPU
         //////////////////////////////////////////////////
         cudaWrapper->newSolutionUpdate(costCurrentSolution, id_select);
-        
+        std::tie(cuParams.selectThread, cuParams.selectBlock) = cudaWrapper->getMovementDeviceToHost(id_select); 
         ///////////////////////////////////////////////////
         ///  Verifica Error
         //////////////////////////////////////////////////
@@ -187,14 +193,14 @@ double SimulatedAnnealing::runGPU(){
             std::cout << costCurrentSolution;
             exit(1);
         }
-        
+           
 #if SAVE_DATA
     #ifdef ENABLE_OPEN_RECORD_MOVE_SOLUTION
-        auto move = cudaWrapper->getMovementDeviceToHost(id_select);
+        
         recordManager->vector_historyCostSolution.emplace_back(costCurrentSolution);
         recordManager->vector_historyTemp.emplace_back(saParams.temp);
-        recordManager->vector_historystu.emplace_back(std::get<0>(move));
-        recordManager->vector_historycol.emplace_back(std::get<1>(move));
+        recordManager->vector_historystu.emplace_back(cuParams.selectThread);
+        recordManager->vector_historycol.emplace_back(cuParams.selectBlock);
     #endif
 
     #ifdef ENABLE_OPEN_RECORD_REGISTER
@@ -212,6 +218,9 @@ double SimulatedAnnealing::runGPU(){
             costPreviousSolution = costCurrentSolution;
             saParams.c_accepta++;
             saParams.count_rechaso = 0;
+            maxHeap.removeById(cuParams.selectThread);
+            maxHeap.insert(structDist({distMat[cuParams.selectThread][cuParams.selectBlock],cuParams.selectThread}));
+            max_dist = maxHeap.getMax().distance;
             //cout << costCurrentSolution << " | " << saParams.count << " | " << id_select <<  endl;
 
 #if SAVE_DATA
@@ -223,6 +232,8 @@ double SimulatedAnnealing::runGPU(){
             recordManager->vector_costoCupo.emplace_back(costCupo(bestSolution, cupoArray));
             recordManager->vector_temp.emplace_back(saParams.temp);
             recordManager->vector_count.emplace_back(saParams.count);
+            recordManager->vector_max_dist.emplace_back(max_dist);
+
     #endif
     #ifdef ENABLE_OPEN_RECORD_MOVE_SOLUTION
         recordManager->vector_historyAcceptSolution.emplace_back(true);
@@ -235,6 +246,8 @@ double SimulatedAnnealing::runGPU(){
 
                 cudaWrapper->AcceptanceSolution();
                 costPreviousSolution = costCurrentSolution;
+                maxHeap.removeById(cuParams.selectThread);
+                maxHeap.insert(structDist({distMat[cuParams.selectThread][cuParams.selectBlock],cuParams.selectThread}));
 #if SAVE_DATA
     #ifdef ENABLE_OPEN_RECORD_MOVE_SOLUTION
                 recordManager->vector_historyAcceptSolution.emplace_back(true);
@@ -277,7 +290,7 @@ double SimulatedAnnealing::runGPU(){
     cout << "Costo de la mejor solución: " << costBestSolution << "\n";
     cout << "Costo de la solución actual: " << costCurrentSolution << "\n";
     cout << "Tiempo de ejecución de SA: " << time_taken << "\n";
-    cout << "distancia: " << meanDist(bestSolution, distMat) << "\n";
+    cout << "distancia: " << max_dist << "\n";
     cout << "Segregación: " << S(bestSolution, alumnosSep, totalVuln) << "\n";
     cout << "CostoCupo: " << costCupo(bestSolution, cupoArray) << "\n";
     cout << "--------------- Finalizo con exito ----------------" << "\n";
@@ -289,7 +302,7 @@ double SimulatedAnnealing::runGPU(){
         costBestSolution,
         costCurrentSolution,
         time_taken,
-        meanDist(bestSolution, distMat),
+        max_dist,
         S(bestSolution, alumnosSep, totalVuln),
         costCupo(bestSolution, cupoArray));
     recordManager->closeRecordInfo();
@@ -326,7 +339,8 @@ double SimulatedAnnealing::runGPU(){
         ltParams.len4,
         acParams.Th,
         cuParams.n_block,
-        cuParams.n_thread
+        cuParams.n_thread,
+        max_dist
     );
     recordManager->closeRecordRegister();
     #endif
@@ -400,7 +414,9 @@ void SimulatedAnnealing::inicializationValues(T* wrapper){
                 dataSet->colegios);
     assignSchoolToArray(previousSolution, bestSolution, currentSolution, dataSet->ptr_colegios, dataSet->ptr_students, cupoArray);
     calcDist(dataSet->ptr_colegios, dataSet->ptr_students, distMat);
+    load_distance(maxHeap,distMat,currentSolution,saParams.n_students);
     saParams.max_dist = getMaxDistance(distMat);
+    double max_student_dist = maxHeap.getMax().distance; 
     normalizedAlpha(alpha);
 
     ///////////////////////////////////////////////////
@@ -437,7 +453,7 @@ void SimulatedAnnealing::inicializationValues(T* wrapper){
     
     // double costCurrentSolutionV2 = costCurrentSolution;
     
-    currentVars[0] = sumDist(currentSolution,distMat);
+    currentVars[0] = max_student_dist;
     currentVars[1] = sumS(currentSolution, alumnosSep, totalVuln);
     currentVars[2] = sumCostCupo(currentSolution,cupoArray);
     previousVars[0] = currentVars[0];
@@ -445,8 +461,7 @@ void SimulatedAnnealing::inicializationValues(T* wrapper){
     previousVars[2] = currentVars[2];
     
     double var1,var2,var3;
-    var1 = (currentVars[0]/saParams.n_students);
-    var1= (var1/saParams.max_dist);
+    var1= max_student_dist;
     //cout << var1 << "\n";
     var2 = (currentVars[1]/2.0);
     //cout << var2 << "\n";
@@ -490,7 +505,7 @@ void SimulatedAnnealing::inicializationValues(T* wrapper){
 /// Calcula el costo
 ///////////////////////////////////////////////////
 double SimulatedAnnealing::calCosto(int *currentSolution, double **distMat, const double *ptr_alpha, int *alumnosSep, int totalVuln, int *cupoArray){
-    double var1 = meanDist(currentSolution,distMat)/saParams.max_dist;
+    double var1 = currentMaxDist();
     //cout << "distancia: " << var1 << "\n";
     double var2 = S(currentSolution, alumnosSep, totalVuln);
     //cout << "Segregación: " << var2 << "\n";
@@ -510,6 +525,10 @@ double SimulatedAnnealing::meanDist(const int *currentSolution, double  **distMa
     //cout << "meanDist: " << sumDist << endl;
     //cout << "Numero de estudiantes: " << saParams.n_students << "  |  Suma de distancias:" << sumDist << "\n";
     return sumDist/saParams.n_students;
+}
+
+double SimulatedAnnealing::currentMaxDist(){
+    return maxHeap.getMax().distance;
 }
 
 double SimulatedAnnealing::sumDist(const int *currentSolution, double  **distMat){
@@ -786,4 +805,11 @@ void SimulatedAnnealing::UpdateProb(int it){
 
         // Asegurar que el último elemento sea 1
         probSelection[size - 1] = 1;
+}
+
+
+void SimulatedAnnealing::load_distance(MaxHeap& maxheap, double **distMat, int *currentSolution,int n_student){
+    for(int i=0; i < n_student; i++){
+        maxheap.insert(structDist({distMat[i][currentSolution[i]],i}));
+    }
 }

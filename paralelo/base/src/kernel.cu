@@ -17,6 +17,7 @@ __global__ void newSolution_kernel(
     const int* __restrict__ d_shuffle_students,
     const int* __restrict__ d_shuffle_colegios,
     const double* __restrict__ d_currentVars,
+    const structDist* __restrict__ d_max_values,
     size_t pitch) {
     int tid = blockIdx.x * blockDim.x + threadIdx.x;
     int aluchange,
@@ -29,8 +30,9 @@ __global__ void newSolution_kernel(
             alu_solution;
     double  totalcostCupo= 0.0,
             totalSesc= 0.0,
-            sumDist = 0.0,
             cost_solution;
+    
+
     aluchange = d_shuffle_students[tid%d_n_students]; 
     newSchool = d_shuffle_colegios[blockIdx.x%d_n_colegios];
     currentSchool = d_currentSolution[aluchange];
@@ -39,14 +41,14 @@ __global__ void newSolution_kernel(
     d_array_current_Solution[tid].col = col_solution;
     d_array_current_Solution[tid].stu = alu_solution;
     
-    sumDist = d_currentVars[0];
+    //sumDist = d_currentVars[0];
     totalSesc = d_currentVars[1];
     totalcostCupo = d_currentVars[2];
     ////////////////////////////////////////////////////////////////
     /////// Descuenta antes de mover
     ////////////////////////////////////////////////////////////////
     // Distancia
-    sumDist -= d_distMat[aluchange * pitch / sizeof(double) + currentSchool];
+    //sumDist -= d_distMat[aluchange * pitch / sizeof(double) + currentSchool];
     // seg de la escuela actual
     totalAluCol = d_aluxcol[currentSchool];
     //cout << "Alumnos actual escuela "<< totalAluCol << " " << endl;
@@ -71,7 +73,7 @@ __global__ void newSolution_kernel(
     ////////////////////////////////////////////////////////////////
     ////// Calculó despues de mover
     //////////////////////////////////////////////////////////////
-    sumDist += d_distMat[aluchange * pitch / sizeof(double) + newSchool];
+    //sumDist += d_distMat[aluchange * pitch / sizeof(double) + newSchool];
     // seg de la escuela actual
     totalAluCol = d_aluxcol[currentSchool]-1;
     aluVulCol = d_aluVulxCol[currentSchool];
@@ -91,7 +93,25 @@ __global__ void newSolution_kernel(
     // costcupo escuela antigua
     totalcostCupo += ((double)totalAluCol * fabs((double)d_cupoArray[newSchool] - totalAluCol) / pow(((double)d_cupoArray[newSchool] * 0.5), 2));
 
-    cost_solution = d_alpha[0] * (sumDist / (d_n_students * d_max_dist));
+    //Obtiene el maximo
+    double max_dist = d_max_values[0].distance;
+    double current_dist = d_distMat[aluchange  * pitch / sizeof(double) + newSchool];
+
+    // Máscaras booleanas
+    int is_aluchange_max = (aluchange == d_max_values->id);
+    int is_not_aluchange_max = 1 - is_aluchange_max;
+
+    // Máscaras para las comparaciones de distancias
+    int is_greater_than_max1 = (current_dist > d_max_values[1].distance);
+    int is_greater_than_max0 = (current_dist > d_max_values[0].distance);
+
+    // Selección condicional sin bifurcaciones
+    double max_dist1 = is_aluchange_max * ((1 - is_greater_than_max1) * d_max_values[1].distance + is_greater_than_max1 * current_dist);
+    double max_dist2 = is_not_aluchange_max * ((1 - is_greater_than_max0) * d_max_values[0].distance + is_greater_than_max0 * current_dist);
+
+    // Combina los resultados
+    max_dist = max_dist1 + max_dist2;
+    cost_solution = d_alpha[0] * max_dist;//(sumDist / (d_n_students * d_max_dist));
     cost_solution += d_alpha[1] * (totalSesc * 0.5);
     cost_solution += d_alpha[2] * (totalcostCupo / d_n_colegios);
 
@@ -178,7 +198,8 @@ __global__ void calculateSolution(
     size_t pitch,
     double *d_currentVars,
     double *d_costCurrentSolution,
-    int id_select){
+    int id_select,
+    const structDist* __restrict__ d_max_values){
 
     int aluchange,
     colchange,
@@ -192,8 +213,7 @@ __global__ void calculateSolution(
             totalSesc= 0.0,
             var1,
             var2,
-            var3,
-            sumDist = 0.0;
+            var3;
     /// Inicializa arrays
 
     aluchange = d_array_current_Solution[id_select].stu;
@@ -203,7 +223,7 @@ __global__ void calculateSolution(
     newSchool = colchange;
 
     
-    sumDist= d_currentVars[0];
+    //sumDist= d_currentVars[0];
     totalSesc = d_currentVars[1];
     totalcostCupo = d_currentVars[2];
 
@@ -213,7 +233,7 @@ __global__ void calculateSolution(
     /////// Descuenta antes de mover
     ////////////////////////////////////////////////////////////////
     // Distancia
-    sumDist-=d_distMat[aluchange * pitch / sizeof(double) + currentSchool];
+    //sumDist-=d_distMat[aluchange * pitch / sizeof(double) + currentSchool];
     //printf("%lf \n",sumDist);
     // seg de la escuela actual
     totalAluCol = d_aluxcol[currentSchool];
@@ -254,7 +274,7 @@ __global__ void calculateSolution(
     ////////////////////////////////////////////////////////////////
     ////// Calculó despues de mover
     //////////////////////////////////////////////////////////////
-    sumDist+=d_distMat[aluchange * pitch / sizeof(double) + newSchool];
+    //sumDist+=d_distMat[aluchange * pitch / sizeof(double) + newSchool];
     
     // seg de la escuela actual
     totalAluCol = d_aluxcol[currentSchool];
@@ -277,12 +297,32 @@ __global__ void calculateSolution(
 
     totalcostCupo+=((double)totalAluCol*fabs((double)d_cupoArray[newSchool]-totalAluCol)/pow(((double)d_cupoArray[newSchool]*0.5),2));
     //printf("%lf %lf %lf %d %d %d\n",sumDist,totalSesc,totalcostCupo,aluchange,colchange,currentSchool);
-    d_currentVars[0] = sumDist;
+        //Obtiene el maximo
+    double max_dist = d_max_values[0].distance;
+    double current_dist = d_distMat[aluchange  * pitch / sizeof(double) + newSchool];
+
+    // Máscaras booleanas
+    int is_aluchange_max = (aluchange == d_max_values->id);
+    int is_not_aluchange_max = 1 - is_aluchange_max;
+
+    // Máscaras para las comparaciones de distancias
+    int is_greater_than_max1 = (current_dist > d_max_values[1].distance);
+    int is_greater_than_max0 = (current_dist > d_max_values[0].distance);
+
+    // Selección condicional sin bifurcaciones
+    double max_dist1 = is_aluchange_max * ((1 - is_greater_than_max1) * d_max_values[1].distance + is_greater_than_max1 * current_dist);
+    double max_dist2 = is_not_aluchange_max * ((1 - is_greater_than_max0) * d_max_values[0].distance + is_greater_than_max0 * current_dist);
+
+    // Combina los resultados
+    max_dist = max_dist1 + max_dist2;
+
+    
+    
+    d_currentVars[0] = max_dist;
     d_currentVars[1] = totalSesc;
     d_currentVars[2] = totalcostCupo;
     //printf("%lf %lf %lf %d %d %d\n",sumDist,totalSesc,totalcostCupo,aluchange,colchange,currentSchool);
-    var1 = (sumDist/d_n_students);
-    var1= (var1/d_max_dist);
+    var1= (max_dist);
     //cout << var1 << "\n";
     var2 = (totalSesc*0.5);
     //cout << var2 << "\n";

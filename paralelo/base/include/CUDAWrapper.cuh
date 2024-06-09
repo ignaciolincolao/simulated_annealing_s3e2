@@ -23,6 +23,7 @@
 #include <thrust/host_vector.h>
 #include <thrust/sort.h>
 #include <structData.cuh>
+#include <structDist.hpp>
 
 using std::string;
 using std::stof;
@@ -77,6 +78,7 @@ class CUDAWrapper{
         cudaError_t errAsync;
         size_t pitch;
         mt19937& mt;
+        structDist* d_max_values;
     public:
         CUDAWrapper(CUDAParams& cuParams_,SimulatedParams& saParams, mt19937& mt);
         ~CUDAWrapper();
@@ -97,7 +99,7 @@ class CUDAWrapper{
         void uploadCurrentMemorySolution();
         void AcceptanceBestSolution();
         void AcceptanceSolution();
-        void newSolution();
+        void newSolution(std::vector<structDist> twoMax);
         void find_minimum();
         void newSolutionRandomSelection(
             uniform_int_distribution<int> dist,
