@@ -34,7 +34,7 @@ __global__ void newSolution_kernel(
     
 
     aluchange = d_shuffle_students[tid%d_n_students]; 
-    newSchool = d_shuffle_colegios[blockIdx.x%d_n_colegios];
+    newSchool = d_shuffle_colegios[0];
     currentSchool = d_currentSolution[aluchange];
     col_solution = newSchool;
     alu_solution = aluchange;
