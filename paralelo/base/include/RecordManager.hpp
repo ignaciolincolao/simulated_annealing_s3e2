@@ -24,7 +24,8 @@ private:
     std::ofstream infoGraphics;
     std::ofstream infoGraphicsBestSolution;
     std::ofstream infoMove;
-    std::array<std::string, 5> path_names;
+    std::ofstream infoJson;
+    std::array<std::string, 6> path_names;
     std::vector<bool> empty_files;
     RecordParams &rMgrParams;
     SimulatedParams &saParams;
@@ -64,12 +65,14 @@ public:
     void openRecordGraphics();
     void openRecordGraphicsBestSolution();
     void openRecordMoveSolution();
+    void openRecordInfoJson();
 
     void closeRecordInfo();
     void closeRecordRegister();
     void closeRecordGraphics();
     void closeRecordGraphicsBestSolution();
     void closeRecordMoveSolution();
+    void closeRecordInfoJson();
 
     void SaveInfoInit(double costBestSolution,
                       double meanDist,
@@ -104,7 +107,8 @@ public:
         double len4,
         double Th,
         int n_block,
-        int n_thread);
+        int n_thread,
+        int *solution);
 
     void SaveGraphicsInit(double meanDist,
                           double S,

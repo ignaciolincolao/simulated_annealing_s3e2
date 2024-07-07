@@ -5,4 +5,4 @@
 
 
 cd ./build
-./grid_executable 100000 0.98 1 2
+./grid_executable 1602.26 0.999 2.78021 9.89461

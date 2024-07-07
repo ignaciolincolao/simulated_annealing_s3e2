@@ -43,7 +43,7 @@ float len2;
 
 
 
-void algorithm_sample(int indice, string timestr, string pathSave){
+void algorithm_sample(int indice, string timestr, string pathSave,int argc, char *argv[]){
     random_device rd;
     mt19937 mt(rd());
 
@@ -149,12 +149,21 @@ void algorithm_sample(int indice, string timestr, string pathSave){
                             };
     n_block = block_threads[indice][0];
     n_thread = block_threads[indice][1];
-    temp= 1602.26;
-    coolingRate= 0.98;
-    len1= 2.78021;
-    len2= 9.89461;
     cuParams->n_block = n_block;
     cuParams->n_thread = n_thread;
+    if(argc < 2){
+        temp= 1602.26;
+        coolingRate= 0.98;
+        len1= 2.78021;
+        len2= 9.89461;
+    }
+    else{
+        temp= std::stod(argv[1]);
+        coolingRate= std::stod(argv[2]);
+        len1= std::stod(argv[3]);
+        len2= std::stod(argv[4]);
+
+    }
     saParams->temp = temp;
     csParams->coolingRate = coolingRate;
     ltParams->len1 = len1;
@@ -243,6 +252,7 @@ void algorithm_sample(int indice, string timestr, string pathSave){
 int main(int argc, char *argv[])
 {
 random_device rd;
+
     mt19937 mt(rd());
 
     // Hora Actual
@@ -253,12 +263,10 @@ random_device rd;
     char timestr[20];
     strftime(timestr, sizeof(timestr), "%Y-%m-%d T:%H-%M", time_info);
     const std::string file_name = "../save/"+string(timestr)+"seed_iteration.csv";
-
-
     
     for (int x=0; x < 36; x++){
         for(int y=0;y < 30; y++){
-        algorithm_sample(x, timestr, file_name);
+        algorithm_sample(x, timestr, file_name,argc,argv);
         }
     }
 
