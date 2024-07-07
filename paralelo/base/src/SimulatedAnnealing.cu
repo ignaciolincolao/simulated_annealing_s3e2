@@ -323,7 +323,8 @@ double SimulatedAnnealing::runGPU(){
         ltParams.len4,
         acParams.Th,
         cuParams.n_block,
-        cuParams.n_thread
+        cuParams.n_thread,
+        bestSolution
     );
     recordManager->closeRecordRegister();
     #endif

@@ -79,12 +79,16 @@ if (BUILD_SHARED_LIB)
             PATTERN "*.hpp"
             PATTERN "*.cuh")
 else()
+
+
+    find_package(nlohmann_json REQUIRED)
     add_executable(paralelo src/main.cpp ${all_SRCS} alumnos_utm.txt colegios_utm.txt)
     add_executable(grid_executable src/test/grid.cpp ${all_SRCS}  alumnos_utm.txt colegios_utm.txt)
     configure_file(${CMAKE_CURRENT_SOURCE_DIR}/data/alumnos_utm.txt ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
     configure_file(${CMAKE_CURRENT_SOURCE_DIR}/data/colegios_utm.txt ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
 
-    
+    target_link_libraries(grid_executable PRIVATE nlohmann_json::nlohmann_json)
+    target_link_libraries(paralelo PRIVATE nlohmann_json::nlohmann_json)
     set_target_properties(grid_executable PROPERTIES LINKER_LANGUAGE CXX)
     set_property(TARGET grid_executable PROPERTY CUDA_ARCHITECTURES native)
     set_property(TARGET grid_executable PROPERTY CUDA_SEPARABLE_COMPILATION ON)

@@ -30,3 +30,9 @@ cmake -DENABLE_SAVE_DATA=ON -DENABLE_OPEN_RECORD_INFO=OFF -DENABLE_OPEN_RECORD_G
 2- dentro escribir:
     cmake ..
     sudo cmake -P cmake_install.cmake
+
+
+
+Libreria necesaria es:
+nlohmnan json
+sudo apt-get install nlohmann-json3-dev
