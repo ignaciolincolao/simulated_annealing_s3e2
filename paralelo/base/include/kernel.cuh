@@ -9,7 +9,7 @@
 using std::size_t;
 
 
-extern __constant__ double d_alpha[3];
+extern __constant__ double d_alpha[4];
 extern __constant__ int d_n_students;
 extern __constant__ int d_n_colegios;
 extern __constant__ double d_max_dist;
@@ -27,6 +27,7 @@ __global__ void newSolution_kernel(
     const int* __restrict__ d_shuffle_students,
     const int* __restrict__ d_shuffle_colegios,
     const double* __restrict__ d_currentVars,
+    const uint8_t *__restrict__ d_choices,
     size_t pitch);
 
 __global__ void reduce_kernel(
@@ -55,6 +56,7 @@ __global__ void calculateSolution(
     int* d_currentSolution,
     const double* __restrict__ d_distMat,
     size_t pitch,
+    uint8_t *d_choices,
     double *d_currentVars,
     double *d_costCurrentSolution,
     int idx);
@@ -88,4 +90,6 @@ __global__ void calculateSolution(
     double *d_currentVars,
     double *d_costCurrentSolution);
 inline __device__ double cu_round_n(double x);
+
+inline __device__ double calcPenalty(double currentSolution, uint8_t *choices);
 #endif

@@ -36,3 +36,4 @@ build/
 
 save/
 .vscode/
+CMakeSettings.json

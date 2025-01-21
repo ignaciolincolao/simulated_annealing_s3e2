@@ -88,6 +88,7 @@ double SimulatedAnnealing::runGPU(){
         aluVulxCol,
         matrestest,
         alpha,
+        choices_parents,
         currentVars);
 
     cout << "--------------- Primeros datos -------------\n";
@@ -95,6 +96,8 @@ double SimulatedAnnealing::runGPU(){
     cout << "Primer distancia: " << meanDist(currentSolution, distMat) << "\n";
     cout << "Primer Segregación: " << S(currentSolution, alumnosSep, totalVuln) << "\n";
     cout << "Primer CostoCupo: " << costCupo(currentSolution, cupoArray) << "\n\n";
+    //preguntarle al lincolao como es que se hace la combinacion CPU/GPU
+    cout << "Penalty inicial: " << penaltyParents(currentSolution) << "\n\n";
 #if SAVE_DATA
     #if ENABLE_OPEN_RECORD_INFO
     recordManager->openRecordInfo();
@@ -277,6 +280,7 @@ double SimulatedAnnealing::runGPU(){
     cout << "distancia: " << meanDist(bestSolution, distMat) << "\n";
     cout << "Segregación: " << S(bestSolution, alumnosSep, totalVuln) << "\n";
     cout << "CostoCupo: " << costCupo(bestSolution, cupoArray) << "\n";
+    cout << "Penalty final: " << penaltyParents(bestSolution) << "\n";
     cout << "--------------- Finalizo con exito ----------------" << "\n";
 
 #if SAVE_DATA
@@ -355,6 +359,7 @@ void SimulatedAnnealing::inicializationValues(T* wrapper){
 
     aluxcol= (int *)malloc(sizeof(int)*saParams.n_colegios);
     aluVulxCol = (int *)malloc(sizeof(int)*saParams.n_colegios);
+    choices_parents = (uint8_t *)malloc(5 * saParams.n_students);
     previousAluxCol = (int *)malloc(sizeof(int)*saParams.n_colegios);
     previousAluVulxCol = (int *)malloc(sizeof(int)*saParams.n_colegios);
     bestAluxCol = (int *)malloc(sizeof(int)*saParams.n_colegios);
@@ -413,7 +418,7 @@ void SimulatedAnnealing::inicializationValues(T* wrapper){
     ///////////////////////////////////////////////////
     /// Genera distribuciones para seleccionar un estudiante y una escuela al azar
     ///////////////////////////////////////////////////
-
+    
     dist = uniform_int_distribution<int>(0, saParams.n_students-1);
     dist2 = uniform_int_distribution<int>(0, saParams.n_colegios-1);
 
@@ -438,18 +443,22 @@ void SimulatedAnnealing::inicializationValues(T* wrapper){
     currentVars[0] = sumDist(currentSolution,distMat);
     currentVars[1] = sumS(currentSolution, alumnosSep, totalVuln);
     currentVars[2] = sumCostCupo(currentSolution,cupoArray);
+    currentVars[3] = penaltyParents(currentSolution);
     previousVars[0] = currentVars[0];
     previousVars[1] = currentVars[1];
     previousVars[2] = currentVars[2];
+    previousVars[3] = currentVars[3];
     
-    double var1,var2,var3;
+    
+    double var1,var2,var3,var4;
     var1 = (currentVars[0]/saParams.n_students);
     var1= (var1/saParams.max_dist);
     //cout << var1 << "\n";
     var2 = (currentVars[1]/2.0);
     //cout << var2 << "\n";
     var3 = (currentVars[2] /saParams.n_colegios);
-    costBestSolution = (double)((ptr_alpha[0]*var1)+(ptr_alpha[1]*var2)+(ptr_alpha[2]*var3));
+    var4 = currentVars[3];
+    costBestSolution = (double)((ptr_alpha[0] * var1) + (ptr_alpha[1] * var2) + (ptr_alpha[2] * var3) + (ptr_alpha[3] * var4));
     costPreviousSolution = costBestSolution;
     costCurrentSolution = costBestSolution;
     auto start_compare = std::chrono::high_resolution_clock::now();
@@ -494,7 +503,9 @@ double SimulatedAnnealing::calCosto(int *currentSolution, double **distMat, cons
     //cout << "Segregación: " << var2 << "\n";
     double var3 = costCupo(currentSolution,cupoArray);
     //cout << "CostoCupo: " << var3 << "\n";
-    return (double)((ptr_alpha[0]*var1)+(ptr_alpha[1]*var2)+(ptr_alpha[2]*var3));
+    double var4 = penaltyParents(currentSolution);
+
+    return (double)((ptr_alpha[0] * var1) + (ptr_alpha[1] * var2) + (ptr_alpha[2] * var3) + (ptr_alpha[3] * var4));
 }
 
 ///////////////////////////////////////////////////
@@ -735,6 +746,10 @@ void SimulatedAnnealing::initializeArray(int *aluxcol, int *previousAluxCol, int
     ///////////////////////////////////////////////////
     for(int x=0; x < saParams.n_students; x++) {
         alumnosSep[x] = students[x].sep;
+        //agregar las preferencias de los padres (creo que esto es unicamente para la prueba CPU)
+        for (std::size_t i = 0; i < 5; i++){
+            choices_parents[x * 5 + i] = students[x].choices[i];
+        }
     }
 }
 
@@ -784,4 +799,30 @@ void SimulatedAnnealing::UpdateProb(int it){
 
         // Asegurar que el último elemento sea 1
         probSelection[size - 1] = 1;
+}
+
+
+//esta funcion lo hace por CPU, creo que deberia eliminarse
+std::size_t SimulatedAnnealing::penaltyParents(int *currentSolution) {
+    std::array<std::size_t, 6> weights{0, 100, 200, 300, 400, 5000};
+
+    std::size_t penalty = 0;
+    bool find = false;
+
+    for (std::size_t i = 0; i < saParams.n_students; i++) {
+        for (std::size_t j = 0; j < 5; j++) {
+            if (currentSolution[i] == choices_parents[i * 5 + j]) {
+                penalty += weights[j];
+                find = true;
+                break;
+            }
+        }
+
+        if (!find)
+            penalty += weights[5];
+
+        find = false;
+    }
+
+    return penalty;
 }

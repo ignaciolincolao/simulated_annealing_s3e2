@@ -34,6 +34,7 @@ struct SimulatedParams {
     double alpha1; // Alpha de distancia
     double alpha2; // Alpha de segregación
     double alpha3; // Alpha de costocupo
+    double alpha4; // Alpha de penalty padres
     double max_dist;
     double min_dist;
     double init_dist;
@@ -41,7 +42,8 @@ struct SimulatedParams {
     double costCurrent;
     int* shuffle_student;
     int* shuffle_colegios;
-    double alpha[3]; // Valores del alpha con orden Distancia, Segregación, Costo Cupo
+    double alpha[4]; // Valores del alpha con orden Distancia, Segregación, Costo Cupo
+    //y penaltyparents (no creo que solo poniendo un 4 se cree)
 
 };
 

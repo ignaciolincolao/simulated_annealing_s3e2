@@ -1,6 +1,6 @@
 #include <kernel.cuh>
 
-__constant__ double d_alpha[3];
+__constant__ double d_alpha[4];
 __constant__ int d_n_students;
 __constant__ int d_n_colegios;
 __constant__ double d_max_dist;
@@ -17,6 +17,7 @@ __global__ void newSolution_kernel(
     const int* __restrict__ d_shuffle_students,
     const int* __restrict__ d_shuffle_colegios,
     const double* __restrict__ d_currentVars,
+    const uint8_t *__restrict__ d_choices,
     size_t pitch) {
     int tid = blockIdx.x * blockDim.x + threadIdx.x;
     int aluchange,
@@ -30,8 +31,19 @@ __global__ void newSolution_kernel(
     double  totalcostCupo= 0.0,
             totalSesc= 0.0,
             sumDist = 0.0,
+            penalty = 0.0,
             cost_solution;
-    aluchange = d_shuffle_students[tid%d_n_students]; 
+    aluchange = d_shuffle_students[tid%d_n_students];
+    
+    //arreglo de preferencias de estudiantes (robado del oscar, todavia no se bien lo que hace)
+    uint8_t choices[5] = {
+        d_choices[aluchange * 5 + 0],
+        d_choices[aluchange * 5 + 1],
+        d_choices[aluchange * 5 + 2],
+        d_choices[aluchange * 5 + 3],
+        d_choices[aluchange * 5 + 4],
+    };
+
     newSchool = d_shuffle_colegios[0];
     currentSchool = d_currentSolution[aluchange];
     col_solution = newSchool;
@@ -42,6 +54,7 @@ __global__ void newSolution_kernel(
     sumDist = d_currentVars[0];
     totalSesc = d_currentVars[1];
     totalcostCupo = d_currentVars[2];
+    penalty = d_currentVars[3];
     ////////////////////////////////////////////////////////////////
     /////// Descuenta antes de mover
     ////////////////////////////////////////////////////////////////
@@ -54,7 +67,7 @@ __global__ void newSolution_kernel(
     aluNoVulCol = totalAluCol - aluVulCol;
     totalSesc -= fabs((aluVulCol / (double)d_totalVuln) - (aluNoVulCol / (double)(d_n_students - d_totalVuln)));
     // costcupo escuela actual 
-
+    penalty -= calcPenalty(currentSchool, choices);
     
     totalcostCupo -= (double)totalAluCol * fabs((double)d_cupoArray[currentSchool] - totalAluCol) / pow(((double)d_cupoArray[currentSchool] * 0.5), 2);
 
@@ -67,6 +80,8 @@ __global__ void newSolution_kernel(
 
     // costcupo escuela nueva
     totalcostCupo -= (double)totalAluCol * fabs((double)d_cupoArray[newSchool] - totalAluCol) / pow(((double)d_cupoArray[newSchool] * 0.5), 2);
+
+    penalty += calcPenalty(newSchool, choices);
 
     ////////////////////////////////////////////////////////////////
     ////// Calculó despues de mover
@@ -94,7 +109,9 @@ __global__ void newSolution_kernel(
     cost_solution = d_alpha[0] * (sumDist / (d_n_students * d_max_dist));
     cost_solution += d_alpha[1] * (totalSesc * 0.5);
     cost_solution += d_alpha[2] * (totalcostCupo / d_n_colegios);
-
+    cost_solution += d_alpha[3] * penalty;
+    //printf("alpha[3] valor: %f\n", d_alpha[3]);
+    //por alguna razon en el codigo del oscar este valor cambia a 0.416667
     d_array_current_Solution[tid].costSolution  = (newSchool != currentSchool) * cost_solution + (double)(0xffffffffffffffff) * (newSchool == currentSchool);
 }
 
@@ -176,6 +193,7 @@ __global__ void calculateSolution(
     int* d_currentSolution,
     const double* __restrict__ d_distMat,
     size_t pitch,
+    uint8_t *d_choices,
     double *d_currentVars,
     double *d_costCurrentSolution,
     int id_select){
@@ -190,10 +208,12 @@ __global__ void calculateSolution(
 
     double  totalcostCupo= 0.0,
             totalSesc= 0.0,
+            penalty = 0.0,
+            sumDist = 0.0,
             var1,
             var2,
             var3,
-            sumDist = 0.0;
+            var4;
     /// Inicializa arrays
 
     aluchange = d_array_current_Solution[id_select].stu;
@@ -202,10 +222,18 @@ __global__ void calculateSolution(
     //printf("%d \t %.20lf | %d %d %d \n",blockIdx.x,d_array_current_Solution[0],d_array_current_Solution_alu[0],d_array_current_Solution_col[0],currentSchool);
     newSchool = colchange;
 
+    uint8_t choices[5] = {
+        d_choices[aluchange * 5 + 0],
+        d_choices[aluchange * 5 + 1],
+        d_choices[aluchange * 5 + 2],
+        d_choices[aluchange * 5 + 3],
+        d_choices[aluchange * 5 + 4],
+    };
     
     sumDist= d_currentVars[0];
     totalSesc = d_currentVars[1];
     totalcostCupo = d_currentVars[2];
+    penalty = d_currentVars[3];
 
     //printf("%lf |%lf |%lf |%lf |%d |%d \n",sumDist,totalSesc,totalcostCupo,d_array_current_Solution[0],aluchange,colchange);
 
@@ -217,7 +245,7 @@ __global__ void calculateSolution(
     //printf("%lf \n",sumDist);
     // seg de la escuela actual
     totalAluCol = d_aluxcol[currentSchool];
-    
+    penalty -= calcPenalty(currentSchool, choices);
     //cout << "Alumnos actual escuela "<< totalAluCol << " " << endl;
     aluVulCol = d_aluVulxCol[currentSchool];
     aluNoVulCol =totalAluCol - aluVulCol;
@@ -234,6 +262,8 @@ __global__ void calculateSolution(
     aluNoVulCol =totalAluCol - aluVulCol;
     
     totalSesc-=fabs((aluVulCol/(double)d_totalVuln)-(aluNoVulCol/(double)(d_n_students-d_totalVuln)));
+
+    penalty += calcPenalty(newSchool, choices);
 
     // costcupo escuela nueva
 
@@ -280,6 +310,7 @@ __global__ void calculateSolution(
     d_currentVars[0] = sumDist;
     d_currentVars[1] = totalSesc;
     d_currentVars[2] = totalcostCupo;
+    d_currentVars[3] = penalty;
     //printf("%lf %lf %lf %d %d %d\n",sumDist,totalSesc,totalcostCupo,aluchange,colchange,currentSchool);
     var1 = (sumDist/d_n_students);
     var1= (var1/d_max_dist);
@@ -287,7 +318,11 @@ __global__ void calculateSolution(
     var2 = (totalSesc*0.5);
     //cout << var2 << "\n";
     var3 = (totalcostCupo /d_n_colegios);
-    d_costCurrentSolution[0] =  (double)((d_alpha[0]*var1)+(d_alpha[1]*var2)+(d_alpha[2]*var3));
+
+    var4 = penalty;
+
+    
+    d_costCurrentSolution[0] = (double)((d_alpha[0] * var1) + (d_alpha[1] * var2) + (d_alpha[2] * var3) + (d_alpha[3] * var4));
 }
 
 
@@ -326,3 +361,12 @@ __global__ void copyCost(
         costCurrentSolution[0] = new_costCurrentSolution[0];
 
     }
+
+inline __device__ double calcPenalty(double currentCollege, uint8_t choices[5]) {
+    double weights[6] = {5000, 0, 100, 200, 300, 400};
+    uint8_t index = 0;
+    for (size_t i = 1; i < 6; i++)
+        index += (currentCollege == choices[i - 1]) * i;
+
+    return weights[index];
+}

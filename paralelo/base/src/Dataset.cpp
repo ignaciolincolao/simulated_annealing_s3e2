@@ -1,6 +1,6 @@
 #include <Dataset.hpp>
 
-Dataset::Dataset(std::string fileName_school, std::string fileName_students) {
+Dataset::Dataset(std::string fileName_school, std::string fileName_students, std::string fileName_parents) {
     totalVuln = 0;
     ///////////////////////////////////////////////////
     /// Datos colegios
@@ -16,6 +16,7 @@ Dataset::Dataset(std::string fileName_school, std::string fileName_students) {
     getDataStudents(fileName_students,students,totalVuln);
     ptr_students = students.data();
     n_students = students.size();
+    getDataParents(fileName_parents,students);
 }
 
 void Dataset::getDataSchool(std::string fileName_school, std::vector<Info_colegio> &colegios){
@@ -68,6 +69,26 @@ void Dataset::getDataStudents(std::string fileName_students, std::vector<Info_al
 }
 
 
+
+
+void Dataset::getDataParents(std::string fileName_parents, std::vector<Info_alu>& students) {
+    ifstream info_parent(fileName_parents);
+    std::string line_student;
+    int cx = 0;
+
+    while (std::getline(info_parent, line_student)) {
+        stringstream linestream(line_student);
+        string data;
+
+        for (int i = 0; i < 5; i++) {
+            getline(linestream, data, ',');
+            students[cx].choices[i] = std::stoi(data);
+        }
+        cx++;
+    }
+
+    info_parent.close();
+}
 
 
 /*

@@ -34,5 +34,8 @@ cmake -DENABLE_SAVE_DATA=ON -DENABLE_OPEN_RECORD_INFO=OFF -DENABLE_OPEN_RECORD_G
 
 
 Libreria necesaria es:
-nlohmnan json
+nlohmnann_json/3.11.3
 sudo apt-get install nlohmann-json3-dev
+
+para windows se puede utilizar vcpkg y decirle a cmake que lea las librerias de vcpkg con la flag:
+-DCMAKE_TOOLCHAIN_FILE=(ruta a vcpkg)/vcpkg/scripts/buildsystems/vcpkg.cmake

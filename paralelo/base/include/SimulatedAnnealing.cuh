@@ -57,6 +57,7 @@ private:
 
     int* previousSolution;
     int* bestSolution;
+    uint8_t *choices_parents;
     int* currentSolution;
     int* cupoArray;
     int* alumnosSep;
@@ -118,6 +119,7 @@ public:
     double sumS(const int *currentSolution,const int *alumnosSep, int totalVuln);
     double costCupo(int *currentSolution,int *cupoArray);
     double sumCostCupo(int *currentSolution,int *cupoArray);
+    std::size_t penaltyParents(int *currentSolution);
     void newSolution(int *currentSolution,const int *previousSolution);
     void assignSchoolToArray(int *previousSolution, int *bestSolution, int *currentSolution, Info_colegio *ptr_colegios, Info_alu *ptr_students, int *cupoArray);
     void calcDist(Info_colegio *ptr_colegios, Info_alu *ptr_students, double **distMat);

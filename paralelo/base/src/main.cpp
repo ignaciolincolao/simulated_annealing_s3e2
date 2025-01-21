@@ -35,6 +35,7 @@ int main(int argc, char *argv[])
     double alp1 =  10.0;
     double alp2 = 30.0;
     double alp3 = 25.0;
+    double alp4 = 50.0;
     SimulatedParams* saParams = new SimulatedParams{
         .seed = 1574067955,
         .n_students = 0,
@@ -52,12 +53,13 @@ int main(int argc, char *argv[])
         .alpha1 = alp1,
         .alpha2 = alp2,
         .alpha3 = alp3,
+        .alpha4 = alp4,
         .max_dist = 0.0,
         .min_dist = 0.0,
         .init_dist = 0.0,
         .costPrevious = 0.0,
         .costCurrent = 0.0,
-        .alpha = {alp1, alp2, alp3}};
+        .alpha = {alp1, alp2, alp3, alp4}};
 
     AcceptanceParams* acParams = new AcceptanceParams{
         .Th = 1.1};

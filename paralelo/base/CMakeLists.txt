@@ -3,11 +3,14 @@ cmake_minimum_required(VERSION 3.25.2)
 if (WIN32)
     find_package(CUDAToolkit)
     set(CMAKE_CUDA_ARCHITECTURES 52 60 61 75 86)
+    #set(CMAKE_TOOLCHAIN_FILE "C:/Users/hexzz/Desktop/CUDA_UPDATE/vcpkg/scripts/buildsystems/vcpkg.cmake" CACHE STRING "Toolchain file for vcpkg")
+
+
 endif (WIN32)
 
 if (UNIX)
     set(CMAKE_CUDA_COMPILER /usr/local/cuda/bin/nvcc)
-    set(CMAKE_CUDA_ARCHITECTURES 52 60 61 75 86 89)
+    set(CMAKE_CUDA_ARCHITECTURES 52 60 61 75 86 89) 
 endif (UNIX)
 
 project(paralelo LANGUAGES CUDA CXX)
@@ -82,10 +85,11 @@ else()
 
 
     find_package(nlohmann_json REQUIRED)
-    add_executable(paralelo src/main.cpp ${all_SRCS} alumnos_utm.txt colegios_utm.txt)
-    add_executable(grid_executable src/test/grid.cpp ${all_SRCS}  alumnos_utm.txt colegios_utm.txt)
+    add_executable(paralelo src/main.cpp ${all_SRCS} alumnos_utm.txt colegios_utm.txt parents.txt)
+    add_executable(grid_executable src/test/grid.cpp ${all_SRCS}  alumnos_utm.txt colegios_utm.txt parents.txt)
     configure_file(${CMAKE_CURRENT_SOURCE_DIR}/data/alumnos_utm.txt ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
     configure_file(${CMAKE_CURRENT_SOURCE_DIR}/data/colegios_utm.txt ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
+    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/data/parents.txt ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
 
     target_link_libraries(grid_executable PRIVATE nlohmann_json::nlohmann_json)
     target_link_libraries(paralelo PRIVATE nlohmann_json::nlohmann_json)

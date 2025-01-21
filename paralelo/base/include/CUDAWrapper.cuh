@@ -41,7 +41,7 @@ using std::size_t;
 using std::uniform_int_distribution;
 using std::uniform_real_distribution;
 
-extern __constant__ double d_alpha[3];
+extern __constant__ double d_alpha[4];
 extern __constant__ int d_n_students;
 extern __constant__ int d_n_colegios;
 extern __constant__ double d_max_dist;
@@ -62,6 +62,7 @@ class CUDAWrapper{
         int *d_aluVulxCol,*d_previousAluVulxCol;
         int *d_shuffle_students;
         int *d_shuffle_colegios;
+        uint8_t *d_choices;
         double *d_currentVars, *d_bestVars, *d_previousVars;
         double *d_costPreviousSolution, *d_costBestSolution, *d_costCurrentSolution;
         int deviceId;
@@ -91,6 +92,7 @@ class CUDAWrapper{
             int*& aluVulxCol,
             double*& matrestest,
             double*& alpha,
+            uint8_t *&choices,
             double*& currentVars
         );
         void memCopyPrevToCurrent();
