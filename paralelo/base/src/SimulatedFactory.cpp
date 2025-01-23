@@ -61,10 +61,6 @@ SimulatedAnnealing* SimulatedFactory::createSimulatedAnnealing(
             RecordManager *rMgr = new RecordManager(*saParams, *rMgrParams);
             Dataset* dS = new Dataset("colegios_utm.txt", "alumnos_utm.txt", "parents.txt");
 
-            // Imprimir las elecciones de los padres
-            std::cout << "Parent choices from Dataset:" << std::endl;
-            //dS->printParentChoices();
-
             SimulatedAnnealing *simulatedAnneling = new SimulatedAnnealing(aC, cS, lT, rM, dS, rMgr, saParams, cuParams, mt);
             return simulatedAnneling;
 

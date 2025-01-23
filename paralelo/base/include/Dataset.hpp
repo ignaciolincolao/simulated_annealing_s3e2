@@ -58,15 +58,6 @@ class Dataset {
         void getDataSchool(std::string fileName_school, std::vector<Info_colegio> &colegios);
         void getDataStudents(std::string fileName_students, std::vector<Info_alu> &students, int &totalVuln);
         void getDataParents(std::string fileName_parents, std::vector<Info_alu>& students);
-        void printParentChoices() {
-            for (size_t i = 0; i < students.size(); ++i) {
-                std::cout << "Student " << i + 1 << " choices: ";
-                for (size_t j = 0; j < students[i].choices.size(); ++j) {
-                    std::cout << static_cast<int>(students[i].choices[j]) << " ";
-                }
-                std::cout << std::endl;
-            }
-        }
 
         //void toCSV(std::string fileName);
 };

@@ -718,10 +718,10 @@ double SimulatedAnnealing::getMaxDistance(double **distMat){
 void SimulatedAnnealing::normalizedAlpha(double *alpha)
 {
     double sumaAlpha = 0.0;
-    for(int x=0; x<3; x++){
+    for(int x=0; x<4; x++){
         sumaAlpha +=alpha[x];
     }
-    for(int x=0; x<3; x++){
+    for(int x=0; x<4; x++){
         alpha[x]= alpha[x]/(double)sumaAlpha;
     }
 }
