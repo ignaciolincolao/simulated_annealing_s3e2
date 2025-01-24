@@ -131,6 +131,8 @@ public:
     int acceptanceCriterionApply();
     int selecSolution();
     void UpdateProb(int it);
+    void simceScoreUpdate(int *bestSolution, Info_alu *ptr_students, Info_colegio *ptr_colegios);
+    
 };
 
 #endif

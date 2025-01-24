@@ -37,7 +37,7 @@ int main(int argc, char *argv[])
     double alp3 = 25.0;
     double alp4 = 50.0; //se lo robe al oscar
     SimulatedParams* saParams = new SimulatedParams{
-        .seed = 1574067955,
+        .seed = 1574067956,
         .n_students = 0,
         .n_colegios = 0,
         .count_rechaso = 0,

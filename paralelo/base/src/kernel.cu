@@ -114,7 +114,6 @@ __global__ void newSolution_kernel(
     //printf("alpha 2 valor: %f\n", d_alpha[1]);
     //printf("alpha 3 valor: %f\n", d_alpha[2]);
     //printf("alpha 4 valor: %f\n", d_alpha[3]);
-    //por alguna razon en el codigo del oscar este valor cambia a 0.416667
     d_array_current_Solution[tid].costSolution  = (newSchool != currentSchool) * cost_solution + (double)(0xffffffffffffffff) * (newSchool == currentSchool);
 }
 

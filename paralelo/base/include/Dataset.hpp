@@ -33,6 +33,8 @@ struct Info_colegio {
     int num_alu = 0;
     int rbd = 0;
     int prioritario = 0;
+    double pmat = 0;
+    double plen = 0;
 };
 ///////////////////////////////////////////////////
 /// Estructura de alumnos
@@ -43,6 +45,8 @@ struct Info_alu {
     double latitude = 0.0;
     double longitude = 0.0;
     array<uint8_t, 5> choices; //el oscar tiene 5 preferencias
+    double pmat = 0;
+    double plen = 0;
 };
 
 class Dataset {

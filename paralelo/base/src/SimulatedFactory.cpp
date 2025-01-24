@@ -59,7 +59,8 @@ SimulatedAnnealing* SimulatedFactory::createSimulatedAnnealing(
                 rM = ReheatingMap[simStruct->reheatingmethod](*saParams, *rtParams);
             }
             RecordManager *rMgr = new RecordManager(*saParams, *rMgrParams);
-            Dataset* dS = new Dataset("colegios_utm.txt", "alumnos_utm.txt", "parents.txt");
+            //Dataset* dS = new Dataset("colegios_utm.txt", "alumnos_utm.txt", "parents.txt");
+            Dataset* dS = new Dataset("4bsimcecol.txt", "4bsimcealu.txt", "4bsimcepref.txt");
 
             SimulatedAnnealing *simulatedAnneling = new SimulatedAnnealing(aC, cS, lT, rM, dS, rMgr, saParams, cuParams, mt);
             return simulatedAnneling;

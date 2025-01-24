@@ -37,6 +37,10 @@ void Dataset::getDataSchool(std::string fileName_school, std::vector<Info_colegi
         colegios[cx].num_alu = stoi(data);
         getline(linestream, data, ',');
         colegios[cx].prioritario = stoi(data);
+        getline(linestream, data, ',');
+        colegios[cx].pmat = stoi(data);
+        getline(linestream, data, ',');
+        colegios[cx].plen = stoi(data);
         cx++;
     }
     info_school.close();
@@ -62,6 +66,10 @@ void Dataset::getDataStudents(std::string fileName_students, std::vector<Info_al
         if (students[cx].sep == 1) {
             totalVuln++;
         }
+        getline(linestream, data, ',');
+        students[cx].pmat = std::stod(data);
+        getline(linestream, data, ',');
+        students[cx].plen = std::stoi(data);
         cx++;
 
     }
