@@ -118,6 +118,9 @@ void CUDAWrapper::memInit(
     gpuErrchk( cudaMemcpyToSymbolAsync( d_max_dist, &saParams.max_dist, sizeof(double),0,cudaMemcpyHostToDevice,streams[5]));
     gpuErrchk( cudaMemcpyToSymbolAsync( d_totalVuln, &totalVuln, sizeof(int),0,cudaMemcpyHostToDevice,streams[6]));
 
+    double weight_n_students = saParams.n_students * 500000.0; // Definir directamente como double
+    gpuErrchk(cudaMemcpyToSymbolAsync(d_weight_n_students, &weight_n_students, sizeof(double), 0, cudaMemcpyHostToDevice, streams[7]));
+
 
     size_t h_pitchBytes = saParams.n_colegios * sizeof(double);
     cudaMemcpy2DAsync(d_distMat,

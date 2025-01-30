@@ -70,6 +70,8 @@ void Dataset::getDataStudents(std::string fileName_students, std::vector<Info_al
         students[cx].pmat = std::stod(data);
         getline(linestream, data, ',');
         students[cx].plen = std::stoi(data);
+        getline(linestream, data, ',');
+        students[cx].mrun = std::stoi(data);
         cx++;
 
     }

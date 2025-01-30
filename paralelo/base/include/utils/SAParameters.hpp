@@ -43,6 +43,7 @@ struct SimulatedParams {
     int* shuffle_student;
     int* shuffle_colegios;
     double alpha[4]; // Valores del alpha con orden Distancia, Segregación, Costo Cupo
+    double p_weight;
     //y penaltyparents (no creo que solo poniendo un 4 se cree)
 
 };

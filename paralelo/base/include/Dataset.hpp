@@ -47,6 +47,7 @@ struct Info_alu {
     array<uint8_t, 5> choices; //el oscar tiene 5 preferencias
     double pmat = 0;
     double plen = 0;
+    double mrun = 0;
 };
 
 class Dataset {

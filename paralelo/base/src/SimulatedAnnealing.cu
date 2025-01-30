@@ -95,16 +95,16 @@ double SimulatedAnnealing::runGPU(){
     cout << "Primer costo de solución: " << costBestSolution << "\n";
     cout << "Primer distancia: " << meanDist(currentSolution, distMat) << "\n";
     cout << "Primer Segregación: " << S(currentSolution, alumnosSep, totalVuln) << "\n";
-    cout << "Primer CostoCupo: " << costCupo(currentSolution, cupoArray) << "\n\n";
-    //preguntarle al lincolao como es que se hace la combinacion CPU/GPU
-    cout << "Penalty inicial: " << penaltyParents(currentSolution) << "\n\n";
+    cout << "Primer CostoCupo: " << costCupo(currentSolution, cupoArray) << "\n";
+    cout << "Penalty inicial: " << penaltyParents(currentSolution)/saParams.p_weight << "\n\n";
 #if SAVE_DATA
     #if ENABLE_OPEN_RECORD_INFO
     recordManager->openRecordInfo();
     recordManager->SaveInfoInit(costBestSolution,
         meanDist(currentSolution, distMat),
         S(currentSolution, alumnosSep, totalVuln),
-        costCupo(currentSolution, cupoArray));
+        costCupo(currentSolution, cupoArray),
+        penaltyParents(currentSolution));
     recordManager->closeRecordInfo();
     #endif
     #ifdef ENABLE_OPEN_RECORD_GRAPHICS
@@ -112,7 +112,8 @@ double SimulatedAnnealing::runGPU(){
     recordManager->SaveGraphicsInit(meanDist(currentSolution, distMat),
     S(currentSolution, alumnosSep, totalVuln),
     costCupo(currentSolution, cupoArray),
-    costCurrentSolution);
+    costCurrentSolution,
+    penaltyParents(currentSolution));
     recordManager->closeRecordGraphics();
     #endif
 
@@ -121,6 +122,12 @@ double SimulatedAnnealing::runGPU(){
     recordManager->SaveGraphicsBestSolution(currentSolution);
     recordManager->closeRecordGraphicsBestSolution();
     #endif 
+    
+    #ifdef ENABLE_OPEN_RECORD_GRAPHICS_BEST_SOLUTION_RBD
+    recordManager->openRecordGraphicsBestSolutionRBD();
+    recordManager->SaveGraphicsFirstSolutionRBD(currentSolution, dataSet->ptr_colegios, dataSet->ptr_students);
+    recordManager->closeRecordGraphicsBestSolutionRBD();
+    #endif
 #endif
     ///////////////////////////////////////////////////
     /// Inicio el contador de tiempo antes de iniciar el algortimo
@@ -221,6 +228,7 @@ double SimulatedAnnealing::runGPU(){
             recordManager->vector_meanDist.emplace_back(meanDist(bestSolution, distMat));
             recordManager->vector_segregation.emplace_back(S(bestSolution, alumnosSep, totalVuln));
             recordManager->vector_costoCupo.emplace_back(costCupo(bestSolution, cupoArray));
+            recordManager->vector_penalty.emplace_back(penaltyParents(bestSolution));
             recordManager->vector_temp.emplace_back(saParams.temp);
             recordManager->vector_count.emplace_back(saParams.count);
     #endif
@@ -280,10 +288,9 @@ double SimulatedAnnealing::runGPU(){
     cout << "distancia: " << meanDist(bestSolution, distMat) << "\n";
     cout << "Segregación: " << S(bestSolution, alumnosSep, totalVuln) << "\n";
     cout << "CostoCupo: " << costCupo(bestSolution, cupoArray) << "\n";
-    cout << "Penalty final: " << penaltyParents(bestSolution) << "\n";
+    cout << "Penalty final: " << penaltyParents(bestSolution)/saParams.p_weight << "\n";
     cout << "--------------- Finalizo con exito ----------------" << "\n";
     
-    simceScoreUpdate(bestSolution, dataSet->ptr_students,dataSet->ptr_colegios);
 
 #if SAVE_DATA
     #ifdef ENABLE_OPEN_RECORD_INFO
@@ -294,7 +301,8 @@ double SimulatedAnnealing::runGPU(){
         time_taken,
         meanDist(bestSolution, distMat),
         S(bestSolution, alumnosSep, totalVuln),
-        costCupo(bestSolution, cupoArray));
+        costCupo(bestSolution, cupoArray),
+        penaltyParents(bestSolution));
     recordManager->closeRecordInfo();
     #endif
     #ifdef ENABLE_OPEN_RECORD_GRAPHICS
@@ -307,6 +315,11 @@ double SimulatedAnnealing::runGPU(){
     recordManager->SaveGraphicsBestSolution(bestSolution);
     recordManager->closeRecordGraphicsBestSolution();
     #endif
+    #ifdef ENABLE_OPEN_RECORD_GRAPHICS_BEST_SOLUTION_RBD
+    recordManager->openRecordGraphicsBestSolutionRBD();
+    recordManager->SaveGraphicsUpdateSolutionRBD(bestSolution, dataSet->ptr_colegios);
+    recordManager->closeRecordGraphicsBestSolutionRBD();
+    #endif
     #ifdef ENABLE_OPEN_RECORD_REGISTER
     recordManager->openRecordRegister();
     recordManager->SaveInfoRegister(
@@ -315,6 +328,7 @@ double SimulatedAnnealing::runGPU(){
         meanDist(bestSolution, distMat),
         S(bestSolution, alumnosSep, totalVuln),
         costCupo(bestSolution, cupoArray),
+        penaltyParents(bestSolution),
         csParams.coolingRate,
         rmParams.k_reheating_init,
         rmParams.e_const,
@@ -339,6 +353,11 @@ double SimulatedAnnealing::runGPU(){
     recordManager->AllMovementFinish();
     recordManager->closeRecordMoveSolution();
     #endif
+    #ifdef ENABLE_OPEN_RECORD_SIMCE_UPDATE
+    recordManager->openRecordInfoSimce();
+    recordManager->simceScoreUpdate(bestSolution, dataSet->ptr_students,dataSet->ptr_colegios);
+    recordManager->closeRecordInfoSimce();
+    #endif
 #endif
     delete cudaWrapper;
     // cout << "finalizo con :" << costBestSolution << endl;
@@ -351,6 +370,7 @@ void SimulatedAnnealing::inicializationValues(T* wrapper){
     totalVuln = dataSet->totalVuln;
     saParams.n_colegios = dataSet->n_colegios;
     saParams.n_students = dataSet->n_students;
+    saParams.p_weight = saParams.n_students*500000.0;
     //cout << fixed << setprecision(70) << endl;
     //srand(time(NULL));
 
@@ -459,7 +479,7 @@ void SimulatedAnnealing::inicializationValues(T* wrapper){
     var2 = (currentVars[1]/2.0);
     //cout << var2 << "\n";
     var3 = (currentVars[2] /saParams.n_colegios);
-    var4 = currentVars[3];
+    var4 = currentVars[3] /(saParams.n_students*50000.0);
     costBestSolution = (double)((ptr_alpha[0] * var1) + (ptr_alpha[1] * var2) + (ptr_alpha[2] * var3) + (ptr_alpha[3] * var4));
     costPreviousSolution = costBestSolution;
     costCurrentSolution = costBestSolution;
@@ -804,9 +824,8 @@ void SimulatedAnnealing::UpdateProb(int it){
 }
 
 
-//esta funcion lo hace por CPU, creo que deberia eliminarse
 std::size_t SimulatedAnnealing::penaltyParents(int *currentSolution) {
-    std::array<std::size_t, 6> weights{0, 100, 200, 300, 400, 5000};
+    std::array<std::size_t, 6> weights{0, 100, 200, 300, 400, 500000};
 
     std::size_t penalty = 0;
     bool find = false;
@@ -829,7 +848,7 @@ std::size_t SimulatedAnnealing::penaltyParents(int *currentSolution) {
     return penalty;
 }
 
-
+/*
 void SimulatedAnnealing::simceScoreUpdate(int *bestSolution, Info_alu *ptr_students, Info_colegio *ptr_colegios) {
 
     std::vector<std::array<double, 4>> schoolScores(saParams.n_colegios, {0.0, 0.0, 0.0, 0.0});
@@ -865,7 +884,7 @@ void SimulatedAnnealing::simceScoreUpdate(int *bestSolution, Info_alu *ptr_stude
     }
     //guardamos los resultados como un txt
     //no me funciono lo de las flag
-    const std::string outputFile = "./save/resultados_simce.csv";
+    const std::string outputFile = "../../save/resultados_simce.csv";
     //PD: el compilador no se que le pasa que no quiere crear carpetas y no reconoce mkdir
     //estoy creando la carpeta a mano, y tira todo a la carpeta de release/debug
     std::ofstream outFile(outputFile);
@@ -893,5 +912,5 @@ void SimulatedAnnealing::simceScoreUpdate(int *bestSolution, Info_alu *ptr_stude
 
     //no he tocado la funcion de penalty del oscar
 }
-
+*/
 

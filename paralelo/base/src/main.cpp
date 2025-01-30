@@ -23,21 +23,23 @@ int main(int argc, char *argv[])
     time(&hora_actual);
     time_info = localtime(&hora_actual);
     char timestr[20];
-    strftime(timestr, sizeof(timestr), "%Y-%m-%d T:%H-%M", time_info);
+    strftime(timestr, sizeof(timestr), "%Y-%m-%d T_%H-%M", time_info);
 
     // Configuración del algoritmo
     RecordParams* rMgrParams = new RecordParams{
                 .prefijo_save = string(timestr),
-                .ruta_save = "../save/",
+                .ruta_save = "../../save/",
+                //.ruta_save = "./save/",
                 .name_exp = "base",
                 .activated_files = {true,true,true,true,true}};
 
     double alp1 =  10.0;
     double alp2 = 30.0;
     double alp3 = 25.0;
-    double alp4 = 50.0; //se lo robe al oscar
+    //double alp4 = 50.0; se lo robe al oscar
+    double alp4 = 100.0; 
     SimulatedParams* saParams = new SimulatedParams{
-        .seed = 1574067956,
+        .seed = 1574067955,
         .n_students = 0,
         .n_colegios = 0,
         .count_rechaso = 0,
@@ -59,7 +61,8 @@ int main(int argc, char *argv[])
         .init_dist = 0.0,
         .costPrevious = 0.0,
         .costCurrent = 0.0,
-        .alpha = {alp1, alp2, alp3, alp4}};
+        .alpha = {alp1, alp2, alp3, alp4},
+        .p_weight = 0.0};
 
     AcceptanceParams* acParams = new AcceptanceParams{
         .Th = 1.1};
@@ -78,7 +81,7 @@ int main(int argc, char *argv[])
         .k_reheating_init = 0};
 
     CUDAParams* cuParams = new CUDAParams{
-        .n_block = 32,
+        .n_block = 89,
         .n_thread = 32,
         .selectThread = 0,
         .selectBlock = 0};

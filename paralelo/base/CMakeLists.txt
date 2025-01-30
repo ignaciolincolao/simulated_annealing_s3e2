@@ -21,7 +21,10 @@ set(CMAKE_CUDA_STANDARD 20)
 set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+#linux
 file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/../save)
+#windows
+#file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/../../save)
 
 option(ENABLE_SAVE_DATA "Habilita el RecordManager" ON)
 if(ENABLE_SAVE_DATA)
@@ -35,6 +38,8 @@ endif()
 option(ENABLE_OPEN_RECORD_INFO "Enable openRecordInfo" ON)
 option(ENABLE_OPEN_RECORD_GRAPHICS "Enable openRecordGraphics" ON)
 option(ENABLE_OPEN_RECORD_GRAPHICS_BEST_SOLUTION "Enable openRecordGraphicsBestSolution" ON)
+option(ENABLE_OPEN_RECORD_GRAPHICS_BEST_SOLUTION_RBD "Enable openRecordGraphicsBestSolutionRBD" ON)
+option(ENABLE_OPEN_RECORD_SIMCE_UPDATE "Enable openRecordSimceUpdate" ON)
 option(ENABLE_OPEN_RECORD_REGISTER "Enable openRecordRegister" ON)
 option(ENABLE_OPEN_RECORD_MOVE_SOLUTION "Enable openRecordMoveSolution" ON)
 if (ENABLE_OPEN_RECORD_INFO)
@@ -47,6 +52,14 @@ endif()
 
 if (ENABLE_OPEN_RECORD_GRAPHICS_BEST_SOLUTION)
     add_definitions(-DENABLE_OPEN_RECORD_GRAPHICS_BEST_SOLUTION)
+endif()
+
+if (ENABLE_OPEN_RECORD_GRAPHICS_BEST_SOLUTION_RBD)
+    add_definitions(-DENABLE_OPEN_RECORD_GRAPHICS_BEST_SOLUTION_RBD)
+endif()
+
+if (ENABLE_OPEN_RECORD_SIMCE_UPDATE)
+    add_definitions(-DENABLE_OPEN_RECORD_SIMCE_UPDATE)
 endif()
 
 if (ENABLE_OPEN_RECORD_REGISTER)

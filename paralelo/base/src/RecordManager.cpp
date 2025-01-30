@@ -14,11 +14,13 @@ RecordManager::RecordManager(SimulatedParams &saParams_, RecordParams &params_)
     path_names[3] = rMgrParams.ruta_save + rMgrParams.prefijo_save + "-info-graphicsBestSolution.txt";
     path_names[4] = rMgrParams.ruta_save + rMgrParams.prefijo_save + "-info-graphicMoveSolution.txt";
     path_names[5] = rMgrParams.ruta_save + rMgrParams.prefijo_save + "-json-graphics.json";
+    path_names[6] = rMgrParams.ruta_save + rMgrParams.prefijo_save + "-info-graphicsBestSolutionRBD.txt";
+    path_names[7] = rMgrParams.ruta_save + rMgrParams.prefijo_save + "-info-simceUpdate.txt";
 
     vector_percentage = {75, 50, 25, 10, 5, 1,0.75,.5,.25,.1,.05,0};
     vector_it_percentage.resize(vector_percentage.size(), 0);
     vector_temp_percentage.resize(vector_percentage.size(),0);
-    empty_files.resize(6,true);
+    empty_files.resize(8,true);
     vector_activated_files.resize(6,true);
     vector_activated_files = rMgrParams.activated_files;
 }
@@ -33,10 +35,15 @@ RecordManager::~RecordManager()
         infoGraphics.close();
     if (infoGraphicsBestSolution.is_open())
         infoGraphicsBestSolution.close();
+    if (infoGraphicsBestSolutionRBD.is_open())
+        infoGraphicsBestSolutionRBD.close();
+    if (infoSimce.is_open())
+        infoSimce.close();
     if (infoMove.is_open())
         infoMove.close();
     if (infoJson.is_open())
         infoJson.close();
+
 }
 
 void RecordManager::open_file(const std::size_t n_file, std::ofstream &file)
@@ -88,6 +95,16 @@ void RecordManager::openRecordGraphicsBestSolution()
     open_file(3, infoGraphicsBestSolution);
 }
 
+void RecordManager::openRecordGraphicsBestSolutionRBD()
+{
+    open_file(6, infoGraphicsBestSolutionRBD);
+}
+
+void RecordManager::openRecordInfoSimce()
+{
+    open_file(7, infoSimce);
+}
+
 void RecordManager::openRecordMoveSolution()
 {
     open_file(4, infoMove);
@@ -119,6 +136,16 @@ void RecordManager::closeRecordGraphicsBestSolution()
     infoGraphicsBestSolution.close();
 }
 
+void RecordManager::closeRecordGraphicsBestSolutionRBD()
+{
+    infoGraphicsBestSolutionRBD.close();
+}
+
+void RecordManager::closeRecordInfoSimce()
+{
+    infoSimce.close();
+}
+
 void RecordManager::closeRecordMoveSolution()
 {
     infoMove.close();
@@ -135,13 +162,15 @@ void RecordManager::closeRecordInfoJson()
 void RecordManager::SaveInfoInit(double costBestSolution,
                                  double meanDist,
                                  double S,
-                                 double costCupo)
+                                 double costCupo,
+                                 size_t penaltyParents)
 {
     info << "--------------- Primeros datos -------------\n";
     info << "Primer costo de solución: " << costBestSolution << "\n";
     info << "Primer distancia: " << meanDist << "\n";
     info << "Primer Segregación: " << S << "\n";
-    info << "Primer CostoCupo: " << costCupo << "\n\n";
+    info << "Primer CostoCupo: " << costCupo << "\n";
+    info << "Penalty inicial: " << penaltyParents/saParams.p_weight << "\n\n";
 }
 
 void RecordManager::SaveInfoFinish(
@@ -151,7 +180,8 @@ void RecordManager::SaveInfoFinish(
     double time_taken,
     double meanDist,
     double S,
-    double costCupo)
+    double costCupo,
+    size_t penaltyParents)
 {
     info << "--------------- Resultado Final ----------------"
          << "\n";
@@ -163,6 +193,7 @@ void RecordManager::SaveInfoFinish(
     info << "distancia: " << meanDist << "\n";
     info << "Segregación: " << S << "\n";
     info << "CostoCupo: " << costCupo << "\n";
+    info << "Penalty Final: " << penaltyParents/saParams.p_weight << "\n\n";
     info << "--------------- Finalizo con exito ----------------"
          << "\n";
 }
@@ -174,16 +205,38 @@ void RecordManager::SaveGraphicsBestSolution(int *solution)
     infoGraphicsBestSolution << "\n";
 }
 
-void RecordManager::SaveGraphicsInit(double meanDist, double S, double costCupo, double costCurrentSolution)
+void RecordManager::SaveGraphicsFirstSolutionRBD(int *solution, Info_colegio *ptr_colegios, Info_alu *ptr_students)
+{   
+    infoGraphicsBestSolutionRBD << std::fixed << std::setprecision(0);
+    for (std::size_t i{}; i < saParams.n_students; i++)
+        infoGraphicsBestSolutionRBD << ptr_students[solution[i]].mrun << ",";
+    infoGraphicsBestSolutionRBD << "\n";
+    for (std::size_t i{}; i < saParams.n_students; i++)
+        infoGraphicsBestSolutionRBD << ptr_colegios[solution[i]].rbd << ",";
+    infoGraphicsBestSolutionRBD << "\n";
+    
+}
+
+void RecordManager::SaveGraphicsUpdateSolutionRBD(int *solution, Info_colegio *ptr_colegios)
+{   
+    for (std::size_t i{}; i < saParams.n_students; i++)
+        infoGraphicsBestSolutionRBD << ptr_colegios[solution[i]].rbd << ",";
+    infoGraphicsBestSolutionRBD << "\n";
+}
+
+void RecordManager::SaveGraphicsInit(double meanDist, double S, double costCupo, double costCurrentSolution, size_t penaltyParents)
 {
-    infoGraphics << std::setprecision(13);
+    infoGraphics << std::fixed << std::setprecision(13);
     infoGraphics << saParams.count << ","
                  << meanDist / saParams.max_dist << ","             // Distancia promedio recorrida por los estudiantes normalizada
                  << meanDist << ","                                 // Distancia promedio recorrida por los estudiantes
                  << S << ","                                        // Indice de duncan
                  << costCupo << ","                                 // Costo cupo de las escuelas
+                 << penaltyParents << ","                           // Penalty sin normalizar
+                 << penaltyParents/saParams.p_weight << ","         // Penalty normalizado
                  << costCurrentSolution << ","                      // Solución actual
-                 << saParams.temp << std::setprecision(13) << "\n"; // Temperatura actual
+                 << saParams.temp << "\n";                           // Temperatura actual
+                 
 }
 
 void RecordManager::SaveGraphicsFinish()
@@ -195,6 +248,8 @@ void RecordManager::SaveGraphicsFinish()
                      << vector_meanDist.at(x) << ","
                      << vector_segregation.at(x) << ","
                      << vector_costoCupo.at(x) << ","
+                     << vector_penalty.at(x) << ","
+                     << vector_penalty.at(x) / (saParams.n_students*500000.0) << ","
                      << vector_costCurrentSolution.at(x) << ","
                      << std::fixed << vector_temp.at(x) << std::setprecision(13) << "\n";
     }
@@ -219,6 +274,7 @@ void RecordManager::SaveInfoRegister(
     double meanDist,
     double S,
     double costCupo,
+    size_t penaltyParents,
     double coolingRate,
     double k_reheating_init,
     double e_const,
@@ -243,6 +299,8 @@ void RecordManager::SaveInfoRegister(
                  << "," << "meanDist"
                  << "," << "S"
                  << "," << "costCupo"
+                 << "," << "penaltyParents"
+                 << "," << "penaltyParentsNorm"
                  << "," << "saParams.count"
                  << "," << "saParams.temp_init"
                  << "," << "saParams.temp"
@@ -251,9 +309,11 @@ void RecordManager::SaveInfoRegister(
                  << "," << "saParams.alpha1"
                  << "," << "saParams.alpha2"
                  << "," << "saParams.alpha3"
+                 << "," << "saParams.alpha4"
                  << "," << "saParams.alpha[0]"
                  << "," << "saParams.alpha[1]"
                  << "," << "saParams.alpha[2]"
+                 << "," << "saParams.alpha[3]"
                  << "," << "coolingRate"
                  << "," << "k_reheating_init"
                  << "," << "e_const"
@@ -282,6 +342,8 @@ void RecordManager::SaveInfoRegister(
                  << "," << meanDist
                  << "," << S
                  << "," << costCupo
+                 << "," << penaltyParents
+                 << "," << penaltyParents/saParams.p_weight
                  << "," << saParams.count
                  << "," << std::fixed << saParams.temp_init << std::setprecision(13)
                  << "," << std::fixed << saParams.temp << std::setprecision(13)
@@ -290,9 +352,11 @@ void RecordManager::SaveInfoRegister(
                  << "," << saParams.alpha1
                  << "," << saParams.alpha2
                  << "," << saParams.alpha3
+                 << "," << saParams.alpha4
                  << "," << saParams.alpha[0]
                  << "," << saParams.alpha[1]
                  << "," << saParams.alpha[2]
+                 << "," << saParams.alpha[3]
                  << "," << coolingRate
                  << "," << k_reheating_init
                  << "," << e_const
@@ -325,6 +389,8 @@ void RecordManager::SaveInfoRegister(
         {"meanDist",meanDist},
         {"S",S},
         {"costCupo",costCupo},
+        {"penaltyParents",penaltyParents},
+        {"PenaltyParentsNorm",penaltyParents/saParams.p_weight},
         {"saParams.count",saParams.count},
         {"saParams.temp_init",saParams.temp_init},
         {"saParams.temp",saParams.temp},
@@ -333,9 +399,11 @@ void RecordManager::SaveInfoRegister(
         {"saParams.alpha1",saParams.alpha1},
         {"saParams.alpha2",saParams.alpha2},
         {"saParams.alpha3",saParams.alpha3},
+        {"saParams.alpha4",saParams.alpha4},
         {"saParams.alpha[0]",saParams.alpha[0]},
         {"saParams.alpha[1]",saParams.alpha[1]},
         {"saParams.alpha[2]",saParams.alpha[2]},
+        {"saParams.alpha[3]",saParams.alpha[3]},
         {"coolingRate",coolingRate},
         {"k_reheating_init",k_reheating_init},
         {"e_const",e_const},
@@ -365,6 +433,8 @@ void RecordManager::SaveInfoRegister(
         data_solution["meanDist"] = vector_meanDist.at(x);
         data_solution["S"] = vector_segregation.at(x);
         data_solution["costCupo"] = vector_costoCupo.at(x);
+        data_solution["penaltyParents"] = penaltyParents/saParams.p_weight;
+        data_solution["penaltyParentsNorm"] = vector_penalty.at(x);
         data_solution["costCurrentSolution"] = vector_costCurrentSolution.at(x);
         data_solution["temp"] = vector_temp.at(x);
         info_json.push_back(data_solution);
@@ -382,4 +452,44 @@ void RecordManager::SaveInfoRegister(
     closeRecordInfoJson();
 
 
+}
+
+void RecordManager::simceScoreUpdate(int *bestSolution, Info_alu *ptr_students, Info_colegio *ptr_colegios) {
+
+    std::vector<std::array<double, 4>> schoolScores(saParams.n_colegios, {0.0, 0.0, 0.0, 0.0});
+    //vector que almacena los nuevos puntajes simce de cada colegio (rbd, pmat, plen, numero de estudiantes en el colegio)
+
+    for (int x = 0; x < saParams.n_students; x++) {
+        int schoolID = bestSolution[x];
+        double simceMath = ptr_students[x].pmat;
+        double simceLanguage = ptr_students[x].plen;
+
+        schoolScores[schoolID][0] = ptr_colegios[schoolID].rbd; 
+        schoolScores[schoolID][1] += simceMath;                //guardamos la suma de los puntajes mat y len
+        schoolScores[schoolID][2] += simceLanguage;             
+        schoolScores[schoolID][3] += 1;                        //y el numero de alumnos en el colegio
+    }
+
+    std::vector<std::array<double, 3>> results; // Almacena {RBD, delta_math, delta_language}
+    //vector que almacenara la informacion util (RBD del colegio, variacion en puntaje mat, variacion len)
+
+    for (int i = 0; i < saParams.n_colegios; i++) {
+        const auto& score = schoolScores[i];
+        if (score[3] > 0) { //descartamos los que se quedaron sin alumnos matriculados despues del cambio
+            double avgMath = score[1] / score[3]; //calculamos promedios
+            double avgLanguage = score[2] / score[3];
+
+            //calcular variacion entre antes y depsues del cambio
+            double deltaMath = avgMath - ptr_colegios[i].pmat;
+            double deltaLanguage = avgLanguage - ptr_colegios[i].plen;
+
+            results.push_back({score[0], deltaMath, deltaLanguage}); //utilizamos el RBD real del colegio
+        }
+    }
+
+    infoSimce << std::setprecision(13);
+    infoSimce << "rbd,delta_pmat,delta_plen\n";
+    for (const auto& res : results) {
+        infoSimce << res[0] << "," << res[1] << "," << res[2] << "\n";
+    }
 }

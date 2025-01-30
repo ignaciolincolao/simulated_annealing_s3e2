@@ -5,6 +5,7 @@ __constant__ int d_n_students;
 __constant__ int d_n_colegios;
 __constant__ double d_max_dist;
 __constant__ int d_totalVuln;
+__constant__ double d_weight_n_students;
 
 __global__ void newSolution_kernel(
     DataResult *d_array_current_Solution,
@@ -109,7 +110,7 @@ __global__ void newSolution_kernel(
     cost_solution = d_alpha[0] * (sumDist / (d_n_students * d_max_dist));
     cost_solution += d_alpha[1] * (totalSesc * 0.5);
     cost_solution += d_alpha[2] * (totalcostCupo / d_n_colegios);
-    cost_solution += d_alpha[3] * penalty;
+    cost_solution += d_alpha[3] * (penalty / d_weight_n_students);
     //printf("alpha 1 valor: %f\n", d_alpha[0]);
     //printf("alpha 2 valor: %f\n", d_alpha[1]);
     //printf("alpha 3 valor: %f\n", d_alpha[2]);
@@ -321,7 +322,10 @@ __global__ void calculateSolution(
     //cout << var2 << "\n";
     var3 = (totalcostCupo /d_n_colegios);
 
-    var4 = penalty;
+    var4 = (penalty / d_weight_n_students);
+    //printf("penalty: %f\n", penalty);
+    //printf("d_weight_n_students: %f\n", d_weight_n_students);
+    //printf("var4: %f\n", var4);
 
     
     d_costCurrentSolution[0] = (double)((d_alpha[0] * var1) + (d_alpha[1] * var2) + (d_alpha[2] * var3) + (d_alpha[3] * var4));
@@ -365,7 +369,7 @@ __global__ void copyCost(
     }
 
 inline __device__ double calcPenalty(double currentCollege, uint8_t choices[5]) {
-    double weights[6] = {5000, 0, 100, 200, 300, 400};
+    double weights[6] = {500000, 0, 100, 200, 300, 400};
     uint8_t index = 0;
     for (size_t i = 1; i < 6; i++)
         index += (currentCollege == choices[i - 1]) * i;

@@ -7,6 +7,7 @@
 #include <array>
 #include <string>
 #include <utils/SAParameters.hpp>
+#include <Dataset.hpp>
 
 struct RecordParams
 {
@@ -23,9 +24,11 @@ private:
     std::ofstream infoRegister;
     std::ofstream infoGraphics;
     std::ofstream infoGraphicsBestSolution;
+    std::ofstream infoGraphicsBestSolutionRBD;
+    std::ofstream infoSimce;
     std::ofstream infoMove;
     std::ofstream infoJson;
-    std::array<std::string, 6> path_names;
+    std::array<std::string, 8> path_names;
     std::vector<bool> empty_files;
     RecordParams &rMgrParams;
     SimulatedParams &saParams;
@@ -38,6 +41,7 @@ public:
     std::vector<double> vector_meanDist;
     std::vector<double> vector_segregation;
     std::vector<double> vector_costoCupo;
+    std::vector<size_t> vector_penalty;
     std::vector<double> vector_temp;
     std::vector<int> vector_count;
     std::vector<double> vector_historyCostSolution;
@@ -64,6 +68,8 @@ public:
     void openRecordRegister();
     void openRecordGraphics();
     void openRecordGraphicsBestSolution();
+    void openRecordGraphicsBestSolutionRBD();
+    void openRecordInfoSimce();
     void openRecordMoveSolution();
     void openRecordInfoJson();
 
@@ -71,13 +77,16 @@ public:
     void closeRecordRegister();
     void closeRecordGraphics();
     void closeRecordGraphicsBestSolution();
+    void closeRecordGraphicsBestSolutionRBD();
+    void closeRecordInfoSimce();
     void closeRecordMoveSolution();
     void closeRecordInfoJson();
 
     void SaveInfoInit(double costBestSolution,
                       double meanDist,
                       double S,
-                      double costCupo);
+                      double costCupo,
+                      size_t penaltyParents);
 
     void SaveInfoFinish(double costPreviousSolution,
                         double costBestSolution,
@@ -85,7 +94,8 @@ public:
                         double time_taken,
                         double meanDist,
                         double S,
-                        double costCupo);
+                        double costCupo,
+                        size_t penaltyParents);
 
     void SaveInfoRegister(
         double time_taken,
@@ -93,6 +103,7 @@ public:
         double meanDist,
         double S,
         double costCupo,
+        size_t penaltyParents,
         double coolingRate,
         double k_reheating_init,
         double e_const,
@@ -113,13 +124,18 @@ public:
     void SaveGraphicsInit(double meanDist,
                           double S,
                           double costCupo,
-                          double costCurrentSolution);
+                          double costCurrentSolution,
+                          size_t penaltyParents);
 
     void SaveGraphicsFinish();
     void AllGraphicsFinish();
     void AllMovementFinish();
 
     void SaveGraphicsBestSolution(int *solution);
+    void SaveGraphicsFirstSolutionRBD(int *solution, Info_colegio *ptr_colegios, Info_alu *ptr_students);
+    void SaveGraphicsUpdateSolutionRBD(int *solution, Info_colegio *ptr_colegios);
+
+    void simceScoreUpdate(int *bestSolution, Info_alu *ptr_students, Info_colegio *ptr_colegios);
 
     ~RecordManager();
 };
