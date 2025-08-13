@@ -848,6 +848,17 @@ std::size_t SimulatedAnnealing::penaltyParents(int *currentSolution) {
     return penalty;
 }
 
+
+//version CPU con la misma logica de calPenalty del GPU
+//double calcPenaltyCPU(int currentCollege, const uint8_t choices[5]) {
+//    double weights[6] = {500000, 0, 100, 200, 300, 400};
+//    uint8_t index = 0;
+//    for (size_t i = 1; i < 6; i++) {
+//        index += (currentCollege == choices[i - 1]) * i;
+//    }
+//    return weights[index];
+//}
+
 /*
 void SimulatedAnnealing::simceScoreUpdate(int *bestSolution, Info_alu *ptr_students, Info_colegio *ptr_colegios) {
 

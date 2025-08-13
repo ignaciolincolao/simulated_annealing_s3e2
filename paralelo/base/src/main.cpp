@@ -33,7 +33,7 @@ int main(int argc, char *argv[])
                 .name_exp = "base",
                 .activated_files = {true,true,true,true,true}};
 
-    double alp1 =  10.0;
+    double alp1 = 10.0;
     double alp2 = 30.0;
     double alp3 = 25.0;
     //double alp4 = 50.0; se lo robe al oscar

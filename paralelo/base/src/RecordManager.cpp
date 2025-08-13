@@ -470,26 +470,42 @@ void RecordManager::simceScoreUpdate(int *bestSolution, Info_alu *ptr_students, 
         schoolScores[schoolID][3] += 1;                        //y el numero de alumnos en el colegio
     }
 
-    std::vector<std::array<double, 3>> results; // Almacena {RBD, delta_math, delta_language}
+    std::vector<std::array<double, 5>> results; // Almacena {RBD, delta_math, delta_language}
     //vector que almacenara la informacion util (RBD del colegio, variacion en puntaje mat, variacion len)
 
     for (int i = 0; i < saParams.n_colegios; i++) {
         const auto& score = schoolScores[i];
-        if (score[3] > 0) { //descartamos los que se quedaron sin alumnos matriculados despues del cambio
-            double avgMath = score[1] / score[3]; //calculamos promedios
-            double avgLanguage = score[2] / score[3];
+        //if (score[3] > 0) { //descartamos los que se quedaron sin alumnos matriculados despues del cambio
+        double avgMath = score[1] / score[3]; //calculamos promedios
+        double avgLanguage = score[2] / score[3];
 
-            //calcular variacion entre antes y depsues del cambio
-            double deltaMath = avgMath - ptr_colegios[i].pmat;
-            double deltaLanguage = avgLanguage - ptr_colegios[i].plen;
+        //calcular variacion entre antes y depsues del cambio
+        double deltaMath = avgMath - ptr_colegios[i].pmat;
+        double deltaLanguage = avgLanguage - ptr_colegios[i].plen;
 
-            results.push_back({score[0], deltaMath, deltaLanguage}); //utilizamos el RBD real del colegio
+        double deltacupo = score[3] -ptr_colegios[i].num_alu;
+
+        if (score[3] == 0){
+            schoolScores[i][0] = ptr_colegios[i].rbd;
         }
+        results.push_back({score[0], deltaMath, deltaLanguage, deltacupo, score[3]}); //utilizamos el RBD real del colegio
+        //}
     }
 
     infoSimce << std::setprecision(13);
-    infoSimce << "rbd,delta_pmat,delta_plen\n";
+    /*
+    infoSimce << "rbd,delta_pmat,delta_plen, delta_cupo \n";
     for (const auto& res : results) {
-        infoSimce << res[0] << "," << res[1] << "," << res[2] << "\n";
+        infoSimce << res[0] << "," << res[1] << "," << res[2] << "," << res[3] << "\n";
+    }
+    */
+   infoSimce << "rbd,delta_pmat,delta_plen, capacidad, n_capacidad, delta_cupo\n";
+    for (int i = 0; i < results.size(); i++) {
+        infoSimce << results[i][0] << "," 
+                  << results[i][1] << "," 
+                  << results[i][2] << "," 
+                  << ptr_colegios[i].num_alu << ","
+                  << results[i][4] << "," 
+                  << results[i][3] << "\n";
     }
 }

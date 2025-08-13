@@ -83,6 +83,13 @@ file(GLOB_RECURSE all_SRCS
 list(REMOVE_ITEM all_SRCS "${PROJECT_SOURCE_DIR}/src/main.cpp")
 list(REMOVE_ITEM all_SRCS "${PROJECT_SOURCE_DIR}/src/test/grid.cpp")
 
+# =============================
+# Excluir cualquier cosa de unitTest
+# =============================
+list(FILTER all_SRCS EXCLUDE REGEX ".*/unitTest/.*")
+
+#-------------------------------
+
 option(BUILD_SHARED_LIB "Build Shared Library" OFF)
 
 if (BUILD_SHARED_LIB)
@@ -146,3 +153,31 @@ SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pg")
 SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -pg")
 
 include(CPack)
+
+
+
+
+
+
+
+
+# =============================
+# Google Test al final
+# =============================
+file(GLOB TEST_SOURCES
+    "${PROJECT_SOURCE_DIR}/src/unitTest/*.cpp"
+    "${PROJECT_SOURCE_DIR}/src/unitTest/*.cu"
+)
+
+if(TEST_SOURCES)
+    enable_testing()
+    find_package(GTest REQUIRED)
+
+    add_executable(unit_tests ${TEST_SOURCES})
+    target_link_libraries(unit_tests PRIVATE
+        GTest::GTest
+        GTest::Main
+    )
+
+    add_test(NAME run_unit_tests COMMAND unit_tests)
+endif()
