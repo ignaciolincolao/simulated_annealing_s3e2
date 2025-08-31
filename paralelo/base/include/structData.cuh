@@ -2,19 +2,26 @@
 #define STRUCT_CUH
 
 
+#ifdef __CUDACC__
+  #define HD __host__ __device__
+#else
+  #define HD
+#endif
+
 struct DataResult {
-    double costSolution; 
+    double costSolution;
     int col;
     int stu;
 
-    __host__ __device__ DataResult() : costSolution(0), col(-1), stu(-1) {}
-   __host__ __device__ DataResult(double val, int c, int s) : costSolution(val), col(c), stu(s) {}
+    HD DataResult() : costSolution(0.0), col(-1), stu(-1) {}
+    HD DataResult(double val, int c, int s) : costSolution(val), col(c), stu(s) {}
+
+    // Necesario para thrust::sort en device y usable también en host
+    HD bool operator<(const DataResult& other) const {
+        return costSolution < other.costSolution;
+    }
 };
 
-__host__ __device__ inline bool operator<(const DataResult& lhs, const DataResult& rhs) {
-    return lhs.costSolution < rhs.costSolution;
-}
-
-
+#undef HD
 
 #endif

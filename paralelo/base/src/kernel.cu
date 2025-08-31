@@ -239,7 +239,7 @@ __global__ void calculateSolution(
     penalty = d_currentVars[3];
 
     //printf("%lf |%lf |%lf |%lf |%d |%d \n",sumDist,totalSesc,totalcostCupo,d_array_current_Solution[0],aluchange,colchange);
-
+    //printf("GPU: %lf |%lf |%lf |%lf \n",sumDist,totalSesc,totalcostCupo,penalty);
     ////////////////////////////////////////////////////////////////
     /////// Descuenta antes de mover
     ////////////////////////////////////////////////////////////////
@@ -257,6 +257,8 @@ __global__ void calculateSolution(
     //printf("%lf \n",totalSesc);
     totalcostCupo-=(double)totalAluCol*fabs((double)d_cupoArray[currentSchool]-totalAluCol)/pow(((double)d_cupoArray[currentSchool]*0.5),2);
     //printf("%lf \n",totalcostCupo);
+    //printf("Vars GPU: %d %d \n", totalAluCol, d_cupoArray[currentSchool]);
+    //printf("cost A: %lf \n", totalcostCupo);
     //printf("%lf %lf %lf %d %d %d\n",sumDist,totalSesc,totalcostCupo,aluchange,colchange,currentSchool);
     // seg de la escuela nueva
     totalAluCol = d_aluxcol[newSchool];
@@ -272,6 +274,7 @@ __global__ void calculateSolution(
 
     totalcostCupo-=(double)totalAluCol*fabs((double)d_cupoArray[newSchool]-totalAluCol)/pow(((double)d_cupoArray[newSchool]*0.5),2);
     //printf("a%d \n",newSchool);
+    //printf("GPU cost 1: %lf \n", totalcostCupo);
     //printf("%lf %lf %lf %d %d %d\n",sumDist,totalSesc,totalcostCupo,aluchange,colchange,currentSchool);
     ////////////////////////////////////////////////////////////////
     /////// Realiza Movimiento
@@ -295,8 +298,8 @@ __global__ void calculateSolution(
     aluNoVulCol =totalAluCol - aluVulCol;
     totalSesc+=fabs((aluVulCol/(double)d_totalVuln)-(aluNoVulCol/(double)(d_n_students-d_totalVuln)));
     // costcupo escuela actual
-
     totalcostCupo+=(double)totalAluCol*fabs((double)d_cupoArray[currentSchool]-totalAluCol)/pow(((double)d_cupoArray[currentSchool]*0.5),2);
+    
     //printf("%lf \n",totalcostCupo);
     //printf("%lf %lf %lf %d %d %d\n",sumDist,totalSesc,totalcostCupo,aluchange,colchange,currentSchool);
     // seg de la escuela antigua
@@ -307,9 +310,10 @@ __global__ void calculateSolution(
     totalSesc+=fabs((aluVulCol/(double)d_totalVuln)-(aluNoVulCol/(double)(d_n_students-d_totalVuln)));
 
     // costcupo escuela antigua
-
+    //printf("GPU cost 2 A: %lf \n", totalcostCupo);
     totalcostCupo+=((double)totalAluCol*fabs((double)d_cupoArray[newSchool]-totalAluCol)/pow(((double)d_cupoArray[newSchool]*0.5),2));
     //printf("%lf %lf %lf %d %d %d\n",sumDist,totalSesc,totalcostCupo,aluchange,colchange,currentSchool);
+    //printf("GPU cost 2 B: %lf \n", totalcostCupo);
     d_currentVars[0] = sumDist;
     d_currentVars[1] = totalSesc;
     d_currentVars[2] = totalcostCupo;

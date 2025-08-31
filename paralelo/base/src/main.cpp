@@ -6,6 +6,7 @@
 #include <random>
 #include <stdio.h>
 #include <SimulatedFactory.hpp>
+#include <gtest/gtest.h>
 
 
 
@@ -105,7 +106,8 @@ int main(int argc, char *argv[])
             cuParams,
             mt);
 
-    simulatedAnneling->runGPU();
+    //simulatedAnneling->runGPU();
+    simulatedAnneling->ValidateGPU();
     delete simulatedAnneling;
     delete simStruct;
     delete rMgrParams;
@@ -116,6 +118,21 @@ int main(int argc, char *argv[])
     delete rtParams;
     delete cuParams;
     
+
+    
     
     return (EXIT_SUCCESS);
+
+
+
+    ::testing::InitGoogleTest(&argc, argv);
+    int result = RUN_ALL_TESTS();
+
+    if (result == 0) {
+        std::cout << "Tests passed" << std::endl;
+        return EXIT_SUCCESS;
+    } else {
+        std::cerr << "Error" << std::endl;
+        return result; 
+    }
 }

@@ -380,3 +380,9 @@ void CUDAWrapper::UpdateCurrentVarsHostToGPU(double*& currentVars){
 }
 
 
+void CUDAWrapper::getSolution(std::vector<DataResult>& out) {
+    const int N = cuParams.n_block * cuParams.n_thread;
+    out.resize(N);
+    cudaMemcpy(out.data(), d_array_current_Solution,
+               N * sizeof(DataResult), cudaMemcpyDeviceToHost);
+}

@@ -454,6 +454,8 @@ void RecordManager::SaveInfoRegister(
 
 }
 
+
+//probablemente eliminar si no existe info de cual es el puntaje simce del alumno
 void RecordManager::simceScoreUpdate(int *bestSolution, Info_alu *ptr_students, Info_colegio *ptr_colegios) {
 
     std::vector<std::array<double, 4>> schoolScores(saParams.n_colegios, {0.0, 0.0, 0.0, 0.0});

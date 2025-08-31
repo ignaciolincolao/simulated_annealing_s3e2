@@ -162,7 +162,7 @@ include(CPack)
 
 
 # =============================
-# Google Test al final
+#mi ejecutable de pruebas unitarias
 # =============================
 file(GLOB TEST_SOURCES
     "${PROJECT_SOURCE_DIR}/src/unitTest/*.cpp"
@@ -181,3 +181,5 @@ if(TEST_SOURCES)
 
     add_test(NAME run_unit_tests COMMAND unit_tests)
 endif()
+
+#-------------------------------------------------------

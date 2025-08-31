@@ -132,6 +132,8 @@ class CUDAWrapper{
         //void newSolutionUpdate(double& costCurrentSolution,int aluchange, int colchange);
         std::tuple<int,int> getMovementDeviceToHost(int idx);
         void sortSolutions();
+
+        void getSolution(std::vector<DataResult>& out);
 };
 
 

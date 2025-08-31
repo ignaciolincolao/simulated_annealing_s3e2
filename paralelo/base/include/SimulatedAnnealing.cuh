@@ -24,6 +24,8 @@
 #include <RecordManager.hpp>
 #include <Dataset.hpp>
 
+#include <structData.cuh>
+
 using std::string;
 using std::stof;
 using std::stoi;
@@ -132,6 +134,10 @@ public:
     int selecSolution();
     void UpdateProb(int it);
     void simceScoreUpdate(int *bestSolution, Info_alu *ptr_students, Info_colegio *ptr_colegios);
+    
+
+    void ValidateGPU();
+    DataResult cpu_one_tid_newSolution(int tid) const;
     
 };
 
