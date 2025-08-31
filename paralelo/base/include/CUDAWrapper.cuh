@@ -79,6 +79,10 @@ class CUDAWrapper{
         cudaError_t errAsync;
         size_t pitch;
         mt19937& mt;
+
+        int *d_prevMove; //pruebas unitarias
+        double *d_costPrevSolUnitTest;
+
     public:
         CUDAWrapper(CUDAParams& cuParams_,SimulatedParams& saParams, mt19937& mt);
         ~CUDAWrapper();
@@ -133,7 +137,12 @@ class CUDAWrapper{
         std::tuple<int,int> getMovementDeviceToHost(int idx);
         void sortSolutions();
 
+        //funciones de los UnitTests
         void getSolution(std::vector<DataResult>& out);
+        void previousSolution(int idx);
+        void getPreviousSolutionUnitTest(double& costPrevSolUnitTest);
+
+        
 };
 
 

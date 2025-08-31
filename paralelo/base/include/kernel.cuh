@@ -60,7 +60,25 @@ __global__ void calculateSolution(
     uint8_t *d_choices,
     double *d_currentVars,
     double *d_costCurrentSolution,
-    int idx);
+    int idx,
+    int * d_prevMove //para pruebas unitarias
+    );
+
+__global__ void calculatePreviousSolution(
+    //DataResult *d_array_current_Solution,
+    const int* __restrict__ d_cupoArray,
+    const int* __restrict__ d_alumnosSep,
+    int* d_aluxcol,
+    int* d_aluVulxCol,
+    int* d_currentSolution,
+    const double* __restrict__ d_distMat,
+    size_t pitch,
+    uint8_t *d_choices,
+    double *d_currentVars,
+    double *d_costPrevSolUnitTest,
+    int idx,
+    int * d_prevMove //para pruebas unitarias
+);
 
 
 __global__ void copyMemSolution(
@@ -79,6 +97,8 @@ __global__ void copyCost(
     double *costCurrentSolution,
     double *new_costCurrentSolution
     );
+
+/* eliminar??
 __global__ void calculateSolution(
     DataResult *d_array_current_Solution,
     const int* __restrict__ d_cupoArray,
@@ -90,6 +110,8 @@ __global__ void calculateSolution(
     size_t pitch,
     double *d_currentVars,
     double *d_costCurrentSolution);
+*/
+
 inline __device__ double cu_round_n(double x);
 
 inline __device__ double calcPenalty(double currentSolution, uint8_t *choices);

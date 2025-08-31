@@ -51,6 +51,10 @@ CUDAWrapper::~CUDAWrapper(){
     cudaFree(d_distMat);
     cudaFree(d_alpha);
     cudaFree(d_choices);
+
+    cudaFree(d_prevMove); //pruebas unitarias
+    cudaFree(d_costPrevSolUnitTest);
+    
     cudaEventDestroy(start_cuda);
     cudaEventDestroy(stop_cuda);
 }
@@ -91,7 +95,8 @@ void CUDAWrapper::memInit(
     cudaMalloc((void **) &d_cupoArray, saParams.n_colegios * sizeof(int));
     cudaMalloc((void **) &d_choices, saParams.n_students * 5 * sizeof(uint8_t)); //arreglo de choices (deje los 5 porque se lo robe al oscar)
 
-    
+    cudaMalloc((void **) &d_prevMove, 2 * sizeof(int)); //guardar movimiento anterior para pruebas unitarias
+    cudaMalloc((void **) &d_costPrevSolUnitTest, 1 * sizeof(double)); //guardar el costo del movimiento anterior realizado con el nuevo kernel
 
     ///////////////////////////////////////////////////
     /// Genera arreglos que contendran valores del 0 hasta saParams.n_students y saParams.n_colegios
@@ -279,7 +284,9 @@ void CUDAWrapper::newSolutionUpdate(double& costCurrentSolution, int id_select)
         d_choices,
         d_currentVars,
         d_costCurrentSolution,
-        id_select);
+        id_select,
+        d_prevMove //para pruebas unitarias
+);
         getCurrentSolutionGpuToHost(costCurrentSolution);
         synchronizeBucle();
 }
@@ -385,4 +392,33 @@ void CUDAWrapper::getSolution(std::vector<DataResult>& out) {
     out.resize(N);
     cudaMemcpy(out.data(), d_array_current_Solution,
                N * sizeof(DataResult), cudaMemcpyDeviceToHost);
+}
+
+void CUDAWrapper::previousSolution(int id_select)
+{
+        calculatePreviousSolution<<<1,1>>>(d_cupoArray,
+        d_alumnosSep,
+        d_aluxcol,
+        d_aluVulxCol,
+        d_currentSolution,
+        d_distMat,
+        pitch,
+        d_choices,
+        d_currentVars,
+        d_costPrevSolUnitTest,
+        id_select,
+        d_prevMove //para pruebas unitarias
+);
+        synchronizeBucle();
+}
+
+void CUDAWrapper::getPreviousSolutionUnitTest(double& costPrevSolUnitTest)
+{
+    cudaMemcpy(&costPrevSolUnitTest,&d_costPrevSolUnitTest[0], sizeof(double),cudaMemcpyDeviceToHost);
+    errSync  = cudaGetLastError();
+    errAsync = cudaDeviceSynchronize();
+    if (errSync != cudaSuccess) 
+        printf("5 Sync kernel error: %s\n", cudaGetErrorString(errSync));
+    if (errAsync != cudaSuccess)
+        printf("5 Async kernel error: %s\n", cudaGetErrorString(errAsync));
 }

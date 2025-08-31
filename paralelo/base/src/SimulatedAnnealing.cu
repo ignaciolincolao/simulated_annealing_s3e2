@@ -965,7 +965,7 @@ void SimulatedAnnealing::ValidateGPU(){
         currentVars);
 
     //error max detectado de 2e-16 (ciclo 54)
-    int n_ciclos = 12000;
+    int n_ciclos = 1000000;
     std::vector<DataResult> sol;
     int id_select= 0;
     DataResult cpu;
@@ -973,6 +973,8 @@ void SimulatedAnnealing::ValidateGPU(){
     double dif;
     double max_error = -1;
     int ciclo_max_error = -1;
+    double previousSolutionUnitTest;
+    double epsilon = 1e-15;
 
     for (int ciclo = 0; ciclo < n_ciclos; ++ciclo) {
         cudaWrapper->memCopyPrevToCurrent();
@@ -993,10 +995,16 @@ void SimulatedAnnealing::ValidateGPU(){
         //mostrar accion realizada
         //cout << "accion: -> stu= " << r.stu << " -> col= " << r.col << " costo=" << r.costSolution << "\n";
         
-
         //2nd kernel (se cambia a un alu de col)
         cudaWrapper->newSolutionUpdate(costCurrentSolution, id_select);
-        
+        cudaWrapper->previousSolution(id_select);
+        cudaWrapper->getPreviousSolutionUnitTest(previousSolutionUnitTest);
+
+        if((previousSolutionUnitTest-costPreviousSolution) > epsilon){
+            cout << "En el ciclo " << ciclo << " el calculo del valor anterior no es igual\n";
+        }
+
+
         //copypaste del original
         if(costCurrentSolution < costBestSolution){
                 cudaWrapper->AcceptanceBestSolution();
@@ -1011,8 +1019,10 @@ void SimulatedAnnealing::ValidateGPU(){
 
                 dif = costTempSol - costBestSolution;
                 if (dif>0){
-                    cout << "iteracion N " << ciclo+1 << " : Resultado no es igual a CPU, error de "<< dif<< "\n";
-                    cout << "accion realizada: -> stu= " << r.stu << " -> col= " << r.col << " costo=" << r.costSolution << "\n";
+                    if (dif > epsilon){
+                        //cout << "iteracion N " << ciclo+1 << " : Resultado no es igual a CPU, error de "<< dif<< "\n";
+                        //cout << "accion realizada: -> stu= " << r.stu << " -> col= " << r.col << " costo=" << r.costSolution << "\n";  
+                    }
                     if (max_error < dif){
                         max_error = dif;
                         ciclo_max_error = ciclo;
@@ -1083,6 +1093,8 @@ void SimulatedAnnealing::ValidateGPU(){
               << mismatches << " de " << N << "\n";
 
     */
+
+
     delete cudaWrapper;
 }
 

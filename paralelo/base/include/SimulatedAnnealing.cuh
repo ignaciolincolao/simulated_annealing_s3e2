@@ -24,7 +24,7 @@
 #include <RecordManager.hpp>
 #include <Dataset.hpp>
 
-#include <structData.cuh>
+#include <structData.cuh> //lo añadi porque las pruebas unitarias lo necesitan
 
 using std::string;
 using std::stof;

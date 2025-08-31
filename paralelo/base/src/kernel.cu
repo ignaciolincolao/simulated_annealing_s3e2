@@ -199,7 +199,9 @@ __global__ void calculateSolution(
     uint8_t *d_choices,
     double *d_currentVars,
     double *d_costCurrentSolution,
-    int id_select){
+    int id_select,
+    int * d_prevMove //para pruebas unitarias
+){
 
     int aluchange,
     colchange,
@@ -222,7 +224,12 @@ __global__ void calculateSolution(
     aluchange = d_array_current_Solution[id_select].stu;
     colchange = d_array_current_Solution[id_select].col;
     currentSchool = d_currentSolution[aluchange];
-    //printf("%d \t %.20lf | %d %d %d \n",blockIdx.x,d_array_current_Solution[0],d_array_current_Solution_alu[0],d_array_current_Solution_col[0],currentSchool);
+
+    //para pruebas unitarias
+    d_prevMove[0] = aluchange;
+    d_prevMove[1] = d_currentSolution[aluchange];
+    //fin
+
     newSchool = colchange;
 
     uint8_t choices[5] = {
@@ -238,101 +245,110 @@ __global__ void calculateSolution(
     totalcostCupo = d_currentVars[2];
     penalty = d_currentVars[3];
 
-    //printf("%lf |%lf |%lf |%lf |%d |%d \n",sumDist,totalSesc,totalcostCupo,d_array_current_Solution[0],aluchange,colchange);
     //printf("GPU: %lf |%lf |%lf |%lf \n",sumDist,totalSesc,totalcostCupo,penalty);
     ////////////////////////////////////////////////////////////////
     /////// Descuenta antes de mover
     ////////////////////////////////////////////////////////////////
+
     // Distancia
     sumDist-=d_distMat[aluchange * pitch / sizeof(double) + currentSchool];
-    //printf("%lf \n",sumDist);
+
     // seg de la escuela actual
     totalAluCol = d_aluxcol[currentSchool];
-    penalty -= calcPenalty(currentSchool, choices);
-    //cout << "Alumnos actual escuela "<< totalAluCol << " " << endl;
     aluVulCol = d_aluVulxCol[currentSchool];
     aluNoVulCol =totalAluCol - aluVulCol;
+    //printf("Original 1 ac: alucol: %d | aluvulcol: %d | alunovulcol: %d | aluchange: %d \n",totalAluCol,aluVulCol,aluNoVulCol, aluchange);
+
     totalSesc-=fabs((aluVulCol/(double)d_totalVuln)-(aluNoVulCol/(double)(d_n_students-d_totalVuln)));
-    // costcupo escuela actual 
-    //printf("%lf \n",totalSesc);
+
+    //costocupo escuela actual 
     totalcostCupo-=(double)totalAluCol*fabs((double)d_cupoArray[currentSchool]-totalAluCol)/pow(((double)d_cupoArray[currentSchool]*0.5),2);
-    //printf("%lf \n",totalcostCupo);
-    //printf("Vars GPU: %d %d \n", totalAluCol, d_cupoArray[currentSchool]);
-    //printf("cost A: %lf \n", totalcostCupo);
-    //printf("%lf %lf %lf %d %d %d\n",sumDist,totalSesc,totalcostCupo,aluchange,colchange,currentSchool);
-    // seg de la escuela nueva
+    
+
+
+    //seg de la escuela nueva
     totalAluCol = d_aluxcol[newSchool];
-    //cout << "Alumnos nueva escuela "<< totalAluCol << " " << endl;
     aluVulCol = d_aluVulxCol[newSchool];
     aluNoVulCol =totalAluCol - aluVulCol;
-    
+    //printf("Original 1 an: alucol: %d | aluvulcol: %d | alunovulcol: %d | aluchange: %d \n",totalAluCol,aluVulCol,aluNoVulCol, newSchool);
+
     totalSesc-=fabs((aluVulCol/(double)d_totalVuln)-(aluNoVulCol/(double)(d_n_students-d_totalVuln)));
 
-    penalty += calcPenalty(newSchool, choices);
-
-    // costcupo escuela nueva
-
+    //costocupo escuela nueva
     totalcostCupo-=(double)totalAluCol*fabs((double)d_cupoArray[newSchool]-totalAluCol)/pow(((double)d_cupoArray[newSchool]*0.5),2);
-    //printf("a%d \n",newSchool);
-    //printf("GPU cost 1: %lf \n", totalcostCupo);
-    //printf("%lf %lf %lf %d %d %d\n",sumDist,totalSesc,totalcostCupo,aluchange,colchange,currentSchool);
+    
+
+
     ////////////////////////////////////////////////////////////////
     /////// Realiza Movimiento
     ////////////////////////////////////////////////////////////////
+
     //ELimina el estudiante de la escuela actual
     d_aluxcol[currentSchool]-=1;
     d_aluVulxCol[currentSchool]-=d_alumnosSep[aluchange];
+
     //Asigna al estudiante a la nueva escuela
     d_currentSolution[aluchange] = newSchool;
     d_aluxcol[newSchool]+=1;
     d_aluVulxCol[newSchool]+=d_alumnosSep[aluchange];
 
+
     ////////////////////////////////////////////////////////////////
     ////// Calculó despues de mover
     //////////////////////////////////////////////////////////////
+
+    //distancia de la nueva escuela
     sumDist+=d_distMat[aluchange * pitch / sizeof(double) + newSchool];
     
-    // seg de la escuela actual
+    //seg de la escuela actual
     totalAluCol = d_aluxcol[currentSchool];
     aluVulCol = d_aluVulxCol[currentSchool];
     aluNoVulCol =totalAluCol - aluVulCol;
+    //printf("Original 2 ac: alucol: %d | aluvulcol: %d | alunovulcol: %d | aluchange: %d \n",totalAluCol,aluVulCol,aluNoVulCol, aluchange);
+
     totalSesc+=fabs((aluVulCol/(double)d_totalVuln)-(aluNoVulCol/(double)(d_n_students-d_totalVuln)));
-    // costcupo escuela actual
+    
+    //costocupo escuela actual
     totalcostCupo+=(double)totalAluCol*fabs((double)d_cupoArray[currentSchool]-totalAluCol)/pow(((double)d_cupoArray[currentSchool]*0.5),2);
     
-    //printf("%lf \n",totalcostCupo);
-    //printf("%lf %lf %lf %d %d %d\n",sumDist,totalSesc,totalcostCupo,aluchange,colchange,currentSchool);
-    // seg de la escuela antigua
-    totalAluCol = d_aluxcol[newSchool];
 
+    //seg de la escuela antigua
+    totalAluCol = d_aluxcol[newSchool];
     aluVulCol = d_aluVulxCol[newSchool];
     aluNoVulCol =totalAluCol - aluVulCol;
+    //printf("Original 2 an: alucol: %d | aluvulcol: %d | alunovulcol: %d | aluchange: %d \n",totalAluCol,aluVulCol,aluNoVulCol, newSchool);
+
     totalSesc+=fabs((aluVulCol/(double)d_totalVuln)-(aluNoVulCol/(double)(d_n_students-d_totalVuln)));
 
-    // costcupo escuela antigua
-    //printf("GPU cost 2 A: %lf \n", totalcostCupo);
+    //costcupo escuela antigua
     totalcostCupo+=((double)totalAluCol*fabs((double)d_cupoArray[newSchool]-totalAluCol)/pow(((double)d_cupoArray[newSchool]*0.5),2));
-    //printf("%lf %lf %lf %d %d %d\n",sumDist,totalSesc,totalcostCupo,aluchange,colchange,currentSchool);
-    //printf("GPU cost 2 B: %lf \n", totalcostCupo);
+
+
+    //Calculo de penalty
+    //penalty de la escuela actual
+    penalty -= calcPenalty(currentSchool, choices);
+
+    //penalty de la escuela nueva
+    penalty += calcPenalty(newSchool, choices);
+
+
+    //actualizar las sumatorias guardadas
     d_currentVars[0] = sumDist;
     d_currentVars[1] = totalSesc;
     d_currentVars[2] = totalcostCupo;
     d_currentVars[3] = penalty;
-    //printf("%lf %lf %lf %d %d %d\n",sumDist,totalSesc,totalcostCupo,aluchange,colchange,currentSchool);
+
     var1 = (sumDist/d_n_students);
     var1= (var1/d_max_dist);
-    //cout << var1 << "\n";
+
     var2 = (totalSesc*0.5);
-    //cout << var2 << "\n";
     var3 = (totalcostCupo /d_n_colegios);
-
     var4 = (penalty / d_weight_n_students);
-    //printf("penalty: %f\n", penalty);
-    //printf("d_weight_n_students: %f\n", d_weight_n_students);
-    //printf("var4: %f\n", var4);
 
-    
+    //printf("Original var1: %d, var2: %d, var3: %d, var4: %d \n", var1,var2,var3,var4);
+
     d_costCurrentSolution[0] = (double)((d_alpha[0] * var1) + (d_alpha[1] * var2) + (d_alpha[2] * var3) + (d_alpha[3] * var4));
+    //printf("Original cost: %.16f \n", d_costCurrentSolution[0]);
 }
 
 
@@ -379,4 +395,174 @@ inline __device__ double calcPenalty(double currentCollege, uint8_t choices[5]) 
         index += (currentCollege == choices[i - 1]) * i;
 
     return weights[index];
+}
+
+
+
+
+
+
+
+
+__global__ void calculatePreviousSolution(
+    //DataResult *d_array_current_Solution,
+    const int* __restrict__ d_cupoArray,
+    const int* __restrict__ d_alumnosSep,
+    int* d_aluxcol,
+    int* d_aluVulxCol,
+    int* d_currentSolution,
+    const double* __restrict__ d_distMat,
+    size_t pitch,
+    uint8_t *d_choices,
+    double *d_currentVars,
+    double *d_costPrevSolUnitTest,
+    int id_select,
+    int * d_prevMove //para pruebas unitarias
+){
+
+    int aluchange,
+    colchange,
+    newSchool,
+    aluVulCol= 0,
+    aluNoVulCol= 0,
+    totalAluCol= 0,
+    currentSchool;
+
+    double  totalcostCupo= 0.0,
+            totalSesc= 0.0,
+            penalty = 0.0,
+            sumDist = 0.0,
+            var1,
+            var2,
+            var3,
+            var4;
+    /// Inicializa arrays
+
+    aluchange = d_prevMove[0];
+    colchange = d_prevMove[1];
+    currentSchool = d_currentSolution[aluchange];
+    newSchool = colchange;
+
+    //printf("Previous-> alu: %d, old col: %d, new col: %d \n", aluchange, colchange, currentSchool);
+
+
+    uint8_t choices[5] = {
+        d_choices[aluchange * 5 + 0],
+        d_choices[aluchange * 5 + 1],
+        d_choices[aluchange * 5 + 2],
+        d_choices[aluchange * 5 + 3],
+        d_choices[aluchange * 5 + 4],
+    };
+    
+    sumDist= d_currentVars[0];
+    totalSesc = d_currentVars[1];
+    totalcostCupo = d_currentVars[2];
+    penalty = d_currentVars[3];
+
+    //printf("GPU: %lf |%lf |%lf |%lf \n",sumDist,totalSesc,totalcostCupo,penalty);
+    ////////////////////////////////////////////////////////////////
+    /////// Descuenta antes de mover
+    ////////////////////////////////////////////////////////////////
+
+    // Distancia
+    sumDist-=d_distMat[aluchange * pitch / sizeof(double) + currentSchool];
+
+    // seg de la escuela actual
+    totalAluCol = d_aluxcol[currentSchool];
+    aluVulCol = d_aluVulxCol[currentSchool];
+    aluNoVulCol =totalAluCol - aluVulCol;
+    //printf("Previous 2 ac: alucol: %d | aluvulcol: %d | alunovulcol: %d | aluchange: %d \n",totalAluCol,aluVulCol,aluNoVulCol, aluchange);
+
+    totalSesc-=fabs((aluVulCol/(double)d_totalVuln)-(aluNoVulCol/(double)(d_n_students-d_totalVuln)));
+
+    //costocupo escuela actual 
+    totalcostCupo-=(double)totalAluCol*fabs((double)d_cupoArray[currentSchool]-totalAluCol)/pow(((double)d_cupoArray[currentSchool]*0.5),2);
+    
+
+
+    //seg de la escuela nueva
+    totalAluCol = d_aluxcol[newSchool];
+    aluVulCol = d_aluVulxCol[newSchool];
+    aluNoVulCol =totalAluCol - aluVulCol;
+    //printf("Previous 2 an: alucol: %d | aluvulcol: %d | alunovulcol: %d | aluchange: %d \n",totalAluCol,aluVulCol,aluNoVulCol, newSchool);
+    
+    totalSesc-=fabs((aluVulCol/(double)d_totalVuln)-(aluNoVulCol/(double)(d_n_students-d_totalVuln)));
+
+    //costocupo escuela nueva
+    totalcostCupo-=(double)totalAluCol*fabs((double)d_cupoArray[newSchool]-totalAluCol)/pow(((double)d_cupoArray[newSchool]*0.5),2);
+    
+
+
+    ////////////////////////////////////////////////////////////////
+    /////// Realiza Movimiento
+    ////////////////////////////////////////////////////////////////
+/*
+    //ELimina el estudiante de la escuela actual
+    d_aluxcol[currentSchool]-=1;
+    d_aluVulxCol[currentSchool]-=d_alumnosSep[aluchange];
+
+    //Asigna al estudiante a la nueva escuela
+    d_currentSolution[aluchange] = newSchool;
+    d_aluxcol[newSchool]+=1;
+    d_aluVulxCol[newSchool]+=d_alumnosSep[aluchange];
+*/
+
+    ////////////////////////////////////////////////////////////////
+    ////// Calculó despues de mover
+    //////////////////////////////////////////////////////////////
+
+    //distancia de la nueva escuela
+    sumDist+=d_distMat[aluchange * pitch / sizeof(double) + newSchool];
+    
+    //seg de la escuela actual
+    totalAluCol = d_aluxcol[currentSchool]-1;
+    aluVulCol = d_aluVulxCol[currentSchool] -d_alumnosSep[aluchange];
+    aluNoVulCol =totalAluCol - aluVulCol;
+    //printf("Previous 1 ac: alucol: %d | aluvulcol: %d | alunovulcol: %d | aluchange: %d \n",totalAluCol,aluVulCol,aluNoVulCol, aluchange);
+
+    totalSesc+=fabs((aluVulCol/(double)d_totalVuln)-(aluNoVulCol/(double)(d_n_students-d_totalVuln)));
+    
+    //costocupo escuela actual
+    totalcostCupo+=(double)totalAluCol*fabs((double)d_cupoArray[currentSchool]-totalAluCol)/pow(((double)d_cupoArray[currentSchool]*0.5),2);
+    
+
+    //seg de la escuela antigua
+    totalAluCol = d_aluxcol[newSchool] +1 ;
+    aluVulCol = d_aluVulxCol[newSchool] +d_alumnosSep[aluchange];
+    aluNoVulCol =totalAluCol - aluVulCol;
+    //printf("Previous 1 an: alucol: %d | aluvulcol: %d | alunovulcol: %d | aluchange: %d \n\n",totalAluCol,aluVulCol,aluNoVulCol, newSchool);
+
+
+    totalSesc+=fabs((aluVulCol/(double)d_totalVuln)-(aluNoVulCol/(double)(d_n_students-d_totalVuln)));
+
+    //costcupo escuela antigua
+    totalcostCupo+=((double)totalAluCol*fabs((double)d_cupoArray[newSchool]-totalAluCol)/pow(((double)d_cupoArray[newSchool]*0.5),2));
+
+
+    //Calculo de penalty
+    //penalty de la escuela actual
+    penalty -= calcPenalty(currentSchool, choices);
+
+    //penalty de la escuela nueva
+    penalty += calcPenalty(newSchool, choices);
+
+/*
+    //actualizar las sumatorias guardadas
+    d_currentVars[0] = sumDist;
+    d_currentVars[1] = totalSesc;
+    d_currentVars[2] = totalcostCupo;
+    d_currentVars[3] = penalty;
+*/
+
+    var1 = (sumDist/d_n_students);
+    var1= (var1/d_max_dist);
+
+    var2 = (totalSesc*0.5);
+    var3 = (totalcostCupo /d_n_colegios);
+    var4 = (penalty / d_weight_n_students);
+
+    //printf("Previous var1: %d, var2: %d, var3: %d, var4: %d \n", var1,var2,var3,var4);
+    
+    d_costPrevSolUnitTest[0] = (double)((d_alpha[0] * var1) + (d_alpha[1] * var2) + (d_alpha[2] * var3) + (d_alpha[3] * var4));
+    //printf("Previous cost: %.16f \n\n", d_costPrevSolUnitTest[0]);
 }
