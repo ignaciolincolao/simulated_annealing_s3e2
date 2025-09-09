@@ -54,6 +54,11 @@ CUDAWrapper::~CUDAWrapper(){
 
     cudaFree(d_prevMove); //pruebas unitarias
     cudaFree(d_costPrevSolUnitTest);
+
+    //variables de update de penalty
+    cudaFree(d_preferences_matrix);
+    cudaFree(d_num_preferences);
+    cudaFree(d_penalty_matrix);
     
     cudaEventDestroy(start_cuda);
     cudaEventDestroy(stop_cuda);
@@ -97,6 +102,12 @@ void CUDAWrapper::memInit(
 
     cudaMalloc((void **) &d_prevMove, 2 * sizeof(int)); //guardar movimiento anterior para pruebas unitarias
     cudaMalloc((void **) &d_costPrevSolUnitTest, 1 * sizeof(double)); //guardar el costo del movimiento anterior realizado con el nuevo kernel
+
+    //variables del update de penalty
+    cudaMalloc((void **) &d_preferences_matrix, saParams.n_students * saParams.max_choices * sizeof(int)); //matriz de preferencias
+    cudaMalloc((void **) &d_num_preferences,  saParams.n_students * sizeof(int)); //vector que indica cuantas preferencias escogio cada estudiante
+    cudaMalloc((void **) &d_penalty_matrix, saParams.n_students * saParams.n_colegios * sizeof(float)); //matriz de penalidades calculadas
+
 
     ///////////////////////////////////////////////////
     /// Genera arreglos que contendran valores del 0 hasta saParams.n_students y saParams.n_colegios
@@ -160,7 +171,8 @@ void CUDAWrapper::memInit(
     if (errAsync != cudaSuccess)
         printf("0 Async kernel error: %s\n", cudaGetErrorString(errAsync));
 
-    
+
+
 
 }
 
@@ -235,7 +247,8 @@ void CUDAWrapper::newSolution(){
                                 d_shuffle_colegios,
                                 d_currentVars,
                                 d_choices,
-                                pitch);
+                                pitch,
+                                d_penalty_matrix);
     CUDAWrapper::synchronizeBucle();
 
 
@@ -285,7 +298,9 @@ void CUDAWrapper::newSolutionUpdate(double& costCurrentSolution, int id_select)
         d_currentVars,
         d_costCurrentSolution,
         id_select,
-        d_prevMove //para pruebas unitarias
+        d_prevMove, //para pruebas unitarias
+        d_penalty_matrix
+
 );
         getCurrentSolutionGpuToHost(costCurrentSolution);
         synchronizeBucle();
@@ -407,7 +422,8 @@ void CUDAWrapper::previousSolution(int id_select)
         d_currentVars,
         d_costPrevSolUnitTest,
         id_select,
-        d_prevMove //para pruebas unitarias
+        d_prevMove, //para pruebas unitarias
+        d_penalty_matrix
 );
         synchronizeBucle();
 }
@@ -421,4 +437,76 @@ void CUDAWrapper::getPreviousSolutionUnitTest(double& costPrevSolUnitTest)
         printf("5 Sync kernel error: %s\n", cudaGetErrorString(errSync));
     if (errAsync != cudaSuccess)
         printf("5 Async kernel error: %s\n", cudaGetErrorString(errAsync));
+}
+
+
+void CUDAWrapper::compute_penalty_matrix(
+    int* h_preferences_matrix,        // Entrada: matriz de preferencias en CPU
+    int* h_num_preferences,           // Entrada: número de preferencias por estudiante
+    float* h_penalty_matrix,          // Salida: matriz de penalizaciones en CPU
+
+    // (lo dejo asi de momento luego lo paso a un sa.params)
+    float alpha,              // Curvatura exponencial (recomendado: 0.5 - 2.0)
+    float max_pref_penalty    // Penalización máxima para preferencias (recomendado: 0.3 - 0.8)
+) {
+   
+    // Transferir datos de entrada a GPU
+    cudaMemcpy(d_preferences_matrix, h_preferences_matrix, saParams.n_students * saParams.max_choices * sizeof(int), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_num_preferences, h_num_preferences, saParams.n_students * sizeof(int), cudaMemcpyHostToDevice);
+   
+    // Configuración de grid: balance entre paralelismo y cache efficiency
+    // 16×16 = 256 threads por block es óptimo para la mayoría de GPUs modernas
+    dim3 block_size(16, 16);    
+    dim3 grid_size(
+        (saParams.n_colegios + block_size.x - 1) / block_size.x,      // Ceil division para cobertura completa
+        (saParams.n_students + block_size.y - 1) / block_size.y
+    );
+   
+    // Información sobre configuración de ejecución
+    int total_blocks = grid_size.x * grid_size.y;
+    int total_threads = total_blocks * block_size.x * block_size.y;
+   
+    // Ejecutar kernel con parámetros flexibles
+    compute_preference_penalty_matrix<<<grid_size, block_size>>>(
+        d_preferences_matrix, d_num_preferences, d_penalty_matrix,
+        saParams.n_students, saParams.n_colegios, saParams.max_choices,
+        alpha, max_pref_penalty  // Los nuevos parámetros configurables
+    );
+   
+    // Sincronizar y verificar errores detalladamente (ver bien despues como dejar esto)
+    cudaError_t error;
+    error = cudaDeviceSynchronize();
+    if (error != cudaSuccess) {
+        printf("Error ejecutando kernel: %s\n", cudaGetErrorString(error));
+       
+        // Cleanup en caso de error
+        cudaFree(d_preferences_matrix);
+        cudaFree(d_num_preferences);
+        cudaFree(d_penalty_matrix);
+        return;
+    }
+   
+
+    //para debug guardar la matriz de penalty como un txt
+    cudaMemcpy(h_penalty_matrix, d_penalty_matrix,  saParams.n_students * saParams.n_colegios * sizeof(float), cudaMemcpyDeviceToHost);
+
+    std::ofstream fout("penalty_matrix.txt");
+    if (!fout) {
+        std::cerr << "Error: no se pudo abrir penalty_matrix.txt para escribir\n";
+    } else {
+        fout << std::fixed << std::setprecision(4);
+        for (int i = 0; i < saParams.n_students; ++i) {
+            for (int j = 0; j < saParams.n_colegios; ++j) {
+                fout << h_penalty_matrix[i * saParams.n_colegios + j];
+                if (j < saParams.n_colegios - 1) fout << ",";
+            }
+            fout << "\n";  // salto de línea por estudiante
+        }
+    }
+    fout.close();
+    std::cout << "Matriz de penalizaciones escrita en penalty_matrix.txt\n";
+
+    // Cleanup: liberar toda la memoria GPU
+    // cudaFree(d_preferences);
+    // cudaFree(d_num_preferences);
 }

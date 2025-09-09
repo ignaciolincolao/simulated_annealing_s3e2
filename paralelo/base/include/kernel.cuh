@@ -29,7 +29,9 @@ __global__ void newSolution_kernel(
     const int* __restrict__ d_shuffle_colegios,
     const double* __restrict__ d_currentVars,
     const uint8_t *__restrict__ d_choices,
-    size_t pitch);
+    size_t pitch,
+    const float * __restrict__ d_penalty_matrix //matriz de penalidades
+);
 
 __global__ void reduce_kernel(
     DataResult *d_array_current_Solution, 
@@ -61,7 +63,8 @@ __global__ void calculateSolution(
     double *d_currentVars,
     double *d_costCurrentSolution,
     int idx,
-    int * d_prevMove //para pruebas unitarias
+    int * d_prevMove, //para pruebas unitarias
+    const float * __restrict__ d_penalty_matrix //matriz de penalidades
     );
 
 __global__ void calculatePreviousSolution(
@@ -77,7 +80,8 @@ __global__ void calculatePreviousSolution(
     double *d_currentVars,
     double *d_costPrevSolUnitTest,
     int idx,
-    int * d_prevMove //para pruebas unitarias
+    int * d_prevMove, //para pruebas unitarias
+    const float * __restrict__ d_penalty_matrix //matriz de penalidades
 );
 
 
@@ -115,4 +119,15 @@ __global__ void calculateSolution(
 inline __device__ double cu_round_n(double x);
 
 inline __device__ double calcPenalty(double currentSolution, uint8_t *choices);
+
+__global__ void compute_preference_penalty_matrix(
+    int* preferences_matrix,
+    int* num_preferences,
+    float* penalty_matrix,
+    int num_students,
+    int num_schools,
+    int max_preferences_per_student,
+    float alpha,
+    float max_pref_penalty
+); 
 #endif

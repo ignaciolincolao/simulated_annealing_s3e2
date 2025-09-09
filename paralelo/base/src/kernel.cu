@@ -19,7 +19,9 @@ __global__ void newSolution_kernel(
     const int* __restrict__ d_shuffle_colegios,
     const double* __restrict__ d_currentVars,
     const uint8_t *__restrict__ d_choices,
-    size_t pitch) {
+    size_t pitch,
+    const float * __restrict__ d_penalty_matrix //matriz de penalidades
+) {
     int tid = blockIdx.x * blockDim.x + threadIdx.x;
     int aluchange,
             newSchool,
@@ -36,6 +38,7 @@ __global__ void newSolution_kernel(
             cost_solution;
     aluchange = d_shuffle_students[tid%d_n_students];
     
+    /*
     //arreglo de preferencias de estudiantes (robado del oscar, todavia no se bien lo que hace)
     uint8_t choices[5] = {
         d_choices[aluchange * 5 + 0],
@@ -44,6 +47,7 @@ __global__ void newSolution_kernel(
         d_choices[aluchange * 5 + 3],
         d_choices[aluchange * 5 + 4],
     };
+    */
 
     newSchool = d_shuffle_colegios[0];
     currentSchool = d_currentSolution[aluchange];
@@ -68,8 +72,12 @@ __global__ void newSolution_kernel(
     aluNoVulCol = totalAluCol - aluVulCol;
     totalSesc -= fabs((aluVulCol / (double)d_totalVuln) - (aluNoVulCol / (double)(d_n_students - d_totalVuln)));
     // costcupo escuela actual 
-    penalty -= calcPenalty(currentSchool, choices);
+    //penalty -= calcPenalty(currentSchool, choices);
+    penalty -= d_penalty_matrix[aluchange * d_n_colegios + currentSchool];
     
+
+
+
     totalcostCupo -= (double)totalAluCol * fabs((double)d_cupoArray[currentSchool] - totalAluCol) / pow(((double)d_cupoArray[currentSchool] * 0.5), 2);
 
     // seg de la escuela nueva
@@ -82,7 +90,8 @@ __global__ void newSolution_kernel(
     // costcupo escuela nueva
     totalcostCupo -= (double)totalAluCol * fabs((double)d_cupoArray[newSchool] - totalAluCol) / pow(((double)d_cupoArray[newSchool] * 0.5), 2);
 
-    penalty += calcPenalty(newSchool, choices);
+    //penalty += calcPenalty(newSchool, choices);
+    penalty += d_penalty_matrix[aluchange * d_n_colegios + newSchool];
 
     ////////////////////////////////////////////////////////////////
     ////// Calculó despues de mover
@@ -110,7 +119,8 @@ __global__ void newSolution_kernel(
     cost_solution = d_alpha[0] * (sumDist / (d_n_students * d_max_dist));
     cost_solution += d_alpha[1] * (totalSesc * 0.5);
     cost_solution += d_alpha[2] * (totalcostCupo / d_n_colegios);
-    cost_solution += d_alpha[3] * (penalty / d_weight_n_students);
+    //cost_solution += d_alpha[3] * (penalty / d_weight_n_students);
+    cost_solution += d_alpha[3] * (penalty/d_n_students);
     //printf("alpha 1 valor: %f\n", d_alpha[0]);
     //printf("alpha 2 valor: %f\n", d_alpha[1]);
     //printf("alpha 3 valor: %f\n", d_alpha[2]);
@@ -200,7 +210,8 @@ __global__ void calculateSolution(
     double *d_currentVars,
     double *d_costCurrentSolution,
     int id_select,
-    int * d_prevMove //para pruebas unitarias
+    int * d_prevMove, //para pruebas unitarias
+    const float * __restrict__ d_penalty_matrix //matriz de penalidades
 ){
 
     int aluchange,
@@ -231,7 +242,7 @@ __global__ void calculateSolution(
     //fin
 
     newSchool = colchange;
-
+    /* version antigua de penalty lo dejo de momento
     uint8_t choices[5] = {
         d_choices[aluchange * 5 + 0],
         d_choices[aluchange * 5 + 1],
@@ -239,12 +250,12 @@ __global__ void calculateSolution(
         d_choices[aluchange * 5 + 3],
         d_choices[aluchange * 5 + 4],
     };
-    
+    */
+
     sumDist= d_currentVars[0];
     totalSesc = d_currentVars[1];
     totalcostCupo = d_currentVars[2];
     penalty = d_currentVars[3];
-
     //printf("GPU: %lf |%lf |%lf |%lf \n",sumDist,totalSesc,totalcostCupo,penalty);
     ////////////////////////////////////////////////////////////////
     /////// Descuenta antes de mover
@@ -326,11 +337,14 @@ __global__ void calculateSolution(
 
     //Calculo de penalty
     //penalty de la escuela actual
-    penalty -= calcPenalty(currentSchool, choices);
+    //penalty -= calcPenalty(currentSchool, choices);
+    penalty -= d_penalty_matrix[aluchange * d_n_colegios + currentSchool];
 
+    //printf("Prev, alu: %d, col: %d, penalty: %f \n", aluchange,currentSchool,  d_penalty_matrix[aluchange * d_n_colegios + currentSchool]);
     //penalty de la escuela nueva
-    penalty += calcPenalty(newSchool, choices);
-
+    //penalty += calcPenalty(newSchool, choices);
+    penalty += d_penalty_matrix[aluchange * d_n_colegios + newSchool];
+    //printf("Sig, alu: %d, col: %d, penalty: %f \n", aluchange,newSchool,  d_penalty_matrix[aluchange * d_n_colegios + newSchool]);
 
     //actualizar las sumatorias guardadas
     d_currentVars[0] = sumDist;
@@ -388,6 +402,7 @@ __global__ void copyCost(
 
     }
 
+
 inline __device__ double calcPenalty(double currentCollege, uint8_t choices[5]) {
     double weights[6] = {500000, 0, 100, 200, 300, 400};
     uint8_t index = 0;
@@ -402,10 +417,7 @@ inline __device__ double calcPenalty(double currentCollege, uint8_t choices[5]) 
 
 
 
-
-
 __global__ void calculatePreviousSolution(
-    //DataResult *d_array_current_Solution,
     const int* __restrict__ d_cupoArray,
     const int* __restrict__ d_alumnosSep,
     int* d_aluxcol,
@@ -417,7 +429,8 @@ __global__ void calculatePreviousSolution(
     double *d_currentVars,
     double *d_costPrevSolUnitTest,
     int id_select,
-    int * d_prevMove //para pruebas unitarias
+    int * d_prevMove, //para pruebas unitarias
+    const float * __restrict__ d_penalty_matrix //matriz de penalidades
 ){
 
     int aluchange,
@@ -445,7 +458,7 @@ __global__ void calculatePreviousSolution(
 
     //printf("Previous-> alu: %d, old col: %d, new col: %d \n", aluchange, colchange, currentSchool);
 
-
+/*
     uint8_t choices[5] = {
         d_choices[aluchange * 5 + 0],
         d_choices[aluchange * 5 + 1],
@@ -453,7 +466,7 @@ __global__ void calculatePreviousSolution(
         d_choices[aluchange * 5 + 3],
         d_choices[aluchange * 5 + 4],
     };
-    
+*/    
     sumDist= d_currentVars[0];
     totalSesc = d_currentVars[1];
     totalcostCupo = d_currentVars[2];
@@ -541,10 +554,11 @@ __global__ void calculatePreviousSolution(
 
     //Calculo de penalty
     //penalty de la escuela actual
-    penalty -= calcPenalty(currentSchool, choices);
-
+    //penalty -= calcPenalty(currentSchool, choices);
+    penalty -= d_penalty_matrix[aluchange * d_n_colegios + currentSchool];
     //penalty de la escuela nueva
-    penalty += calcPenalty(newSchool, choices);
+    //penalty += calcPenalty(newSchool, choices);
+    penalty += d_penalty_matrix[aluchange * d_n_colegios + newSchool]; 
 
 /*
     //actualizar las sumatorias guardadas
@@ -565,4 +579,119 @@ __global__ void calculatePreviousSolution(
     
     d_costPrevSolUnitTest[0] = (double)((d_alpha[0] * var1) + (d_alpha[1] * var2) + (d_alpha[2] * var3) + (d_alpha[3] * var4));
     //printf("Previous cost: %.16f \n\n", d_costPrevSolUnitTest[0]);
+}
+
+
+
+
+
+
+
+
+
+/**
+ * KERNEL DE PENALIZACIONES POR PREFERENCIAS CON DISCONTINUIDAD PARAMETRIZABLE
+ *
+ * Calcula la matriz completa P[estudiante][colegio] de penalizaciones basada en:
+ * - Teoría de Satisficing: diferencia cualitativa entre opciones consideradas vs no consideradas
+ * - Función exponencial parametrizable: [0.0, max_pref_penalty] para preferencias, 1.0 para no-preferencias
+ * - Optimización sin bifurcaciones: máximo paralelismo GPU evitando divergencia de warps
+ * - Manejo flexible de preferencias variables: cada estudiante puede tener 1 a num_schools preferencias
+ *
+ * PARÁMETROS:
+ * @param preferences_matrix: Matriz de preferencias [num_students × max_preferences_per_student]
+ *                           Cada fila es el vector de preferencias de un estudiante (índices de colegios)
+ * @param num_preferences: Vector con número de preferencias válidas por estudiante (rango: [1, num_schools])
+ * @param penalty_matrix: Matriz de salida [num_students × num_schools]
+ * @param num_students, num_schools: Dimensiones del problema
+ * @param max_preferences_per_student: Tamaño máximo del vector de preferencias (típicamente = num_schools)
+ * @param alpha: Parámetro de decay exponencial (controla curvatura, recomendado: 1.0f)
+ * @param max_pref_penalty: Penalización máxima para preferencias declaradas (recomendado: 0.3-0.8)
+ *
+ * FUNCIÓN MATEMÁTICA GENERALIZADA:
+ * penalty = max_pref_penalty × (1 - exp(-α(r-1)))  si colegio está en preferencias (rank r)
+ * penalty = 1.0                                    si colegio NO está en preferencias
+ *
+ * INTERPRETACIÓN DE PARÁMETROS:
+ * - alpha bajo (0.5): preferencias más uniformes, diferencia sutil entre 1ra y última opción
+ * - alpha alto (2.0): preferencias muy jerarquizadas, 1ra opción mucho mejor que 2da
+ * - max_pref_penalty bajo (0.3): gran discontinuidad entre preferencias vs no-preferencias  
+ * - max_pref_penalty alto (0.8): discontinuidad más sutil, "zona gris" más amplia
+ */
+__global__ void compute_preference_penalty_matrix(
+    int* preferences_matrix,
+    int* num_preferences,
+    float* d_penalty_matrix,
+    int num_students,
+    int num_schools,
+    int max_preferences_per_student,
+    float alpha,
+    float max_pref_penalty
+) {
+    // Thread mapping: cada thread procesa un par (estudiante, colegio)
+    int student_id = blockIdx.y * blockDim.y + threadIdx.y;
+    int school_id = blockIdx.x * blockDim.x + threadIdx.x;
+   
+    // Bounds check: única bifurcación necesaria para memory safety
+    if (student_id >= num_students || school_id >= num_schools) return;
+   
+    // Obtener número de preferencias para este estudiante específico
+    // CLAVE: cada estudiante puede tener diferente cantidad (1 a num_schools)
+    int student_prefs = num_preferences[student_id];
+   
+    // BÚSQUEDA SIN BIFURCACIONES: encontrar rank del colegio en preferencias de este estudiante
+    // Inicializar con valor que indica "no encontrado"
+    int found_rank = max_preferences_per_student + 1;
+   
+    // Loop desenrollado para evitar divergencia de warps
+    // IMPORTANTE: iteramos hasta max_preferences_per_student, no student_prefs
+    // Esto asegura que todos los threads ejecuten el mismo número de iteraciones
+    #pragma unroll 8  // Optimiza casos comunes (≤8 preferencias)
+    for (int p = 0; p < max_preferences_per_student; p++) {
+        // Leer preferencia en posición p para este estudiante
+        //preferences_matrix da un numero entre 1 - 63, pero necesitamos que este entre 0 -62
+        int pref_school = preferences_matrix[student_id * max_preferences_per_student + p]-1;
+       
+        // Condiciones como factores multiplicativos (0.0 o 1.0):
+        // is_valid: esta posición p contiene una preferencia válida para este estudiante
+        // is_match: el colegio en esta posición coincide con el school_id que estamos evaluando
+        float is_valid = (float)(p < student_prefs);  // Solo las primeras student_prefs posiciones son válidas
+        float is_match = (float)(pref_school == school_id);
+        float found_here = is_valid * is_match;  // Multiplicación actúa como AND lógico
+       
+        // Update condicional sin if/else: actualizar found_rank solo si encontramos match
+        // Técnica elegante: usar aritmética para hacer update selectivo sin divergencia
+        int new_rank = p + 1;  // Ranks empiezan en 1 (primera preferencia = rank 1)
+        found_rank = (int)(found_here * (float)new_rank + (1.0f - found_here) * (float)found_rank);
+       
+        // Nota: continuamos el loop completo aunque hayamos encontrado match
+        // Esto mantiene sincronización perfecta entre todos los threads del warp
+    }
+   
+    // CÁLCULO DE PENALIZACIÓN CON PARÁMETROS FLEXIBLES
+    // Convertir "encontrado vs no encontrado" en factor multiplicativo
+    float was_found = (float)(found_rank <= max_preferences_per_student);
+   
+    // Penalización exponencial parametrizable para preferencias declaradas
+    // NUEVA FÓRMULA: penalty = max_pref_penalty × (1 - exp(-α(r-1)))
+    // Donde r es el rank encontrado (1 = primera preferencia)
+    float pref_penalty = max_pref_penalty * (1.0f - expf(-alpha * fmaxf(0.0f, (float)(found_rank - 1))));
+   
+    // Penalización para colegios no considerados: salto discontinuo a 1.0
+    // Esto preserva la discontinuidad teórica entre "considerado" vs "no considerado"
+    float no_pref_penalty = 1.0f;
+   
+    // Combinar ambos casos usando aritmética pura (sin bifurcaciones)
+    // Esta técnica asegura que todos los threads ejecuten las mismas operaciones
+    float final_penalty = was_found * pref_penalty + (1.0f - was_found) * no_pref_penalty;
+   
+    // Guardar resultado en matriz global
+    // Layout: penalty_matrix[estudiante * num_schools + colegio]
+    d_penalty_matrix[student_id * num_schools + school_id] = final_penalty;
+    
+    /*
+    if (student_id == 1){
+        printf("colegio: %d (%d) (%d), penalty: %f \n", school_id,(student_id * num_schools + school_id), found_rank, final_penalty);
+    }
+    */
 }

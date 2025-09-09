@@ -83,6 +83,10 @@ class CUDAWrapper{
         int *d_prevMove; //pruebas unitarias
         double *d_costPrevSolUnitTest;
 
+        //variables de la update del penalty
+        int *d_preferences_matrix, *d_num_preferences;
+        float *d_penalty_matrix;
+
     public:
         CUDAWrapper(CUDAParams& cuParams_,SimulatedParams& saParams, mt19937& mt);
         ~CUDAWrapper();
@@ -142,7 +146,7 @@ class CUDAWrapper{
         void previousSolution(int idx);
         void getPreviousSolutionUnitTest(double& costPrevSolUnitTest);
 
-        
+        void compute_penalty_matrix(int* h_preferences_matrix, int* h_num_preferences, float* h_penalty_matrix, float alpha = 1.0f, float max_pref_penalty = 0.5f); 
 };
 
 

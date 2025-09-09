@@ -133,11 +133,12 @@ public:
     int acceptanceCriterionApply();
     int selecSolution();
     void UpdateProb(int it);
-    void simceScoreUpdate(int *bestSolution, Info_alu *ptr_students, Info_colegio *ptr_colegios);
     
 
     void ValidateGPU();
     DataResult cpu_one_tid_newSolution(int tid) const;
+
+    //void compute_penalty_matrix(int* h_preferences_matrix, int* h_num_preferences, float* h_penalty_matrix, int num_students, int num_schools, int max_preferences_per_student, float alpha = 1.0f, float max_pref_penalty = 0.5f); 
     
 };
 

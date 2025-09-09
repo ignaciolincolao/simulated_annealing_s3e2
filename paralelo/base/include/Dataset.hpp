@@ -33,26 +33,24 @@ struct Info_colegio {
     int num_alu = 0;
     int rbd = 0;
     int prioritario = 0;
-    double pmat = 0;
-    double plen = 0;
 };
 ///////////////////////////////////////////////////
 /// Estructura de alumnos
 ///////////////////////////////////////////////////
+
 struct Info_alu {
     int rbd = 0;
     int sep = 0;
     double latitude = 0.0;
     double longitude = 0.0;
-    array<uint8_t, 5> choices; //el oscar tiene 5 preferencias
-    double pmat = 0;
-    double plen = 0;
+    array<uint8_t, 15> choices; 
     double mrun = 0;
+    int num_ele = 0;
 };
 
 class Dataset {
     public:
-        Dataset(std::string fileName_school, std::string fileName_students, std::string fileName_parents);
+        Dataset(std::string fileName_school, std::string fileName_students, std::string fileName_parents, int max_choices);
         std::vector<Info_colegio> colegios;
         std::vector<Info_alu> students;
         Info_colegio *ptr_colegios;
@@ -62,7 +60,7 @@ class Dataset {
         int n_students;
         void getDataSchool(std::string fileName_school, std::vector<Info_colegio> &colegios);
         void getDataStudents(std::string fileName_students, std::vector<Info_alu> &students, int &totalVuln);
-        void getDataParents(std::string fileName_parents, std::vector<Info_alu>& students);
+        void getDataParents(std::string fileName_parents, std::vector<Info_alu>& students, int max_choices);
 
         //void toCSV(std::string fileName);
 };

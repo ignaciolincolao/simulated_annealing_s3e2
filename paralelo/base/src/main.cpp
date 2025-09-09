@@ -6,7 +6,6 @@
 #include <random>
 #include <stdio.h>
 #include <SimulatedFactory.hpp>
-#include <gtest/gtest.h>
 
 
 
@@ -63,7 +62,9 @@ int main(int argc, char *argv[])
         .costPrevious = 0.0,
         .costCurrent = 0.0,
         .alpha = {alp1, alp2, alp3, alp4},
-        .p_weight = 0.0};
+        .p_weight = 0.0,
+        .max_choices = 14 //cantidad maxima de elecciones de padres a considerar
+    };
 
     AcceptanceParams* acParams = new AcceptanceParams{
         .Th = 1.1};
@@ -106,8 +107,8 @@ int main(int argc, char *argv[])
             cuParams,
             mt);
 
-    //simulatedAnneling->runGPU();
-    simulatedAnneling->ValidateGPU();
+    simulatedAnneling->runGPU();
+    //simulatedAnneling->ValidateGPU();
     delete simulatedAnneling;
     delete simStruct;
     delete rMgrParams;
@@ -122,17 +123,4 @@ int main(int argc, char *argv[])
     
     
     return (EXIT_SUCCESS);
-
-
-
-    ::testing::InitGoogleTest(&argc, argv);
-    int result = RUN_ALL_TESTS();
-
-    if (result == 0) {
-        std::cout << "Tests passed" << std::endl;
-        return EXIT_SUCCESS;
-    } else {
-        std::cerr << "Error" << std::endl;
-        return result; 
-    }
 }

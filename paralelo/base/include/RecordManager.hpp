@@ -135,8 +135,6 @@ public:
     void SaveGraphicsFirstSolutionRBD(int *solution, Info_colegio *ptr_colegios, Info_alu *ptr_students);
     void SaveGraphicsUpdateSolutionRBD(int *solution, Info_colegio *ptr_colegios);
 
-    void simceScoreUpdate(int *bestSolution, Info_alu *ptr_students, Info_colegio *ptr_colegios);
-
     ~RecordManager();
 };
 
