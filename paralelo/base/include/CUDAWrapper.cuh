@@ -46,7 +46,6 @@ extern __constant__ int d_n_students;
 extern __constant__ int d_n_colegios;
 extern __constant__ double d_max_dist;
 extern __constant__ int d_totalVuln;
-extern __constant__ double d_weight_n_students;
 
 
 class CUDAWrapper{

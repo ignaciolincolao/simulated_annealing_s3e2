@@ -5,7 +5,6 @@ __constant__ int d_n_students;
 __constant__ int d_n_colegios;
 __constant__ double d_max_dist;
 __constant__ int d_totalVuln;
-__constant__ double d_weight_n_students;
 
 __global__ void newSolution_kernel(
     DataResult *d_array_current_Solution,
@@ -38,17 +37,6 @@ __global__ void newSolution_kernel(
             cost_solution;
     aluchange = d_shuffle_students[tid%d_n_students];
     
-    /*
-    //arreglo de preferencias de estudiantes (robado del oscar, todavia no se bien lo que hace)
-    uint8_t choices[5] = {
-        d_choices[aluchange * 5 + 0],
-        d_choices[aluchange * 5 + 1],
-        d_choices[aluchange * 5 + 2],
-        d_choices[aluchange * 5 + 3],
-        d_choices[aluchange * 5 + 4],
-    };
-    */
-
     newSchool = d_shuffle_colegios[0];
     currentSchool = d_currentSolution[aluchange];
     col_solution = newSchool;
@@ -119,7 +107,6 @@ __global__ void newSolution_kernel(
     cost_solution = d_alpha[0] * (sumDist / (d_n_students * d_max_dist));
     cost_solution += d_alpha[1] * (totalSesc * 0.5);
     cost_solution += d_alpha[2] * (totalcostCupo / d_n_colegios);
-    //cost_solution += d_alpha[3] * (penalty / d_weight_n_students);
     cost_solution += d_alpha[3] * (penalty/d_n_students);
     //printf("alpha 1 valor: %f\n", d_alpha[0]);
     //printf("alpha 2 valor: %f\n", d_alpha[1]);
@@ -357,7 +344,7 @@ __global__ void calculateSolution(
 
     var2 = (totalSesc*0.5);
     var3 = (totalcostCupo /d_n_colegios);
-    var4 = (penalty / d_weight_n_students);
+    var4 = (penalty / d_n_students);
 
     //printf("Original var1: %d, var2: %d, var3: %d, var4: %d \n", var1,var2,var3,var4);
 
@@ -573,7 +560,7 @@ __global__ void calculatePreviousSolution(
 
     var2 = (totalSesc*0.5);
     var3 = (totalcostCupo /d_n_colegios);
-    var4 = (penalty / d_weight_n_students);
+    var4 = (penalty / d_n_students);
 
     //printf("Previous var1: %d, var2: %d, var3: %d, var4: %d \n", var1,var2,var3,var4);
     

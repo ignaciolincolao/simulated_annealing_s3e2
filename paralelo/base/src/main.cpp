@@ -62,7 +62,6 @@ int main(int argc, char *argv[])
         .costPrevious = 0.0,
         .costCurrent = 0.0,
         .alpha = {alp1, alp2, alp3, alp4},
-        .p_weight = 0.0,
         .max_choices = 14 //cantidad maxima de elecciones de padres a considerar
     };
 

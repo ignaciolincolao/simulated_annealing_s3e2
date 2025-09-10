@@ -78,7 +78,6 @@ void CUDAWrapper::memInit(
     
 ){
     cudaMalloc(&d_array_current_Solution, (cuParams.n_block*cuParams.n_thread) * sizeof(DataResult));
-    std::cout << cuParams.n_block*cuParams.n_thread << std::endl;
     cudaMalloc((void **) &d_costCurrentSolution, 1 * sizeof(double));
     cudaMalloc((void **) &d_costBestSolution, 1 * sizeof(double));
     cudaMalloc((void **) &d_costPreviousSolution, 1 * sizeof(double));
@@ -125,10 +124,6 @@ void CUDAWrapper::memInit(
     gpuErrchk( cudaMemcpyToSymbolAsync( d_n_colegios, &saParams.n_colegios, sizeof(int),0,cudaMemcpyHostToDevice,streams[4]));
     gpuErrchk( cudaMemcpyToSymbolAsync( d_max_dist, &saParams.max_dist, sizeof(double),0,cudaMemcpyHostToDevice,streams[5]));
     gpuErrchk( cudaMemcpyToSymbolAsync( d_totalVuln, &totalVuln, sizeof(int),0,cudaMemcpyHostToDevice,streams[6]));
-
-    double weight_n_students = saParams.n_students * 500000.0; // Definir directamente como double
-    gpuErrchk(cudaMemcpyToSymbolAsync(d_weight_n_students, &weight_n_students, sizeof(double), 0, cudaMemcpyHostToDevice, streams[7]));
-
 
     size_t h_pitchBytes = saParams.n_colegios * sizeof(double);
     cudaMemcpy2DAsync(d_distMat,
@@ -433,13 +428,12 @@ void CUDAWrapper::getPreviousSolutionUnitTest(double& costPrevSolUnitTest)
 
 
 void CUDAWrapper::compute_penalty_matrix(
-    int* h_preferences_matrix,        // Entrada: matriz de preferencias en CPU
-    int* h_num_preferences,           // Entrada: número de preferencias por estudiante
-    float* h_penalty_matrix,          // Salida: matriz de penalizaciones en CPU
+    int* h_preferences_matrix,        //matriz de preferencias en CPU
+    int* h_num_preferences,           //número de preferencias por estudiante
+    float* h_penalty_matrix,          //matriz de penalizaciones en CPU (salida)
 
-    // (lo dejo asi de momento luego lo paso a un sa.params)
-    float alpha,              // Curvatura exponencial (recomendado: 0.5 - 2.0)
-    float max_pref_penalty    // Penalización máxima para preferencias (recomendado: 0.3 - 0.8)
+    float alpha,              //curvatura exponencial (recomendado: 0.5 - 2.0)
+    float max_pref_penalty    //penalización máxima para preferencias (recomendado: 0.3 - 0.8)
 ) {
     //necesitamos hacer esta reservera al inicio, ya que el metodo global se ejecuta cuando ya se hizo el primer computo CPU
     cudaMalloc((void **) &d_preferences_matrix, saParams.n_students * saParams.max_choices * sizeof(int)); //matriz de preferencias
@@ -494,7 +488,6 @@ void CUDAWrapper::compute_penalty_matrix(
         }
     }
     fout.close();
-    std::cout << "Matriz de penalizaciones escrita en penalty_matrix.txt\n";
 
     //liberar lo que no se utilizara
     cudaFree(d_preferences_matrix);

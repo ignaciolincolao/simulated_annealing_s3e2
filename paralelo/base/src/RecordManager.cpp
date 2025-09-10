@@ -167,10 +167,10 @@ void RecordManager::SaveInfoInit(double costBestSolution,
 {
     info << "--------------- Primeros datos -------------\n";
     info << "Primer costo de solución: " << costBestSolution << "\n";
-    info << "Primer distancia: " << meanDist << "\n";
+    info << "Primer distancia: " << meanDist/ saParams.max_dist << "\n";
     info << "Primer Segregación: " << S << "\n";
     info << "Primer CostoCupo: " << costCupo << "\n";
-    info << "Penalty inicial: " << penaltyParents/saParams.p_weight << "\n\n";
+    info << "Penalty inicial: " << penaltyParents/saParams.n_students << "\n\n";
 }
 
 void RecordManager::SaveInfoFinish(
@@ -190,10 +190,10 @@ void RecordManager::SaveInfoFinish(
     info << "Costo de la mejor solución: " << costBestSolution << "\n";
     info << "Costo de la solución actual: " << costCurrentSolution << "\n";
     info << "Tiempo de ejecución de SA: " << time_taken << "\n";
-    info << "distancia: " << meanDist << "\n";
+    info << "distancia: " << meanDist/ saParams.max_dist << "\n";
     info << "Segregación: " << S << "\n";
     info << "CostoCupo: " << costCupo << "\n";
-    info << "Penalty Final: " << penaltyParents/saParams.p_weight << "\n\n";
+    info << "Penalty Final: " << penaltyParents/saParams.n_students << "\n\n";
     info << "--------------- Finalizo con exito ----------------"
          << "\n";
 }
@@ -233,7 +233,7 @@ void RecordManager::SaveGraphicsInit(double meanDist, double S, double costCupo,
                  << S << ","                                        // Indice de duncan
                  << costCupo << ","                                 // Costo cupo de las escuelas
                  << penaltyParents << ","                           // Penalty sin normalizar
-                 << penaltyParents/saParams.p_weight << ","         // Penalty normalizado
+                 << penaltyParents/saParams.n_students << ","         // Penalty normalizado
                  << costCurrentSolution << ","                      // Solución actual
                  << saParams.temp << "\n";                           // Temperatura actual
                  
@@ -249,7 +249,7 @@ void RecordManager::SaveGraphicsFinish()
                      << vector_segregation.at(x) << ","
                      << vector_costoCupo.at(x) << ","
                      << vector_penalty.at(x) << ","
-                     << vector_penalty.at(x) / (saParams.n_students*500000.0) << ","
+                     << vector_penalty.at(x) / saParams.n_students << ","
                      << vector_costCurrentSolution.at(x) << ","
                      << std::fixed << vector_temp.at(x) << std::setprecision(13) << "\n";
     }
@@ -343,7 +343,7 @@ void RecordManager::SaveInfoRegister(
                  << "," << S
                  << "," << costCupo
                  << "," << penaltyParents
-                 << "," << penaltyParents/saParams.p_weight
+                 << "," << penaltyParents/saParams.n_students
                  << "," << saParams.count
                  << "," << std::fixed << saParams.temp_init << std::setprecision(13)
                  << "," << std::fixed << saParams.temp << std::setprecision(13)
@@ -390,7 +390,7 @@ void RecordManager::SaveInfoRegister(
         {"S",S},
         {"costCupo",costCupo},
         {"penaltyParents",penaltyParents},
-        {"PenaltyParentsNorm",penaltyParents/saParams.p_weight},
+        {"PenaltyParentsNorm",penaltyParents/saParams.n_students},
         {"saParams.count",saParams.count},
         {"saParams.temp_init",saParams.temp_init},
         {"saParams.temp",saParams.temp},
@@ -433,7 +433,7 @@ void RecordManager::SaveInfoRegister(
         data_solution["meanDist"] = vector_meanDist.at(x);
         data_solution["S"] = vector_segregation.at(x);
         data_solution["costCupo"] = vector_costoCupo.at(x);
-        data_solution["penaltyParents"] = penaltyParents/saParams.p_weight;
+        data_solution["penaltyParents"] = penaltyParents/saParams.n_students;
         data_solution["penaltyParentsNorm"] = vector_penalty.at(x);
         data_solution["costCurrentSolution"] = vector_costCurrentSolution.at(x);
         data_solution["temp"] = vector_temp.at(x);

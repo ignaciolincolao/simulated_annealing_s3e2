@@ -95,7 +95,7 @@ double SimulatedAnnealing::runGPU(){
 
     cout << "--------------- Primeros datos -------------\n";
     cout << "Primer costo de solución: " << costBestSolution << "\n";
-    cout << "Primer distancia: " << meanDist(currentSolution, distMat) << "\n";
+    cout << "Primer distancia: " << meanDist(currentSolution, distMat)/saParams.max_dist << "\n"; //lo normalize
     cout << "Primer Segregación: " << S(currentSolution, alumnosSep, totalVuln) << "\n";
     cout << "Primer CostoCupo: " << costCupo(currentSolution, cupoArray) << "\n";
     cout << "Penalty inicial: " << penaltyParents(currentSolution,h_penalty_matrix)/saParams.n_students << "\n\n";
@@ -287,7 +287,7 @@ double SimulatedAnnealing::runGPU(){
     cout << "Costo de la mejor solución: " << costBestSolution << "\n";
     cout << "Costo de la solución actual: " << costCurrentSolution << "\n";
     cout << "Tiempo de ejecución de SA: " << time_taken << "\n";
-    cout << "distancia: " << meanDist(bestSolution, distMat) << "\n";
+    cout << "distancia: " << meanDist(bestSolution, distMat)/saParams.max_dist << "\n"; //lo normalice
     cout << "Segregación: " << S(bestSolution, alumnosSep, totalVuln) << "\n";
     cout << "CostoCupo: " << costCupo(bestSolution, cupoArray) << "\n";
     cout << "Penalty final: " << penaltyParents(bestSolution,h_penalty_matrix)/saParams.n_students << "\n";
@@ -367,7 +367,6 @@ void SimulatedAnnealing::inicializationValues(T* wrapper){
     totalVuln = dataSet->totalVuln;
     saParams.n_colegios = dataSet->n_colegios;
     saParams.n_students = dataSet->n_students;
-    saParams.p_weight = saParams.n_students*500000.0;
     //cout << fixed << setprecision(70) << endl;
     //srand(time(NULL));
 
@@ -861,6 +860,7 @@ void SimulatedAnnealing::UpdateProb(int it){
 }
 
 /*
+funcion original del oscar
 std::size_t SimulatedAnnealing::penaltyParents(int *currentSolution) {
     std::array<std::size_t, 6> weights{0, 100, 200, 300, 400, 500000};
 
@@ -891,7 +891,6 @@ double SimulatedAnnealing::penaltyParents(int *currentSolution, float* h_penalty
     double penalty = 0;
 
     for (std::size_t i = 0; i < saParams.n_students; i++) {
-        //printf("Penalty %f, alu: %d, col: %d", h_penalty_matrix[i*saParams.n_colegios +currentSolution[i]], i, currentSolution[i]);
         penalty += h_penalty_matrix[i*saParams.n_colegios +currentSolution[i]];
     }
 
@@ -915,35 +914,9 @@ void SimulatedAnnealing::ValidateGPU(){
         alpha,
         choices_parents,
         currentVars);
-    
-
-    std::vector<int> num_ele_vec;
-    num_ele_vec.reserve(dataSet->students.size());
-
-    for (const auto& alu : dataSet->students) {
-        num_ele_vec.push_back(alu.num_ele);
-    }
-
-    std::vector<int> choices_matrix;
-    choices_matrix.reserve(saParams.n_students * saParams.max_choices);
-
-for (const auto& alu : dataSet->students) {
-    // solo tomo los primeros saParams.max_choices elementos
-    for (int j = 0; j < saParams.max_choices; ++j) {
-        choices_matrix.push_back(static_cast<int>(alu.choices[j]));
-    }
-}
-
-    std::vector<float> penalty_matrix(saParams.n_students * saParams.n_colegios);
-
-    cudaWrapper->compute_penalty_matrix(choices_matrix.data(),
-                            num_ele_vec.data(),
-                            penalty_matrix.data());
-    
-
 
     //error max detectado de 2e-16 (ciclo 54)
-    int n_ciclos = 10;
+    int n_ciclos = 1000;
     std::vector<DataResult> sol;
     int id_select= 0;
     DataResult cpu;
@@ -997,10 +970,12 @@ for (const auto& alu : dataSet->students) {
 
                 dif = costTempSol - costBestSolution;
                 if (dif>0){
+                    /*
                     if (dif > epsilon){
-                        //cout << "iteracion N " << ciclo+1 << " : Resultado no es igual a CPU, error de "<< dif<< "\n";
-                        //cout << "accion realizada: -> stu= " << r.stu << " -> col= " << r.col << " costo=" << r.costSolution << "\n";  
+                        cout << "iteracion N " << ciclo+1 << " : Resultado no es igual a CPU, error de "<< dif<< "\n";
+                        cout << "accion realizada: -> stu= " << r.stu << " -> col= " << r.col << " costo=" << r.costSolution << "\n";  
                     }
+                    */
                     if (max_error < dif){
                         max_error = dif;
                         ciclo_max_error = ciclo;
@@ -1076,26 +1051,15 @@ for (const auto& alu : dataSet->students) {
     delete cudaWrapper;
 }
 
-
-//imitacion de kernel 1 en CPU (robado de GPT)
-
-static inline double calcPenaltyCPU(int currentCollege, const uint8_t ch[5]) {
-    const double w[6] = {500000, 0, 100, 200, 300, 400};
-    uint8_t idx = 0;
-    for (int i = 1; i <= 5; ++i) idx += (currentCollege == ch[i-1]) * i;
-    return w[idx];
-}
-
-// Mismo cálculo que newSolution_kernel, pero leyendo los miembros de 'this'
+//imitacion del kernel de un movimiento a la vez, pero en CPU para pruebas unitarias 
 DataResult SimulatedAnnealing::cpu_one_tid_newSolution(int tid) const {
     const int n_students   = saParams.n_students;
     const int n_colegios   = saParams.n_colegios;
     const int aluchange    = tid;
     const int newSchool    = saParams.shuffle_colegios[0]; // igual que el kernel actual
-    //cout << tid << " " << aluchange << " "<< saParams.shuffle_colegios[0] << "\n";
     const int currentSchool= currentSolution[aluchange];
 
-    DataResult out; // ctor pone cost=0, col=-1, stu=-1
+    DataResult out;
     out.stu = aluchange;
     out.col = newSchool;
 
@@ -1110,16 +1074,6 @@ DataResult SimulatedAnnealing::cpu_one_tid_newSolution(int tid) const {
     double totalSesc   = currentVars[1];
     double totalCupo   = currentVars[2];
     double penalty     = currentVars[3];
-    //std::cout << std::setprecision(17) << "CPU: " << currentVars[0] << " " << currentVars[1] << " "<< currentVars[2] << " "<< currentVars[3] << "\n";
-
-    // choices del alumno
-    uint8_t ch[5] = {
-        choices_parents[aluchange*5+0],
-        choices_parents[aluchange*5+1],
-        choices_parents[aluchange*5+2],
-        choices_parents[aluchange*5+3],
-        choices_parents[aluchange*5+4],
-    };
 
     // Matriz de distancias en HOST es contigua: stride = n_colegios
     const size_t stride = static_cast<size_t>(n_colegios);
@@ -1131,7 +1085,7 @@ DataResult SimulatedAnnealing::cpu_one_tid_newSolution(int tid) const {
     int vulA = aluVulxCol[currentSchool];
     int novA = totA - vulA;
     totalSesc -= std::fabs( (vulA/(double)totalVuln) - (novA/(double)(n_students - totalVuln)) );
-    penalty   -= calcPenaltyCPU(currentSchool, ch);
+    penalty   -= h_penalty_matrix[aluchange*saParams.n_colegios +currentSchool];
     totalCupo -= (double)totA * std::fabs((double)cupoArray[currentSchool] - totA)
                  / std::pow(cupoArray[currentSchool]*0.5, 2);
 
@@ -1146,8 +1100,7 @@ DataResult SimulatedAnnealing::cpu_one_tid_newSolution(int tid) const {
                  / std::pow(cupoArray[newSchool]*0.5, 2);
 
     //std::cout << std::setprecision(17) << "CPU cost 1: " << totalCupo << "\n";
-    penalty   += calcPenaltyCPU(newSchool, ch);
-
+    penalty   += h_penalty_matrix[aluchange*saParams.n_colegios +newSchool];
 
     //ELimina el estudiante de la escuela actual
     aluxcol[currentSchool]-=1;
@@ -1189,238 +1142,12 @@ DataResult SimulatedAnnealing::cpu_one_tid_newSolution(int tid) const {
 
 
     // Combinar con alphas (mismas normalizaciones que el kernel)
-    const double weight_n_students = n_students * 500000.0;     // igual que memInit
     const double var1 = (sumDist / (double)n_students) / saParams.max_dist;
     const double var2 = (totalSesc * 0.5);
     const double var3 = (totalCupo / (double)n_colegios);
-    const double var4 = (penalty / weight_n_students);
+    const double var4 = (penalty / n_students);
 
     out.costSolution = alpha[0]*var1 + alpha[1]*var2 + alpha[2]*var3 + alpha[3]*var4;
     return out;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-/**
- * FUNCIÓN HOST MEJORADA: Gestión completa con parámetros flexibles
- *
- * Esta función te permite experimentar fácilmente con diferentes configuraciones
- * del modelo sin recompilar el kernel. Piensa en ella como el "panel de control"
- * de tu sistema de penalizaciones.
- *
- * PARÁMETROS NUEVOS Y SUS EFECTOS:
- * @param max_pref_penalty: Controla la discontinuidad entre preferencias vs no-preferencias
- *                          - Valores bajos (0.2-0.4): Gran salto, enfatiza importancia de estar en la lista
- *                          - Valores altos (0.6-0.8): Salto moderado, más "perdón" para asignaciones fuera de preferencias
- * @param alpha: Controla la curvatura de preferencias dentro de la lista
- *               - Valores bajos (0.5): Preferencias más "planas", diferencia sutil entre 1ra y última opción
- *               - Valores altos (2.0): Preferencias muy jerarquizadas, primeras opciones mucho mejor valoradas
-
-void SimulatedAnnealing::compute_penalty_matrix(
-    int* h_preferences_matrix,        // Entrada: matriz de preferencias en CPU
-    int* h_num_preferences,           // Entrada: número de preferencias por estudiante
-    float* h_penalty_matrix,          // Salida: matriz de penalizaciones en CPU
-    int num_students,
-    int num_schools,
-    int max_preferences_per_student,  // Típicamente igual a num_schools, pero puede ser menor
-    float alpha,               // Curvatura exponencial (recomendado: 0.5 - 2.0)
-    float max_pref_penalty    // Penalización máxima para preferencias (recomendado: 0.3 - 0.8)
-) {
-   
-    
-   
-    // Transferir datos de entrada a GPU
-    cudaMemcpy(d_preferences, h_preferences_matrix, prefs_size, cudaMemcpyHostToDevice);
-    cudaMemcpy(d_num_preferences, h_num_preferences, counts_size, cudaMemcpyHostToDevice);
-   
-    // Configuración de grid: balance entre paralelismo y cache efficiency
-    // 16×16 = 256 threads por block es óptimo para la mayoría de GPUs modernas
-    dim3 block_size(16, 16);    
-    dim3 grid_size(
-        (num_schools + block_size.x - 1) / block_size.x,      // Ceil division para cobertura completa
-        (num_students + block_size.y - 1) / block_size.y
-    );
-   
-    // Información sobre configuración de ejecución
-    int total_blocks = grid_size.x * grid_size.y;
-    int total_threads = total_blocks * block_size.x * block_size.y;
-    printf("Configuración de ejecución: %d blocks, %d threads total\n", total_blocks, total_threads);
-   
-    // Ejecutar kernel con parámetros flexibles
-    compute_preference_penalty_matrix<<<grid_size, block_size>>>(
-        d_preferences, d_num_preferences, d_penalty_matrix,
-        num_students, num_schools, max_preferences_per_student,
-        alpha, max_pref_penalty  // Los nuevos parámetros configurables
-    );
-   
-    // Sincronizar y verificar errores detalladamente
-    error = cudaDeviceSynchronize();
-    if (error != cudaSuccess) {
-        printf("Error ejecutando kernel: %s\n", cudaGetErrorString(error));
-       
-        // Cleanup en caso de error
-        cudaFree(d_preferences);
-        cudaFree(d_num_preferences);
-        cudaFree(d_penalty_matrix);
-        return;
-    }
-   
-    cudaMemcpy(h_penalty_matrix, d_penalty_matrix, matrix_size, cudaMemcpyDeviceToHost);
-
-    printf("penalty:  %f %f %f \n", h_penalty_matrix[num_schools*1+60], h_penalty_matrix[num_schools*1+59], h_penalty_matrix[num_schools*1+58]);
-    printf("Kernel ejecutado exitosamente. Matriz de penalizaciones calculada.\n");
-
-    // === NUEVO: escribir matriz a archivo txt ===
-    std::ofstream fout("penalty_matrix.txt");
-    if (!fout) {
-        std::cerr << "Error: no se pudo abrir penalty_matrix.txt para escribir\n";
-    } else {
-        fout << std::fixed << std::setprecision(4);
-        for (int i = 0; i < num_students; ++i) {
-            for (int j = 0; j < num_schools; ++j) {
-                fout << h_penalty_matrix[i * num_schools + j];
-                if (j < num_schools - 1) fout << ",";
-            }
-            fout << "\n";  // salto de línea por estudiante
-        }
-    }
-    fout.close();
-    std::cout << "Matriz de penalizaciones escrita en penalty_matrix.txt\n";
-
-    // Cleanup: liberar toda la memoria GPU
-    cudaFree(d_preferences);
-    cudaFree(d_num_preferences);
-    cudaFree(d_penalty_matrix);
-}
-
-/**
- * UTILIDAD MEJORADA: Validación comprehensiva con diagnósticos detallados
- *
- * Esta función no solo verifica que los resultados sean correctos, sino que también
- * te ayuda a entender cómo se están comportando tus parámetros en la práctica.
- * Es como un "chequeo médico" para tu matriz de penalizaciones.
- *
- * @param penalty_matrix: La matriz calculada por el kernel
- * @param preferences_matrix: Datos originales para cross-validation
- * @param num_preferences: Número de preferencias por estudiante
- * @param num_students, num_schools: Dimensiones
- * @param max_pref_penalty: El valor máximo usado en el cálculo
- * @param verbose: Si imprimir estadísticas detalladas
- *
- * @return true si todos los valores son válidos, false si hay problemas
- 
-bool validate_penalty_matrix(
-    float* penalty_matrix,
-    int* preferences_matrix,
-    int* num_preferences,
-    int num_students,
-    int num_schools,
-    int max_preferences_per_student,
-    float max_pref_penalty,
-    bool verbose = false
-) {
-    int invalid_count = 0;
-    int preference_penalties = 0;      // Conteo de penalizaciones para colegios preferidos
-    int non_preference_penalties = 0;  // Conteo de penalizaciones para colegios NO preferidos
-    float sum_pref_penalties = 0.0f;   // Para calcular promedio de penalizaciones de preferencias
-   
-    for (int student = 0; student < num_students; student++) {
-        int student_prefs = num_preferences[student];
-       
-        for (int school = 0; school < num_schools; school++) {
-            float penalty = penalty_matrix[student * num_schools + school];
-           
-            // Determinar si este colegio está en las preferencias de este estudiante
-            bool is_preferred = false;
-            for (int p = 0; p < student_prefs; p++) {
-                if (preferences_matrix[student * max_preferences_per_student + p] == school) {
-                    is_preferred = true;
-                    break;
-                }
-            }
-           
-            if (is_preferred) {
-                // Verificar rango válido para preferencias: [0.0, max_pref_penalty]
-                if (penalty < 0.0f || penalty > max_pref_penalty + 1e-5f) {  // Pequeña tolerancia para precision
-                    invalid_count++;
-                    if (verbose) {
-                        printf("Error: Estudiante %d, Colegio %d (preferido): penalización %.6f fuera de rango [0, %.3f]\n",
-                               student, school, penalty, max_pref_penalty);
-                    }
-                } else {
-                    preference_penalties++;
-                    sum_pref_penalties += penalty;
-                }
-            } else {
-                // Verificar valor exacto para no-preferencias: debe ser 1.0
-                if (fabsf(penalty - 1.0f) > 1e-5f) {  // Tolerancia para float precision
-                    invalid_count++;
-                    if (verbose) {
-                        printf("Error: Estudiante %d, Colegio %d (NO preferido): penalización %.6f, debería ser 1.0\n",
-                               student, school, penalty);
-                    }
-                } else {
-                    non_preference_penalties++;
-                }
-            }
-        }
-    }
-   
-    // Calcular estadísticas útiles para entender el comportamiento del modelo
-    if (verbose) {
-        float avg_pref_penalty = (preference_penalties > 0) ?
-                                 sum_pref_penalties / preference_penalties : 0.0f;
-       
-        printf("\n=== ESTADÍSTICAS DE VALIDACIÓN ===\n");
-        printf("Total de asignaciones evaluadas: %d\n", num_students * num_schools);
-        printf("Penalizaciones para colegios preferidos: %d (promedio: %.4f)\n",
-               preference_penalties, avg_pref_penalty);
-        printf("Penalizaciones para colegios NO preferidos: %d\n", non_preference_penalties);
-        printf("Errores encontrados: %d\n", invalid_count);
-       
-        // Análisis de la distribución de preferencias por estudiante
-        int min_prefs = num_schools + 1, max_prefs = 0;
-        float sum_prefs = 0.0f;
-        for (int i = 0; i < num_students; i++) {
-            int prefs = num_preferences[i];
-            min_prefs = (prefs < min_prefs) ? prefs : min_prefs;
-            max_prefs = (prefs > max_prefs) ? prefs : max_prefs;
-            sum_prefs += prefs;
-        }
-        float avg_prefs = sum_prefs / num_students;
-       
-        printf("\n=== ANÁLISIS DE PREFERENCIAS ===\n");
-        printf("Preferencias por estudiante - Mínimo: %d, Máximo: %d, Promedio: %.2f\n",
-               min_prefs, max_prefs, avg_prefs);
-        printf("Esto significa que el %.1f%% de las evaluaciones son para colegios preferidos\n",
-               100.0f * preference_penalties / (num_students * num_schools));
-       
-        if (avg_prefs / num_schools < 0.3f) {
-            printf("INSIGHT: Los estudiantes son selectivos (promedio %.1f preferencias de %d colegios)\n",
-                   avg_prefs, num_schools);
-            printf("         La discontinuidad en %.3f vs 1.0 será muy efectiva\n", max_pref_penalty);
-        } else {
-            printf("INSIGHT: Los estudiantes son flexibles (promedio %.1f preferencias de %d colegios)\n",
-                   avg_prefs, num_schools);
-            printf("         Considera ajustar max_pref_penalty para mayor diferenciación\n");
-        }
-    }
-   
-    if (invalid_count > 0) {
-        printf("Advertencia: %d valores de penalización fuera de los rangos esperados\n", invalid_count);
-        return false;
-    }
-   
-    return true;
-}
-*/
