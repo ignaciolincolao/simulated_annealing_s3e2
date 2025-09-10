@@ -92,38 +92,13 @@ double SimulatedAnnealing::runGPU(){
         choices_parents,
         currentVars);
 
-    //crear matriz de penalidades
-    std::vector<int> num_ele_vec;
-    num_ele_vec.reserve(dataSet->students.size());
-
-    for (const auto& alu : dataSet->students) {
-        num_ele_vec.push_back(alu.num_ele);
-    }
-
-    std::vector<int> choices_matrix;
-    choices_matrix.reserve(saParams.n_students * saParams.max_choices);
-
-    for (const auto& alu : dataSet->students) {
-        // solo tomo los primeros saParams.max_choices elementos
-        for (int j = 0; j < saParams.max_choices; ++j) {
-            choices_matrix.push_back(static_cast<int>(alu.choices[j]));
-        }
-    }
-
-    std::vector<float> penalty_matrix(saParams.n_students * saParams.n_colegios);
-
-    cudaWrapper->compute_penalty_matrix(choices_matrix.data(),
-                            num_ele_vec.data(),
-                            penalty_matrix.data());
-
-
 
     cout << "--------------- Primeros datos -------------\n";
     cout << "Primer costo de solución: " << costBestSolution << "\n";
     cout << "Primer distancia: " << meanDist(currentSolution, distMat) << "\n";
     cout << "Primer Segregación: " << S(currentSolution, alumnosSep, totalVuln) << "\n";
     cout << "Primer CostoCupo: " << costCupo(currentSolution, cupoArray) << "\n";
-    cout << "Penalty inicial: " << penaltyParents(currentSolution)/saParams.p_weight << "\n\n";
+    cout << "Penalty inicial: " << penaltyParents(currentSolution,h_penalty_matrix)/saParams.n_students << "\n\n";
 #if SAVE_DATA
     #if ENABLE_OPEN_RECORD_INFO
     recordManager->openRecordInfo();
@@ -131,7 +106,7 @@ double SimulatedAnnealing::runGPU(){
         meanDist(currentSolution, distMat),
         S(currentSolution, alumnosSep, totalVuln),
         costCupo(currentSolution, cupoArray),
-        penaltyParents(currentSolution));
+        penaltyParents(currentSolution,h_penalty_matrix));
     recordManager->closeRecordInfo();
     #endif
     #ifdef ENABLE_OPEN_RECORD_GRAPHICS
@@ -140,7 +115,7 @@ double SimulatedAnnealing::runGPU(){
     S(currentSolution, alumnosSep, totalVuln),
     costCupo(currentSolution, cupoArray),
     costCurrentSolution,
-    penaltyParents(currentSolution));
+    penaltyParents(currentSolution,h_penalty_matrix));
     recordManager->closeRecordGraphics();
     #endif
 
@@ -255,7 +230,7 @@ double SimulatedAnnealing::runGPU(){
             recordManager->vector_meanDist.emplace_back(meanDist(bestSolution, distMat));
             recordManager->vector_segregation.emplace_back(S(bestSolution, alumnosSep, totalVuln));
             recordManager->vector_costoCupo.emplace_back(costCupo(bestSolution, cupoArray));
-            recordManager->vector_penalty.emplace_back(penaltyParents(bestSolution));
+            recordManager->vector_penalty.emplace_back(penaltyParents(bestSolution,h_penalty_matrix));
             recordManager->vector_temp.emplace_back(saParams.temp);
             recordManager->vector_count.emplace_back(saParams.count);
     #endif
@@ -315,7 +290,7 @@ double SimulatedAnnealing::runGPU(){
     cout << "distancia: " << meanDist(bestSolution, distMat) << "\n";
     cout << "Segregación: " << S(bestSolution, alumnosSep, totalVuln) << "\n";
     cout << "CostoCupo: " << costCupo(bestSolution, cupoArray) << "\n";
-    cout << "Penalty final: " << penaltyParents(bestSolution)/saParams.p_weight << "\n";
+    cout << "Penalty final: " << penaltyParents(bestSolution,h_penalty_matrix)/saParams.n_students << "\n";
     cout << "--------------- Finalizo con exito ----------------" << "\n";
     
 
@@ -329,7 +304,7 @@ double SimulatedAnnealing::runGPU(){
         meanDist(bestSolution, distMat),
         S(bestSolution, alumnosSep, totalVuln),
         costCupo(bestSolution, cupoArray),
-        penaltyParents(bestSolution));
+        penaltyParents(bestSolution,h_penalty_matrix));
     recordManager->closeRecordInfo();
     #endif
     #ifdef ENABLE_OPEN_RECORD_GRAPHICS
@@ -355,7 +330,7 @@ double SimulatedAnnealing::runGPU(){
         meanDist(bestSolution, distMat),
         S(bestSolution, alumnosSep, totalVuln),
         costCupo(bestSolution, cupoArray),
-        penaltyParents(bestSolution),
+        penaltyParents(bestSolution,h_penalty_matrix),
         csParams.coolingRate,
         rmParams.k_reheating_init,
         rmParams.e_const,
@@ -453,7 +428,33 @@ void SimulatedAnnealing::inicializationValues(T* wrapper){
     ///////////////////////////////////////////////////
     /// Registro de datos
     ///////////////////////////////////////////////////
+
+    //calculo de la matriz de penalidades
+    std::vector<int> num_ele_vec;
+    num_ele_vec.reserve(dataSet->students.size());
+
+    for (const auto& alu : dataSet->students) {
+        num_ele_vec.push_back(alu.num_ele);
+    }
+
+    std::vector<int> choices_matrix;
+    choices_matrix.reserve(saParams.n_students * saParams.max_choices);
+
+    for (const auto& alu : dataSet->students) {
+        //solo tomo los primeros saParams.max_choices elementos
+        for (int j = 0; j < saParams.max_choices; ++j) {
+            choices_matrix.push_back(static_cast<int>(alu.choices[j]));
+        }
+    }
+
+    //std::vector<float> penalty_matrix(saParams.n_students * saParams.n_colegios);
+    h_penalty_matrix = new float[saParams.n_students * saParams.n_colegios];
+
+    wrapper->compute_penalty_matrix(choices_matrix.data(),
+                            num_ele_vec.data(),
+                            h_penalty_matrix);
     
+/*   
     //borrable???
     //creo que aqui se calculo de forma normal, pero mas adelante se sobreescribe el valor con uno normalizado
     //entonces calCosto no es la version CPU
@@ -462,7 +463,7 @@ void SimulatedAnnealing::inicializationValues(T* wrapper){
     costCurrentSolution = costBestSolution;
 
     //fin borrable ------
-
+*/
     saParams.count++;
 
     ///////////////////////////////////////////////////
@@ -493,7 +494,7 @@ void SimulatedAnnealing::inicializationValues(T* wrapper){
     currentVars[0] = sumDist(currentSolution,distMat);
     currentVars[1] = sumS(currentSolution, alumnosSep, totalVuln);
     currentVars[2] = sumCostCupo(currentSolution,cupoArray);
-    //currentVars[3] = penaltyParents(currentSolution);
+    currentVars[3] = penaltyParents(currentSolution,h_penalty_matrix);
     previousVars[0] = currentVars[0];
     previousVars[1] = currentVars[1];
     previousVars[2] = currentVars[2];
@@ -513,7 +514,7 @@ void SimulatedAnnealing::inicializationValues(T* wrapper){
     //cout << var2 << "\n";
     var3 = (currentVars[2] /saParams.n_colegios);
     //es 50000.0 o 500000.0, sigo analizando estaba en 50000.0
-    var4 = currentVars[3] /(saParams.n_students*500000.0);
+    var4 = currentVars[3] /saParams.n_students;
     costBestSolution = (double)((ptr_alpha[0] * var1) + (ptr_alpha[1] * var2) + (ptr_alpha[2] * var3) + (ptr_alpha[3] * var4));
     //cout << "F2: " << costBestSolution << "\n";
 
@@ -561,14 +562,7 @@ double SimulatedAnnealing::calCosto(int *currentSolution, double **distMat, cons
     //cout << "Segregación: " << var2 << "\n";
     double var3 = costCupo(currentSolution,cupoArray);
     //cout << "CostoCupo: " << var3 << "\n";
-
-    //creo que al oscar le falto incluir una division "/(saParams.n_students*50000.0)"
-    //no tiene sentido todo lo demas es como promedio y metio un total que rompe todo, mas encima porque metio un 50000 hardcode
-    //que significa
-    //ahora entiendo porque piden tanto comentar los codigos 💀💀
-    //me imagino que lo que intento hacer fue normalizar para que siempre de valores entre 0 y 1
-    //nota mental agregar ese 50000 a sa.params (estaba en 50000.0)
-    double var4 = penaltyParents(currentSolution)/(saParams.n_students*500000.0);
+    double var4 = penaltyParents(currentSolution, h_penalty_matrix)/(saParams.n_students);
     //cout << "Penalty: " << var4 << "\n";
 
     return (double)((ptr_alpha[0] * var1) + (ptr_alpha[1] * var2) + (ptr_alpha[2] * var3) + (ptr_alpha[3] * var4));
@@ -866,7 +860,7 @@ void SimulatedAnnealing::UpdateProb(int it){
         probSelection[size - 1] = 1;
 }
 
-
+/*
 std::size_t SimulatedAnnealing::penaltyParents(int *currentSolution) {
     std::array<std::size_t, 6> weights{0, 100, 200, 300, 400, 500000};
 
@@ -890,83 +884,20 @@ std::size_t SimulatedAnnealing::penaltyParents(int *currentSolution) {
 
     return penalty;
 }
-
-
-//version CPU con la misma logica de calPenalty del GPU
-//double calcPenaltyCPU(int currentCollege, const uint8_t choices[5]) {
-//    double weights[6] = {500000, 0, 100, 200, 300, 400};
-//    uint8_t index = 0;
-//    for (size_t i = 1; i < 6; i++) {
-//        index += (currentCollege == choices[i - 1]) * i;
-//    }
-//    return weights[index];
-//}
-
-/*
-void SimulatedAnnealing::simceScoreUpdate(int *bestSolution, Info_alu *ptr_students, Info_colegio *ptr_colegios) {
-
-    std::vector<std::array<double, 4>> schoolScores(saParams.n_colegios, {0.0, 0.0, 0.0, 0.0});
-    //vector que almacena los nuevos puntajes simce de cada colegio (rbd, pmat, plen, numero de estudiantes en el colegio)
-
-    for (int x = 0; x < saParams.n_students; x++) {
-        int schoolID = bestSolution[x];
-        double simceMath = ptr_students[x].pmat;
-        double simceLanguage = ptr_students[x].plen;
-
-        schoolScores[schoolID][0] = ptr_colegios[schoolID].rbd; 
-        schoolScores[schoolID][1] += simceMath;                //guardamos la suma de los puntajes mat y len
-        schoolScores[schoolID][2] += simceLanguage;             
-        schoolScores[schoolID][3] += 1;                        //y el numero de alumnos en el colegio
-    }
-
-    std::vector<std::array<double, 3>> results; // Almacena {RBD, delta_math, delta_language}
-    //vector que almacenara la informacion util (RBD del colegio, variacion en puntaje mat, variacion len)
-
-    for (int i = 0; i < saParams.n_colegios; i++) {
-        const auto& score = schoolScores[i];
-        if (score[3] > 0) { //descartamos los que se quedaron sin alumnos matriculados despues del cambio
-            double avgMath = score[1] / score[3]; //calculamos promedios
-            double avgLanguage = score[2] / score[3];
-
-            //calcular variacion entre antes y depsues del cambio
-            double deltaMath = avgMath - ptr_colegios[i].pmat;
-            double deltaLanguage = avgLanguage - ptr_colegios[i].plen;
-
-            results.push_back({score[0], deltaMath, deltaLanguage}); //utilizamos el RBD real del colegio
-            //PD: pusieron que en bestsolution apunta a la posicion en el arreglo de info_col en lugar del rbd real.
-        }
-    }
-    //guardamos los resultados como un txt
-    //no me funciono lo de las flag
-    const std::string outputFile = "../../save/resultados_simce.csv";
-    //PD: el compilador no se que le pasa que no quiere crear carpetas y no reconoce mkdir
-    //estoy creando la carpeta a mano, y tira todo a la carpeta de release/debug
-    std::ofstream outFile(outputFile);
-    if (!outFile.is_open()) {
-        std::cerr << "Error: No se pudo crear o abrir el archivo: " << outputFile << "\n";
-        return;
-    }
-
-    outFile << "rbd,delta_pmat,delta_plen\n";
-    
-
-    for (const auto& res : results) {
-        outFile << static_cast<int>(res[0]) << "," // rbd
-                << res[1] << ","                   // delta_pmat
-                << res[2] << "\n";                 // delta_plen
-    }
-    outFile.close();
-    std::cout << "Archivo de actualizacion de puntajes guardado en: " << outputFile << "\n";
-
-    //analisis:
-    //se observa que elimina a la gran cantidad de los colegios, esto es porque en el grafico de R se observa que
-    //las preferencias se concentran en un grupo cerrado de colegios, y hay colegios que no tienen ninguna preferencia
-    //ademas como al ubicar a un individuo en un colegio que no selecciono (dandole un valor de 5000), el sistema prefiere
-    //matricular a un individuo con sobrecupo respecto a un colegio que no sea del agrado de los padres.
-
-    //no he tocado la funcion de penalty del oscar
-}
 */
+
+double SimulatedAnnealing::penaltyParents(int *currentSolution, float* h_penalty_matrix) {
+
+    double penalty = 0;
+
+    for (std::size_t i = 0; i < saParams.n_students; i++) {
+        //printf("Penalty %f, alu: %d, col: %d", h_penalty_matrix[i*saParams.n_colegios +currentSolution[i]], i, currentSolution[i]);
+        penalty += h_penalty_matrix[i*saParams.n_colegios +currentSolution[i]];
+    }
+
+    return penalty;
+}
+
 
 void SimulatedAnnealing::ValidateGPU(){
     CUDAWrapper* cudaWrapper = new CUDAWrapper(cuParams, saParams, mt);

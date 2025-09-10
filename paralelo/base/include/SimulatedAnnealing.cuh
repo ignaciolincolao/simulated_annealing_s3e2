@@ -79,6 +79,7 @@ private:
     double *probSelection;
     mt19937& mt;
     
+    float* h_penalty_matrix;
 
 public:
     AcceptanceParams& acParams;
@@ -121,7 +122,7 @@ public:
     double sumS(const int *currentSolution,const int *alumnosSep, int totalVuln);
     double costCupo(int *currentSolution,int *cupoArray);
     double sumCostCupo(int *currentSolution,int *cupoArray);
-    std::size_t penaltyParents(int *currentSolution);
+    //std::size_t penaltyParents(int *currentSolution);
     void newSolution(int *currentSolution,const int *previousSolution);
     void assignSchoolToArray(int *previousSolution, int *bestSolution, int *currentSolution, Info_colegio *ptr_colegios, Info_alu *ptr_students, int *cupoArray);
     void calcDist(Info_colegio *ptr_colegios, Info_alu *ptr_students, double **distMat);
@@ -134,11 +135,10 @@ public:
     int selecSolution();
     void UpdateProb(int it);
     
-
     void ValidateGPU();
     DataResult cpu_one_tid_newSolution(int tid) const;
 
-    //void compute_penalty_matrix(int* h_preferences_matrix, int* h_num_preferences, float* h_penalty_matrix, int num_students, int num_schools, int max_preferences_per_student, float alpha = 1.0f, float max_pref_penalty = 0.5f); 
+    double penaltyParents(int *currentSolution, float* h_penalty_matrix);
     
 };
 

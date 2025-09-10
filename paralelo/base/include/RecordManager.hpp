@@ -41,7 +41,7 @@ public:
     std::vector<double> vector_meanDist;
     std::vector<double> vector_segregation;
     std::vector<double> vector_costoCupo;
-    std::vector<size_t> vector_penalty;
+    std::vector<double> vector_penalty;
     std::vector<double> vector_temp;
     std::vector<int> vector_count;
     std::vector<double> vector_historyCostSolution;

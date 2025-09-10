@@ -56,8 +56,6 @@ CUDAWrapper::~CUDAWrapper(){
     cudaFree(d_costPrevSolUnitTest);
 
     //variables de update de penalty
-    cudaFree(d_preferences_matrix);
-    cudaFree(d_num_preferences);
     cudaFree(d_penalty_matrix);
     
     cudaEventDestroy(start_cuda);
@@ -102,12 +100,6 @@ void CUDAWrapper::memInit(
 
     cudaMalloc((void **) &d_prevMove, 2 * sizeof(int)); //guardar movimiento anterior para pruebas unitarias
     cudaMalloc((void **) &d_costPrevSolUnitTest, 1 * sizeof(double)); //guardar el costo del movimiento anterior realizado con el nuevo kernel
-
-    //variables del update de penalty
-    cudaMalloc((void **) &d_preferences_matrix, saParams.n_students * saParams.max_choices * sizeof(int)); //matriz de preferencias
-    cudaMalloc((void **) &d_num_preferences,  saParams.n_students * sizeof(int)); //vector que indica cuantas preferencias escogio cada estudiante
-    cudaMalloc((void **) &d_penalty_matrix, saParams.n_students * saParams.n_colegios * sizeof(float)); //matriz de penalidades calculadas
-
 
     ///////////////////////////////////////////////////
     /// Genera arreglos que contendran valores del 0 hasta saParams.n_students y saParams.n_colegios
@@ -449,8 +441,12 @@ void CUDAWrapper::compute_penalty_matrix(
     float alpha,              // Curvatura exponencial (recomendado: 0.5 - 2.0)
     float max_pref_penalty    // Penalización máxima para preferencias (recomendado: 0.3 - 0.8)
 ) {
-   
-    // Transferir datos de entrada a GPU
+    //necesitamos hacer esta reservera al inicio, ya que el metodo global se ejecuta cuando ya se hizo el primer computo CPU
+    cudaMalloc((void **) &d_preferences_matrix, saParams.n_students * saParams.max_choices * sizeof(int)); //matriz de preferencias
+    cudaMalloc((void **) &d_num_preferences,  saParams.n_students * sizeof(int)); //vector que indica cuantas preferencias escogio cada estudiante
+    cudaMalloc((void **) &d_penalty_matrix, saParams.n_students * saParams.n_colegios * sizeof(float)); //matriz de penalidades calculadas
+    
+    //transferir datos a CPU
     cudaMemcpy(d_preferences_matrix, h_preferences_matrix, saParams.n_students * saParams.max_choices * sizeof(int), cudaMemcpyHostToDevice);
     cudaMemcpy(d_num_preferences, h_num_preferences, saParams.n_students * sizeof(int), cudaMemcpyHostToDevice);
    
@@ -462,10 +458,6 @@ void CUDAWrapper::compute_penalty_matrix(
         (saParams.n_students + block_size.y - 1) / block_size.y
     );
    
-    // Información sobre configuración de ejecución
-    int total_blocks = grid_size.x * grid_size.y;
-    int total_threads = total_blocks * block_size.x * block_size.y;
-   
     // Ejecutar kernel con parámetros flexibles
     compute_preference_penalty_matrix<<<grid_size, block_size>>>(
         d_preferences_matrix, d_num_preferences, d_penalty_matrix,
@@ -473,20 +465,18 @@ void CUDAWrapper::compute_penalty_matrix(
         alpha, max_pref_penalty  // Los nuevos parámetros configurables
     );
    
-    // Sincronizar y verificar errores detalladamente (ver bien despues como dejar esto)
     cudaError_t error;
     error = cudaDeviceSynchronize();
     if (error != cudaSuccess) {
-        printf("Error ejecutando kernel: %s\n", cudaGetErrorString(error));
+        printf("Error al calcular la matriz de penalidades: %s\n", cudaGetErrorString(error));
        
-        // Cleanup en caso de error
+        //Cleanup en caso de error
         cudaFree(d_preferences_matrix);
         cudaFree(d_num_preferences);
         cudaFree(d_penalty_matrix);
         return;
     }
    
-
     //para debug guardar la matriz de penalty como un txt
     cudaMemcpy(h_penalty_matrix, d_penalty_matrix,  saParams.n_students * saParams.n_colegios * sizeof(float), cudaMemcpyDeviceToHost);
 
@@ -500,13 +490,14 @@ void CUDAWrapper::compute_penalty_matrix(
                 fout << h_penalty_matrix[i * saParams.n_colegios + j];
                 if (j < saParams.n_colegios - 1) fout << ",";
             }
-            fout << "\n";  // salto de línea por estudiante
+            fout << "\n";
         }
     }
     fout.close();
     std::cout << "Matriz de penalizaciones escrita en penalty_matrix.txt\n";
 
-    // Cleanup: liberar toda la memoria GPU
-    // cudaFree(d_preferences);
-    // cudaFree(d_num_preferences);
+    //liberar lo que no se utilizara
+    cudaFree(d_preferences_matrix);
+    cudaFree(d_num_preferences);
 }
+
