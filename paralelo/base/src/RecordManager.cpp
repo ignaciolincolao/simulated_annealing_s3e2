@@ -200,27 +200,44 @@ void RecordManager::SaveInfoFinish(
 
 void RecordManager::SaveGraphicsBestSolution(int *solution)
 {
-    for (std::size_t i{}; i < saParams.n_students; i++)
-        infoGraphicsBestSolution << solution[i] << ",";
+    for (std::size_t i{}; i < saParams.n_students; i++){
+        infoGraphicsBestSolution << solution[i];
+        if (i!=saParams.n_students-1){
+            infoGraphicsBestSolution << ",";
+        }
+    }
     infoGraphicsBestSolution << "\n";
 }
 
 void RecordManager::SaveGraphicsFirstSolutionRBD(int *solution, Info_colegio *ptr_colegios, Info_alu *ptr_students)
 {   
     infoGraphicsBestSolutionRBD << std::fixed << std::setprecision(0);
-    for (std::size_t i{}; i < saParams.n_students; i++)
-        infoGraphicsBestSolutionRBD << ptr_students[solution[i]].mrun << ",";
+    for (std::size_t i{}; i < saParams.n_students; i++){
+        infoGraphicsBestSolutionRBD << ptr_students[i].mrun;
+        if (i!=saParams.n_students-1){
+            infoGraphicsBestSolutionRBD << ",";
+        }
+    }
     infoGraphicsBestSolutionRBD << "\n";
-    for (std::size_t i{}; i < saParams.n_students; i++)
-        infoGraphicsBestSolutionRBD << ptr_colegios[solution[i]].rbd << ",";
+
+    for (std::size_t i{}; i < saParams.n_students; i++){
+        infoGraphicsBestSolutionRBD << ptr_colegios[solution[i]].rbd;
+        if (i!=saParams.n_students-1){
+            infoGraphicsBestSolutionRBD << ",";
+        }
+    }
     infoGraphicsBestSolutionRBD << "\n";
     
 }
 
 void RecordManager::SaveGraphicsUpdateSolutionRBD(int *solution, Info_colegio *ptr_colegios)
 {   
-    for (std::size_t i{}; i < saParams.n_students; i++)
-        infoGraphicsBestSolutionRBD << ptr_colegios[solution[i]].rbd << ",";
+    for (std::size_t i{}; i < saParams.n_students; i++){
+        infoGraphicsBestSolutionRBD << ptr_colegios[solution[i]].rbd;
+        if (i!=saParams.n_students-1){
+            infoGraphicsBestSolutionRBD << ",";
+        }
+    }
     infoGraphicsBestSolutionRBD << "\n";
 }
 

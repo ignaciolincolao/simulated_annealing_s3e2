@@ -33,11 +33,10 @@ int main(int argc, char *argv[])
                 .name_exp = "base",
                 .activated_files = {true,true,true,true,true}};
 
-    double alp1 = 10.0;
-    double alp2 = 30.0;
-    double alp3 = 25.0;
-    //double alp4 = 50.0; se lo robe al oscar
-    double alp4 = 100.0; 
+    double alp1 = 0.1;  //distancia
+    double alp2 = 0.05; //segregacion
+    double alp3 = 0.5;  //costocupo
+    double alp4 = 0.35; //penalty parents
     SimulatedParams* saParams = new SimulatedParams{
         .seed = 1574067955,
         .n_students = 0,

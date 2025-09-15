@@ -139,7 +139,9 @@ public:
     DataResult cpu_one_tid_newSolution(int tid) const;
 
     double penaltyParents(int *currentSolution, float* h_penalty_matrix);
+   
     
+    void asignacionSAE(const std::vector<Info_alu> &alumnos, const std::vector<Info_colegio> &colegios,std::vector<int> &solution);
 };
 
 #endif
