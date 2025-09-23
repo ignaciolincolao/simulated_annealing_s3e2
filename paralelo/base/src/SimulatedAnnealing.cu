@@ -291,6 +291,8 @@ double SimulatedAnnealing::runGPU(){
     cout << "Segregación: " << S(bestSolution, alumnosSep, totalVuln) << "\n";
     cout << "CostoCupo: " << costCupo(bestSolution, cupoArray) << "\n";
     cout << "Penalty final: " << penaltyParents(bestSolution,h_penalty_matrix)/saParams.n_students << "\n";
+    int* summaryPrefs = summaryPreferences(bestSolution, dataSet->students);
+    summaryCostoCupo(bestSolution, dataSet->colegios);
     cout << "--------------- Finalizo con exito ----------------" << "\n";
 
     //llamar a la funcion que lo calcula por el algoritmo original del SAE
@@ -1169,6 +1171,81 @@ DataResult SimulatedAnnealing::cpu_one_tid_newSolution(int tid) const {
 
 
 
+//para contar cuantas asignaciones se hicieron en primera, segunda... N preferencia
+int* SimulatedAnnealing::summaryPreferences(const int* currentSolution,
+                                const std::vector<Info_alu>& alumnos)
+{
+
+    //las primeras max_choices elementos son las preferencias y la ultima son los que estan fuera
+    int* asignacion_por_pref = new int[saParams.max_choices + 1]();
+    
+    for (int i = 0; i < (int)alumnos.size(); ++i) {
+        int col_asignado = currentSolution[i]+1; //en el dataset van de 1 a 63, pero en el 
+        const auto& A = alumnos[i];
+        bool encontrado = false;
+
+        //iteramos por num_ele a cada alumno
+        for (int pref = 0; pref < A.num_ele; ++pref) {
+            if (col_asignado == A.choices[pref]) {
+                asignacion_por_pref[pref]++;
+                encontrado = true;
+                break;
+            }
+        }
+
+        if (!encontrado) {
+            asignacion_por_pref[saParams.max_choices]++;
+        }
+    }
+
+    std::cout << "Asignados en preferencia numero ->";
+    for (int p = 0; p < saParams.max_choices+1; ++p){
+    std::cout << (p+1) << ":" << asignacion_por_pref[p] << "  ";
+}
+    std::cout << "\n";
+
+    return asignacion_por_pref; 
+}
+
+
+void SimulatedAnnealing::summaryCostoCupo(const int* currentSolution,
+                                          const std::vector<Info_colegio>& colegios)
+{
+    int n_colegios = saParams.n_colegios;
+
+    //recuento de alumnos por colegio
+    int* ocupados = new int[n_colegios]();
+    
+    // contar ocupación actual
+    for (int i = 0; i < saParams.n_students; ++i) {
+        ocupados[currentSolution[i]]++;
+    }
+
+    //resumen
+    //[0] = colegios con cupos
+    //[1] = cupos restantes totales
+    //[2] = colegios en sobrecupo
+    int* resumen = new int[3]();
+
+    for (int j = 0; j < n_colegios; ++j) {
+        int capacidad = (int)std::floor(colegios[j].num_alu * 1.1); 
+        int ocup = ocupados[j];
+        int vacantes = capacidad - ocup;
+
+        if (vacantes > 0) {
+            resumen[0]++;          // colegios con cupos
+            resumen[1] += vacantes; // cupos restantes totales
+        }
+        if (ocup > capacidad) {
+            resumen[2]++;          // colegios en sobrecupo
+        }
+    }
+
+    std::cout << "\n" << "Colegios aun con vacantes: " << resumen[0]
+            << " | Vacantes totales restantes: " << resumen[1] << " | colegios en sobrecupo: " << resumen[2] << "\n";
+
+}
+
 
 static inline uint32_t lottery_simple(int student_index, int rbd){
     uint32_t x = (uint32_t)student_index * 0x9E3779B1u ^ (uint32_t)rbd;
@@ -1201,10 +1278,14 @@ void SimulatedAnnealing::asignacionSAE(
     std::unordered_map<int,int> cuota_sep_left;
     cuota_sep_left.reserve(colegios.size()*2);
 
-    // inicialización de vacantes y cuotas (persisten dentro de la función a través de iteraciones)
+    //inicializacion de arreglos que guardan los cupos de cada colegio
     long long total_vacantes_restantes = 0;
+
+    //para comparativa, cuantos alumnos fueron asignados en cada preferencia
+    std::vector<int> asignacion_por_pref(saParams.max_choices + 1, 0);
+
     for (const auto& C : colegios) {
-        int V = (int)std::ceil(C.num_alu * 1.1); //mantenemos el sobrecupo del 10%
+        int V = (int)std::floor(C.num_alu * 1.1); //mantenemos el sobrecupo del 10%
         vac_by_rbd[C.rbd] = V;
         total_vacantes_restantes += V;
 
@@ -1212,92 +1293,86 @@ void SimulatedAnnealing::asignacionSAE(
         int q = (int)std::ceil(0.15 * (double)V);
         cuota_sep_left[C.rbd] = q;
     }
-    if (total_vacantes_restantes <= 0) {
-        // guardar salida vacía igualmente
-        std::ofstream out("asignacion_sae.txt");
-        for (int i = 0; i < saParams.n_students; ++i) out << i << "," << solution[i] << "\n";
-        return;
-    }
 
-    int asignados_totales = 0;
-    const int max_pref = saParams.max_choices; // cantidad máxima de columnas a considerar
+    int asignados_totales = 0; //variable que guarda cuantos fueron asignados
 
-    // ---- Iteraciones: pref_col = 0..max_pref-1 ----
-    for (int pref_col = 0; pref_col < max_pref; ++pref_col) {
+    //iteramos por cada preferencia
+    for (int pref = 0; pref < saParams.max_choices; ++pref) {
 
-        //hash que contiene los postulantes por cada colegio (para ESTA iteración)
+        //hash que contiene los postulantes por cada colegio en dicha iteracion
         std::unordered_map<int, std::vector<Postulante>> listas;
         listas.reserve(colegios.size()*2);
 
-        //rellenamos los tickets de loteria SOLO para alumnos no asignados aún
+        //rellenamos los tickets de loteria solo para alumnos no asignados aún
         for (int i = 0; i < saParams.n_students; ++i){
-            if (solution[i] != -1) continue; // ya asignado en iteraciones previas
+            if (solution[i] != -1) continue; //ya asignado en iteraciones previas
 
             const auto& A = alumnos[i];
-            //si no tiene esa preferencia disponible, lo omitimos
-            if (A.num_ele <= pref_col) continue;
+            //tambien se ignora si el alumno no tiene la eleccion numero pref
+            if (A.num_ele <= pref) continue;
 
-            // OJO: choices[pref_col] es índice a 'colegios'
-            size_t idx = static_cast<size_t>(A.choices[pref_col])-1;
-            if (idx >= colegios.size()) continue;   // preferencia inválida (índice fuera de rango)
+            //obtenemos a que colegio apunta cada estudiante
+            size_t idx = static_cast<size_t>(A.choices[pref])-1;
 
-            int rbd_pref = colegios[idx].rbd;       // RBD real del colegio preferido
+            int rbd_pref = colegios[idx].rbd;       //RBD del colegio de la prefererencia pref
+            int prio;                               //lista de prioridad en la que queda el alumno
 
-            int prio;
-            if (A.rbd == rbd_pref)      prio = 1;   //matrícula asegurada (continuidad)
-            else if (A.sep != 0)        prio = 4;   //SEP (candidato a cuota)
-            else                        prio = 7;   //resto
+            if (A.rbd == rbd_pref)      prio = 1;   //continuidad
+            else if (A.sep == 1)        prio = 4;   //dentro de los cupos SEP
+            //else if (A.sep == 0)        prio = 4;
+            else                        prio = 7;   //sin preferencia
 
+            //guardamos en la lista el alumno (id de arreglo), grado de prioridad y su numero de loteria
             listas[rbd_pref].push_back({ i, prio, lottery_simple(i, rbd_pref) });
         }
 
         int asignados_esta_iter = 0;
 
-        // 2) por RBD: aplicar cuota SEP (usando la cuota restante) y ordenar 1→4→7 con desempate por lotería
+        //realizar una loteria interna para el 15% destinado a cupos SEP
         for (auto& kv : listas){
             int rbd = kv.first;
             auto& vec = kv.second;
 
             int V = 0;
-            if (auto it = vac_by_rbd.find(rbd); it != vac_by_rbd.end()) V = it->second;
-            if (V <= 0) continue; // sin vacantes: nada que asignar aquí
+            if (auto it = vac_by_rbd.find(rbd); it != vac_by_rbd.end()) V = it->second; //buscamos las vacantes en el colegio
+            if (V <= 0) continue; //si no le quedan pasamos al siguiente
 
             int cuota_rest = 0;
-            if (auto it = cuota_sep_left.find(rbd); it != cuota_sep_left.end()) cuota_rest = it->second;
+            if (auto it = cuota_sep_left.find(rbd); it != cuota_sep_left.end()) cuota_rest = it->second; //buscamos cuanto cupo SEP queda en el colegio
 
-            // recolectar SEP de prioridad 4 (ojo: los prio 1 no entran acá aunque sean SEP)
+            //de la lista de postulantes obtenemos solos los de prio 4 para la loteria interna de SEPs
             std::vector<Postulante*> seps;
             seps.reserve(vec.size());
             for (auto& c : vec) if (c.prio == 4) seps.push_back(&c);
 
-            // ordenar SEP por tómbola y rebajar excedentes a 7 **solo para esta iteración**
+            //ordenamos de menor a mayor los tickets de loteria para luego rellenar los cupo sep restantes
             std::sort(seps.begin(), seps.end(), [](const Postulante* a, const Postulante* b){
                 if (a->lotto != b->lotto) return a->lotto < b->lotto;
-                return a->i < b->i;
+                return a->i < b->i; //en el caso de que el ticket fuera igual se desempatara por mrun del alumno
             });
-            if ((int)seps.size() > cuota_rest){
+            if ((int)seps.size() > cuota_rest){ //los que no quepan tendran prioridad 7, es decir sin ningun tipo de prioridad
                 for (size_t t = (size_t)cuota_rest; t < seps.size(); ++t) seps[t]->prio = 7;
             }
 
-            // ordenar final: prio (1<4<7), luego tómbola, luego índice
+            //ordenamos las listas para la tombola final, primero los que formen parte de prio 1, 4 y 7, y a su vez se ordena por ticket de loteria
             std::sort(vec.begin(), vec.end(), [](const Postulante& a, const Postulante& b){
                 if (a.prio  != b.prio)  return a.prio < b.prio;
                 if (a.lotto != b.lotto) return a.lotto < b.lotto;
-                return a.i < b.i;
+                return a.i < b.i; //en el caso de que el ticket fuera igual se desempatara por mrun del alumno
             });
 
-            // 3) pre-asignar hasta V
+            //-------- realizamos las asignaciones-------------
             int asign = 0;
             int sep_asignados_esta_iter = 0;
             for (auto& c : vec){
                 if (asign >= V) break;
-                if (solution[c.i] != -1) continue; // seguridad (por si aparece repetido)
-                solution[c.i] = rbd;               // quedó en este RBD en esta iteración
-                if (c.prio == 4) sep_asignados_esta_iter++;
+                if (solution[c.i] != -1) continue; //revisamos que el alumno no este asignado
+                solution[c.i] = rbd;               //guardamos el rbd asignado
+                if (c.prio == 4) sep_asignados_esta_iter++;  //guardamos la cantidad de sep asignados para recalcular los cupos SEP
                 ++asign;
             }
 
-            // restamos los cupos y la cuota SEP **restante** para próximas iteraciones
+            //recalculamos las cuotas
             vac_by_rbd[rbd]      = std::max(0, V - asign);
             cuota_sep_left[rbd]  = std::max(0, cuota_rest - sep_asignados_esta_iter);
 
@@ -1307,10 +1382,14 @@ void SimulatedAnnealing::asignacionSAE(
         asignados_totales += asignados_esta_iter;
         total_vacantes_restantes -= asignados_esta_iter;
 
-        if (asignados_totales >= saParams.n_students) break; // todos asignados
-        if (total_vacantes_restantes <= 0) break;            // sin vacantes
+        asignacion_por_pref[pref] = asignados_esta_iter;
+
+        if (asignados_totales >= saParams.n_students) break; //todos fueron asignados
+        if (total_vacantes_restantes <= 0) break;            //o nos quedamos sin vacantes
     }
 
+    //mapa que devuelve la conversion de un RBD a la posicion del colegio en el dataset
+    //me daba toc ver que aca los arreglos parten de 0 y en R en 1, y dije va a ser todo por RBD 💀
     std::unordered_map<int,int> rbd2idx;
     rbd2idx.reserve(colegios.size()*2);
     std::vector<int> idx2rbd(colegios.size());
@@ -1319,13 +1398,19 @@ void SimulatedAnnealing::asignacionSAE(
         idx2rbd[j] = colegios[j].rbd;
     }
 
-    /* 2) Alumnos no asignados */
+    //------------- Caso especial, estudiantes no asignados-----------------
+    //lo que se se hace es que son asignados al colegio cercano
+    //partiendo del alumno que tiene el colegio cercano mas lejano
+
+    //obtenemos todos los estudiantes no asignados
     std::vector<int> unassigned;
     unassigned.reserve(saParams.n_students);
     for (int i = 0; i < saParams.n_students; ++i)
         if (solution[i] == -1) unassigned.push_back(i);
 
-    /* 3) Colegios con vacantes (como índices j) */
+    asignacion_por_pref[saParams.max_choices] = unassigned.size();
+
+    //obtenemos todos los colegios con vacantes y cuantas vacantes tienen aun disponibles
     auto rebuild_schools_with_vac = [&](){
         std::vector<int> schools_with_vac_idx;
         schools_with_vac_idx.reserve(colegios.size());
@@ -1338,13 +1423,15 @@ void SimulatedAnnealing::asignacionSAE(
     };
     std::vector<int> schools_with_vac_idx = rebuild_schools_with_vac();
 
-    /* 4) Bucle principal de la heurística */
+    //realizamos la asignacion de los estudiantes faltantes
     while (!unassigned.empty() && total_vacantes_restantes > 0 && !schools_with_vac_idx.empty()){
-        // Para cada no asignado: colegio (con cupo) más cercano y su distancia
-        struct Best { double d; int j; }; // d = distancia mínima, j = índice de colegio
+
+        struct Best { double d; int j; }; //struct que guarda d: la distancia minima, y j el indice del colegio
+
         std::vector<Best> best(unassigned.size(), {std::numeric_limits<double>::infinity(), -1});
         int feasible = 0;
 
+        //obtenemos el colegio mas cercano para todos los estudiantes
         for (size_t t = 0; t < unassigned.size(); ++t){
             int i = unassigned[t];
             double bestd = std::numeric_limits<double>::infinity();
@@ -1352,16 +1439,15 @@ void SimulatedAnnealing::asignacionSAE(
             for (int j : schools_with_vac_idx){
                 int rbd = idx2rbd[j];
                 auto itv = vac_by_rbd.find(rbd);
-                if (itv == vac_by_rbd.end() || itv->second <= 0) continue; // sin cupo
-                double d = distMat[i][j]; // <- N×M, j es índice en 'colegios'
+                if (itv == vac_by_rbd.end() || itv->second <= 0) continue; //descartamos los colegios sin cupo
+                double d = distMat[i][j]; //reutilizamos distMat para el calculo de las distancias
                 if (d < bestd){ bestd = d; bestj = j; }
             }
             best[t] = {bestd, bestj};
             if (bestj != -1) ++feasible;
         }
-        if (feasible == 0) break; // no hay a dónde asignar
 
-        // Elegir al alumno con MAYOR de esas distancias mínimas; empate por índice de alumno (menor primero)
+        //tenemos que eleguir al alumno que tiene la mayor distancia con su colegio cercano y asignarlo
         int pick_t = -1;
         double worst = -1.0;
         int tie_idx = std::numeric_limits<int>::max();
@@ -1376,30 +1462,29 @@ void SimulatedAnnealing::asignacionSAE(
         }
         if (pick_t == -1) break;
 
-        // Asignar a su colegio más cercano con cupo
+        //realizamos la asignacion
         int i_pick = unassigned[pick_t];
         int j_pick = best[pick_t].j;
         int rbd_pick = idx2rbd[j_pick];
         solution[i_pick] = rbd_pick;
 
-        // Actualizar cupos
+        //actualizar cupos
         auto itv = vac_by_rbd.find(rbd_pick);
         if (itv != vac_by_rbd.end() && itv->second > 0){
             itv->second--;
             total_vacantes_restantes--;
         }
 
-        // Remover alumno de la lista
+        //remover alumno de la lista
         unassigned[pick_t] = unassigned.back();
         unassigned.pop_back();
 
-        // Si el colegio se quedó sin vacantes, recomputar lista de colegios con cupo (paso 4.b del doc)
+        //si el colegio se quedo sin vacantes, hay que recalcular las distancias cercanas (4.b del doc)
         if (itv != vac_by_rbd.end() && itv->second == 0){
             schools_with_vac_idx = rebuild_schools_with_vac();
         }
     }
 
-    // (opcional) resumen al final de la heurística
     int alumnos_sin_cupo_final = 0;
     for (int i = 0; i < saParams.n_students; ++i) if (solution[i] == -1) ++alumnos_sin_cupo_final;
 
@@ -1429,20 +1514,23 @@ void SimulatedAnnealing::asignacionSAE(
     std::cout << "Segregación: " << var2 << "\n";
     std::cout << "CostoCupo: " << var3 << "\n";
     std::cout << "Penalty final: " << var4 << "\n";
-    std::cout << "--------------- Finalizo con exito ----------------" << "\n";
 
-    std::cout << "[Cercanía] Sin cupo tras heurística: " << alumnos_sin_cupo_final
-            << " | Colegios aún con vacantes: " << colegios_con_vac_final
-            << " | Vacantes totales restantes: " << total_vacantes_restantes
-            << "\n";
-
+    //estadisticas sacadas en funcion de la preferencia asignada
+    std::cout << "Asignados en preferencia numero ->";
+    for (int p = 0; p < saParams.max_choices+1; ++p){
+    std::cout << (p+1) << ":" << asignacion_por_pref[p] << "  ";
+}
+    std::cout << "\n" << "Colegios aun con vacantes: " << colegios_con_vac_final
+            << " | Vacantes totales restantes: " << total_vacantes_restantes << "\n";
     
-    // Guardar la solución en un TXT: "alumno_index,rbd_asignado"
+    
+
+    std::cout << "--------------- Finalizo con exito ----------------" << "\n";
+    
+    //guardar la solucion en un txt para depurar
     std::ofstream out("asignacion_sae.txt");
     for (int i = 0; i < saParams.n_students; ++i) {
         out << i << "," << sol_idx[i] << "\n";
     }
-
-
 
 }

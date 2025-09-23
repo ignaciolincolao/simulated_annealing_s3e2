@@ -140,7 +140,9 @@ public:
 
     double penaltyParents(int *currentSolution, float* h_penalty_matrix);
    
-    
+    int* summaryPreferences(const int* currentSolution, const std::vector<Info_alu>& alumnos);
+    void summaryCostoCupo(const int* currentSolution, const std::vector<Info_colegio>& colegios);
+
     void asignacionSAE(const std::vector<Info_alu> &alumnos, const std::vector<Info_colegio> &colegios,std::vector<int> &solution);
 };
 
