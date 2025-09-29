@@ -34,9 +34,9 @@ int main(int argc, char *argv[])
                 .activated_files = {true,true,true,true,true}};
 
     double alp1 = 0.1;  //distancia
-    double alp2 = 0.25; //segregacion
-    double alp3 = 0.4;  //costocupo
-    double alp4 = 0.25; //penalty parents
+    double alp2 = 0.2; //segregacion
+    double alp3 = 0.3;  //costocupo
+    double alp4 = 0.4; //penalty parents
     SimulatedParams* saParams = new SimulatedParams{
         .seed = 1574067955,
         .n_students = 0,

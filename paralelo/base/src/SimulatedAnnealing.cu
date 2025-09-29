@@ -296,12 +296,15 @@ double SimulatedAnnealing::runGPU(){
     summaryCostoCupo(bestSolution, dataSet->colegios);
     cout << "--------------- Finalizo con exito ----------------" << "\n";
 
-    //llamar a la funcion que lo calcula por el algoritmo original del SAE
-    //std::vector<int> solution;
-    //asignacionSAE(dataSet->students, dataSet->colegios, solution); 743 sin asignar en alguna pref
-    //fin llamada
 
     balanceCostoCupo(bestSolution,dataSet->students, dataSet->colegios);
+    
+    //llamar a la funcion que lo calcula por el algoritmo original del SAE
+    std::vector<int> solution;
+    asignacionSAE(dataSet->students, dataSet->colegios, solution); //743 sin asignar en alguna pref
+    //fin llamada
+
+    
 
 #if SAVE_DATA
     #ifdef ENABLE_OPEN_RECORD_INFO
@@ -1451,10 +1454,9 @@ void SimulatedAnnealing::asignacionSAE(
     std::vector<int> schools_with_vac_idx = rebuild_schools_with_vac();
 
     //realizamos la asignacion de los estudiantes faltantes
+    struct Best { double d; int j; }; //struct que guarda d: la distancia minima, y j el indice del colegio
+
     while (!unassigned.empty() && total_vacantes_restantes > 0 && !schools_with_vac_idx.empty()){
-
-        struct Best { double d; int j; }; //struct que guarda d: la distancia minima, y j el indice del colegio
-
         std::vector<Best> best(unassigned.size(), {std::numeric_limits<double>::infinity(), -1});
         int feasible = 0;
 
@@ -1603,8 +1605,145 @@ void SimulatedAnnealing::balanceCostoCupo(
         }
     }
 
+    //fase media heurisitica, robado del algoritmo del SAE
+    //solucion temporal mientras veo como diseñar una funcion que penalice con el tiempo pero a un recocido simulado
 
+    //heuristica por penalty
+    for (auto& kv : alus_sobrecupo) {
+    int colegio_sob = kv.first;
+    auto& alumnos_vec = kv.second;
+
+        for (int alu_id : alumnos_vec) {
+            if (vacantes_col[colegio_sob] >= 0) { //mientras aun el colegio esta en sobrecupo ver si puede sacar alumnos
+                break;
+            }
+            //recorrer preferencias del alumno
+            for (int pref_col : alumnos[alu_id].choices) {
+                if (vacantes_col[pref_col-1] > 0) {//choices del dataset va del 1 al 63, pero en el arreglo esta del 0 al 62
+                    
+                    //cout << "el alumno "<< alu_id+1 << " estaba en " <<colegio_sob+1<<" y tiene preferencia en: " << pref_col<< "\n";
+                    currentSolution[alu_id] = pref_col-1;
+                    vacantes_col[pref_col-1]--;   // ocupa vacante
+                    vacantes_col[colegio_sob]++; // libera en sobrecupo
+                    break; // ya lo movimos, no seguimos buscando
+                }
+            }
+        }
+    }
+
+
+    //heuristica por distancia
+    std::vector<int> sobrantes;
+    sobrantes.reserve(1024);
+    for (const auto& kv : alus_sobrecupo) {
+        const auto& vec = kv.second;
+        sobrantes.insert(sobrantes.end(), vec.begin(), vec.end());
+    }
+    if (sobrantes.empty()) return;
+
+    // 2) Helper: construir índices de colegios con vacantes (>0)
+    auto rebuild_schools_with_vac = [&]() {
+        std::vector<int> idx;
+        idx.reserve(saParams.n_colegios);
+        for (int j = 0; j < saParams.n_colegios; ++j)
+            if (vacantes_col[j] > 0) idx.push_back(j);
+        return idx;
+    };
+    std::vector<int> schools_with_vac_idx = rebuild_schools_with_vac();
+    if (schools_with_vac_idx.empty()) return;
+
+    // 3) Bucle principal
+    while (!sobrantes.empty() && !schools_with_vac_idx.empty()) {
+        // 3.a) PRUNEA alumnos cuyo colegio de origen ya no está en sobrecupo
+        // (balance >= 0). Esto evita mover alumnos innecesariamente.
+        {
+            size_t w = 0;
+            for (size_t t = 0; t < sobrantes.size(); ++t) {
+                int i = sobrantes[t];
+                int col_origen = currentSolution[i];
+                if (vacantes_col[col_origen] < 0) { // aún en sobrecupo
+                    sobrantes[w++] = i;
+                }
+            }
+            sobrantes.resize(w);
+            if (sobrantes.empty()) break;
+        }
+
+        // 3.b) Para cada alumno sobrante, calcular su colegio más cercano con cupo
+        struct Best { double d; int j; };
+        std::vector<Best> best(sobrantes.size(), {std::numeric_limits<double>::infinity(), -1});
+        int factibles = 0;
+
+        for (size_t t = 0; t < sobrantes.size(); ++t) {
+            int i = sobrantes[t];
+            int col_origen = currentSolution[i];
+
+            double bestd = std::numeric_limits<double>::infinity();
+            int bestj = -1;
+
+            for (int j : schools_with_vac_idx) {
+                if (j == col_origen) continue;          // ⚠️ excluir el mismo colegio de origen
+                if (vacantes_col[j] <= 0) continue;      // por seguridad
+                double d = distMat[i][j];
+                if (d < bestd) { bestd = d; bestj = j; }
+            }
+
+            best[t] = {bestd, bestj};
+            if (bestj != -1) ++factibles;
+        }
+
+        if (factibles == 0) break; // nadie tiene dónde ir
+
+        // 3.c) Elegir el alumno con peor "mejor distancia" (mayor best.d)
+        int pick_t = -1;
+        double worst = -1.0;
+        int tie_i = std::numeric_limits<int>::max();
+        for (size_t t = 0; t < sobrantes.size(); ++t) {
+            if (best[t].j == -1) continue;
+            int i = sobrantes[t];
+            if (best[t].d > worst || (best[t].d == worst && i < tie_i)) {
+                worst = best[t].d;
+                tie_i = i;
+                pick_t = (int)t;
+            }
+        }
+        if (pick_t == -1) break;
+
+        // 3.d) Reasignar ese alumno
+        int i_pick   = sobrantes[pick_t];
+        int j_pick   = best[pick_t].j;
+        int col_orig = currentSolution[i_pick];
+
+        //mover
+        //cout << "el estudiante "<<i_pick<< " se movio a "<<j_pick<< "\n";
+        currentSolution[i_pick] = j_pick;
+        //actualizar balances
+        vacantes_col[j_pick]--;      // consume un cupo en destino
+        vacantes_col[col_orig]++;    // libera presión en origen
+
+        //quitar de "sobrantes"
+        sobrantes[pick_t] = sobrantes.back();
+        sobrantes.pop_back();
+
+        // 3.e) Si el destino se quedó sin vacantes, reconstruir la lista de colegios con cupo
+        if (vacantes_col[j_pick] == 0) {
+            schools_with_vac_idx = rebuild_schools_with_vac();
+        }
+        // Nota: si algún colegio pasó de 0 a >0 (por liberar origen),
+        // no es obligatorio reconstruir aquí; en la siguiente iteración
+        // lo considerará el rebuild cuando algún colegio llegue a 0,
+        // o puedes optar por reconstruir cada K asignaciones si quieres.
+    }
+
+    cout << "----- Fase 2.1-----\n";
+    cout << "distancia: " << meanDist(bestSolution, distMat)/saParams.max_dist << "\n"; //lo normalice
+    cout << "Segregación: " << S(bestSolution, alumnosSep, totalVuln) << "\n";
+    cout << "CostoCupo: " << costCupo(bestSolution, cupoArray) << "\n";
+    cout << "Penalty final: " << penaltyParents(bestSolution,h_penalty_matrix)/saParams.n_students << "\n";
+    int* summaryPrefs = summaryPreferences(bestSolution, dataSet->students);
+    summaryCostoCupo(currentSolution, colegios);
     // imprimir resultados
+    /*
     std::cout << "Sobrecupo:" << std::endl;
     for (auto& kv : alus_sobrecupo) {
         std::cout << "Colegio " << kv.first+1 << " tiene " << kv.second.size() << " estudiantes en exceso." << std::endl;
@@ -1614,5 +1753,5 @@ void SimulatedAnnealing::balanceCostoCupo(
     for (auto& kv : vacantes_col) {
         std::cout << "Colegio " << kv.first+1 << " tiene " << kv.second << " vacantes." << std::endl;
     }
-
+    */
 }
