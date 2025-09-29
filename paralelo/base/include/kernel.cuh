@@ -119,6 +119,8 @@ inline __device__ double cu_round_n(double x);
 
 inline __device__ double calcPenalty(double currentSolution, uint8_t *choices);
 
+inline __device__ double calcCostoCupo(double p_costCupo);
+
 __global__ void compute_preference_penalty_matrix(
     int* preferences_matrix,
     int* num_preferences,

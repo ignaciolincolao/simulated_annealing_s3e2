@@ -64,9 +64,9 @@ __global__ void newSolution_kernel(
     penalty -= d_penalty_matrix[aluchange * d_n_colegios + currentSchool];
     
 
-
-
-    totalcostCupo -= (double)totalAluCol * fabs((double)d_cupoArray[currentSchool] - totalAluCol) / pow(((double)d_cupoArray[currentSchool] * 0.5), 2);
+    double p_costCupo = double(totalAluCol)/d_cupoArray[currentSchool];
+    totalcostCupo -= calcCostoCupo(p_costCupo);
+    //totalcostCupo -= (double)totalAluCol * fabs((double)d_cupoArray[currentSchool] - totalAluCol) / pow(((double)d_cupoArray[currentSchool] * 0.5), 2);
 
     // seg de la escuela nueva
     totalAluCol = d_aluxcol[newSchool];
@@ -76,7 +76,9 @@ __global__ void newSolution_kernel(
     totalSesc -= fabs((aluVulCol / (double)d_totalVuln) - (aluNoVulCol / (double)(d_n_students - d_totalVuln)));
 
     // costcupo escuela nueva
-    totalcostCupo -= (double)totalAluCol * fabs((double)d_cupoArray[newSchool] - totalAluCol) / pow(((double)d_cupoArray[newSchool] * 0.5), 2);
+    p_costCupo = double(totalAluCol)/d_cupoArray[newSchool];
+    totalcostCupo -= calcCostoCupo(p_costCupo);
+    //totalcostCupo -= (double)totalAluCol * fabs((double)d_cupoArray[newSchool] - totalAluCol) / pow(((double)d_cupoArray[newSchool] * 0.5), 2);
 
     //penalty += calcPenalty(newSchool, choices);
     penalty += d_penalty_matrix[aluchange * d_n_colegios + newSchool];
@@ -91,8 +93,11 @@ __global__ void newSolution_kernel(
     aluVulCol -= d_alumnosSep[aluchange];
     aluNoVulCol = totalAluCol - aluVulCol;
     totalSesc += fabs((aluVulCol / (double)d_totalVuln) - (aluNoVulCol / (double)(d_n_students - d_totalVuln)));
+
     // costcupo escuela actual
-    totalcostCupo += (double)totalAluCol * fabs((double)d_cupoArray[currentSchool] - totalAluCol) / pow(((double)d_cupoArray[currentSchool] * 0.5), 2);
+    p_costCupo = double(totalAluCol)/d_cupoArray[currentSchool];
+    totalcostCupo += calcCostoCupo(p_costCupo);
+    //totalcostCupo += (double)totalAluCol * fabs((double)d_cupoArray[currentSchool] - totalAluCol) / pow(((double)d_cupoArray[currentSchool] * 0.5), 2);
     
     // seg de la escuela antigua
     totalAluCol = d_aluxcol[newSchool] + 1;
@@ -102,7 +107,9 @@ __global__ void newSolution_kernel(
     totalSesc += fabs((aluVulCol / (double)d_totalVuln) - (aluNoVulCol / (double)(d_n_students - d_totalVuln)));
 
     // costcupo escuela antigua
-    totalcostCupo += ((double)totalAluCol * fabs((double)d_cupoArray[newSchool] - totalAluCol) / pow(((double)d_cupoArray[newSchool] * 0.5), 2));
+    p_costCupo = double(totalAluCol)/d_cupoArray[newSchool];
+    totalcostCupo += calcCostoCupo(p_costCupo);
+    //totalcostCupo += ((double)totalAluCol * fabs((double)d_cupoArray[newSchool] - totalAluCol) / pow(((double)d_cupoArray[newSchool] * 0.5), 2));
 
     cost_solution = d_alpha[0] * (sumDist / (d_n_students * d_max_dist));
     cost_solution += d_alpha[1] * (totalSesc * 0.5);
@@ -229,15 +236,6 @@ __global__ void calculateSolution(
     //fin
 
     newSchool = colchange;
-    /* version antigua de penalty lo dejo de momento
-    uint8_t choices[5] = {
-        d_choices[aluchange * 5 + 0],
-        d_choices[aluchange * 5 + 1],
-        d_choices[aluchange * 5 + 2],
-        d_choices[aluchange * 5 + 3],
-        d_choices[aluchange * 5 + 4],
-    };
-    */
 
     sumDist= d_currentVars[0];
     totalSesc = d_currentVars[1];
@@ -250,7 +248,6 @@ __global__ void calculateSolution(
 
     // Distancia
     sumDist-=d_distMat[aluchange * pitch / sizeof(double) + currentSchool];
-
     // seg de la escuela actual
     totalAluCol = d_aluxcol[currentSchool];
     aluVulCol = d_aluVulxCol[currentSchool];
@@ -260,7 +257,10 @@ __global__ void calculateSolution(
     totalSesc-=fabs((aluVulCol/(double)d_totalVuln)-(aluNoVulCol/(double)(d_n_students-d_totalVuln)));
 
     //costocupo escuela actual 
-    totalcostCupo-=(double)totalAluCol*fabs((double)d_cupoArray[currentSchool]-totalAluCol)/pow(((double)d_cupoArray[currentSchool]*0.5),2);
+    double p_costCupo = double(totalAluCol)/d_cupoArray[currentSchool];
+
+    totalcostCupo -= calcCostoCupo(p_costCupo);
+    //totalcostCupo-=(double)totalAluCol*fabs((double)d_cupoArray[currentSchool]-totalAluCol)/pow(((double)d_cupoArray[currentSchool]*0.5),2);
     
 
 
@@ -273,10 +273,11 @@ __global__ void calculateSolution(
     totalSesc-=fabs((aluVulCol/(double)d_totalVuln)-(aluNoVulCol/(double)(d_n_students-d_totalVuln)));
 
     //costocupo escuela nueva
-    totalcostCupo-=(double)totalAluCol*fabs((double)d_cupoArray[newSchool]-totalAluCol)/pow(((double)d_cupoArray[newSchool]*0.5),2);
     
-
-
+    p_costCupo = double(totalAluCol)/d_cupoArray[newSchool];
+    totalcostCupo -= calcCostoCupo(p_costCupo);
+    //totalcostCupo-=(double)totalAluCol*fabs((double)d_cupoArray[newSchool]-totalAluCol)/pow(((double)d_cupoArray[newSchool]*0.5),2);
+    
     ////////////////////////////////////////////////////////////////
     /////// Realiza Movimiento
     ////////////////////////////////////////////////////////////////
@@ -297,7 +298,6 @@ __global__ void calculateSolution(
 
     //distancia de la nueva escuela
     sumDist+=d_distMat[aluchange * pitch / sizeof(double) + newSchool];
-    
     //seg de la escuela actual
     totalAluCol = d_aluxcol[currentSchool];
     aluVulCol = d_aluVulxCol[currentSchool];
@@ -307,8 +307,9 @@ __global__ void calculateSolution(
     totalSesc+=fabs((aluVulCol/(double)d_totalVuln)-(aluNoVulCol/(double)(d_n_students-d_totalVuln)));
     
     //costocupo escuela actual
-    totalcostCupo+=(double)totalAluCol*fabs((double)d_cupoArray[currentSchool]-totalAluCol)/pow(((double)d_cupoArray[currentSchool]*0.5),2);
-    
+    p_costCupo = double(totalAluCol)/d_cupoArray[currentSchool];
+    totalcostCupo += calcCostoCupo(p_costCupo);
+    //totalcostCupo+=(double)totalAluCol*fabs((double)d_cupoArray[currentSchool]-totalAluCol)/pow(((double)d_cupoArray[currentSchool]*0.5),2);
 
     //seg de la escuela antigua
     totalAluCol = d_aluxcol[newSchool];
@@ -319,8 +320,16 @@ __global__ void calculateSolution(
     totalSesc+=fabs((aluVulCol/(double)d_totalVuln)-(aluNoVulCol/(double)(d_n_students-d_totalVuln)));
 
     //costcupo escuela antigua
-    totalcostCupo+=((double)totalAluCol*fabs((double)d_cupoArray[newSchool]-totalAluCol)/pow(((double)d_cupoArray[newSchool]*0.5),2));
+    
+    p_costCupo = double(totalAluCol)/d_cupoArray[newSchool];
 
+    totalcostCupo += calcCostoCupo(p_costCupo);
+    //totalcostCupo+=((double)totalAluCol*fabs((double)d_cupoArray[newSchool]-totalAluCol)/pow(((double)d_cupoArray[newSchool]*0.5),2));
+
+    //double aaa = p_abs*(4*p_costCupo*(1-p_costCupo)) +(1-p_abs);
+    //printf("col: %d | alu_col %d |cupo %d | porcentaje %f | abs %d res: %f \n",newSchool,totalAluCol, d_cupoArray[newSchool],p_costCupo,p_abs,aaa);
+    //(1*p_abs) * (4*p_costCupo*fabs(1-p_costCupo)) + (1-p_abs)
+    
 
     //Calculo de penalty
     //penalty de la escuela actual
@@ -346,10 +355,9 @@ __global__ void calculateSolution(
     var3 = (totalcostCupo /d_n_colegios);
     var4 = (penalty / d_n_students);
 
-    //printf("Original var1: %d, var2: %d, var3: %d, var4: %d \n", var1,var2,var3,var4);
+    //printf("Original var1: %f, var2: %f, var3: %f, var4: %f \n", var1,var2,var3,var4);
 
     d_costCurrentSolution[0] = (double)((d_alpha[0] * var1) + (d_alpha[1] * var2) + (d_alpha[2] * var3) + (d_alpha[3] * var4));
-    //printf("Original cost: %.16f \n", d_costCurrentSolution[0]);
 }
 
 
@@ -399,7 +407,16 @@ inline __device__ double calcPenalty(double currentCollege, uint8_t choices[5]) 
     return weights[index];
 }
 
+inline __device__ double calcCostoCupo(double p_costCupo) {
+    double r = 0.6;
+    double s = 6.0;
+    int l_izq = p_costCupo <= 0.5 && p_costCupo >= 0.0; 
+    int l_der = p_costCupo > 0.5 && p_costCupo <= 1.0; 
 
+    double costCupoEscuela =  l_izq*(pow(2.0, r)*pow(p_costCupo, r)) + l_der*(pow(2.0, s) * pow(1.0 - p_costCupo, s))+(1.0-(l_izq+l_der));
+    //printf("costo: %f, porcentaje %f, l_der: %f \n",costCupoEscuela,p_costCupo,l_der*(pow(2.0, s) * pow(1.0 - p_costCupo, s)));
+    return costCupoEscuela;
+}
 
 
 
@@ -437,7 +454,7 @@ __global__ void calculatePreviousSolution(
             var3,
             var4;
     /// Inicializa arrays
-
+    /*
     aluchange = d_prevMove[0];
     colchange = d_prevMove[1];
     currentSchool = d_currentSolution[aluchange];
@@ -445,15 +462,8 @@ __global__ void calculatePreviousSolution(
 
     //printf("Previous-> alu: %d, old col: %d, new col: %d \n", aluchange, colchange, currentSchool);
 
-/*
-    uint8_t choices[5] = {
-        d_choices[aluchange * 5 + 0],
-        d_choices[aluchange * 5 + 1],
-        d_choices[aluchange * 5 + 2],
-        d_choices[aluchange * 5 + 3],
-        d_choices[aluchange * 5 + 4],
-    };
-*/    
+  
+
     sumDist= d_currentVars[0];
     totalSesc = d_currentVars[1];
     totalcostCupo = d_currentVars[2];
@@ -496,16 +506,7 @@ __global__ void calculatePreviousSolution(
     ////////////////////////////////////////////////////////////////
     /////// Realiza Movimiento
     ////////////////////////////////////////////////////////////////
-/*
-    //ELimina el estudiante de la escuela actual
-    d_aluxcol[currentSchool]-=1;
-    d_aluVulxCol[currentSchool]-=d_alumnosSep[aluchange];
 
-    //Asigna al estudiante a la nueva escuela
-    d_currentSolution[aluchange] = newSchool;
-    d_aluxcol[newSchool]+=1;
-    d_aluVulxCol[newSchool]+=d_alumnosSep[aluchange];
-*/
 
     ////////////////////////////////////////////////////////////////
     ////// Calculó despues de mover
@@ -547,13 +548,7 @@ __global__ void calculatePreviousSolution(
     //penalty += calcPenalty(newSchool, choices);
     penalty += d_penalty_matrix[aluchange * d_n_colegios + newSchool]; 
 
-/*
-    //actualizar las sumatorias guardadas
-    d_currentVars[0] = sumDist;
-    d_currentVars[1] = totalSesc;
-    d_currentVars[2] = totalcostCupo;
-    d_currentVars[3] = penalty;
-*/
+
 
     var1 = (sumDist/d_n_students);
     var1= (var1/d_max_dist);
@@ -566,8 +561,8 @@ __global__ void calculatePreviousSolution(
     
     d_costPrevSolUnitTest[0] = (double)((d_alpha[0] * var1) + (d_alpha[1] * var2) + (d_alpha[2] * var3) + (d_alpha[3] * var4));
     //printf("Previous cost: %.16f \n\n", d_costPrevSolUnitTest[0]);
+    */
 }
-
 
 
 
@@ -662,6 +657,7 @@ __global__ void compute_preference_penalty_matrix(
     // Penalización exponencial parametrizable para preferencias declaradas
     // NUEVA FÓRMULA: penalty = max_pref_penalty × (1 - exp(-α(r-1)))
     // Donde r es el rank encontrado (1 = primera preferencia)
+    //float pref_penalty = max_pref_penalty * (1.0f - expf(-alpha * powf(fmaxf(0.0f, (float)(found_rank - 1)), 1)));
     float pref_penalty = max_pref_penalty * (1.0f - expf(-alpha * fmaxf(0.0f, (float)(found_rank - 1))));
    
     // Penalización para colegios no considerados: salto discontinuo a 1.0

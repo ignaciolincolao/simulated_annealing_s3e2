@@ -193,6 +193,7 @@ double SimulatedAnnealing::runGPU(){
             std::cout << "distancia: " << meanDist(currentSolution,distMat) << "\n";
             std::cout << "Segregación: " << S(currentSolution,alumnosSep, totalVuln) << "\n";
             std::cout << "CostoCupo: " << costCupo(currentSolution,cupoArray) << "\n";
+            std::cout << "Penalty: " << penaltyParents(currentSolution,h_penalty_matrix) << "\n";
             std::cout << costCurrentSolution;
             exit(1);
         }
@@ -296,9 +297,11 @@ double SimulatedAnnealing::runGPU(){
     cout << "--------------- Finalizo con exito ----------------" << "\n";
 
     //llamar a la funcion que lo calcula por el algoritmo original del SAE
-    std::vector<int> solution;
-    asignacionSAE(dataSet->students, dataSet->colegios, solution);
+    //std::vector<int> solution;
+    //asignacionSAE(dataSet->students, dataSet->colegios, solution); 743 sin asignar en alguna pref
     //fin llamada
+
+    balanceCostoCupo(bestSolution,dataSet->students, dataSet->colegios);
 
 #if SAVE_DATA
     #ifdef ENABLE_OPEN_RECORD_INFO
@@ -658,10 +661,23 @@ double SimulatedAnnealing::costCupo(int *currentSolution,int *cupoArray){
                 totalAluCol++;
             }
         }
-        totalcostCupo+=(double)totalAluCol*fabs(((double)cupoArray[j]-totalAluCol)/pow(((double)cupoArray[j]/2),2));
+        double p_costCupo = double(totalAluCol)/cupoArray[j];
+        totalcostCupo += calcCostoCupo(p_costCupo);
+        //totalcostCupo+=(double)totalAluCol*fabs(((double)cupoArray[j]-totalAluCol)/pow(((double)cupoArray[j]/2),2));
         //revisar cuantos colegios ha cerrado
     }
     return totalcostCupo/saParams.n_colegios;
+}
+
+double SimulatedAnnealing::calcCostoCupo(double p_costCupo) {
+    double r = 0.6;
+    double s = 6.0;
+    int l_izq = p_costCupo <= 0.5 && p_costCupo >= 0.0; 
+    int l_der = p_costCupo > 0.5 && p_costCupo <= 1.0; 
+
+    double costCupoEscuela =  l_izq*(pow(2.0, r)*pow(p_costCupo, r)) + l_der*(pow(2.0, s) * pow(1.0 - p_costCupo, s))+(1-(l_izq+l_der));
+    //cout <<l_izq<< l_der<<"p_costCupo: "<<p_costCupo<<" | result: "<<costCupoEscuela<<" l_der"<< l_der*pow(2.0, s) * pow(1.0 - p_costCupo, s)<<"\n";
+    return costCupoEscuela;
 }
 
 
@@ -676,7 +692,9 @@ double SimulatedAnnealing::sumCostCupo(int* currentSolution,int *cupoArray){
                 totalAluCol++;
             }
         }
-        totalcostCupo+= (double)totalAluCol*fabs(((double)cupoArray[j]-totalAluCol)/pow(((double)cupoArray[j]/2),2));
+        double p_costCupo = double(totalAluCol)/cupoArray[j];
+        totalcostCupo += calcCostoCupo(p_costCupo);
+        //totalcostCupo+= (double)totalAluCol*fabs(((double)cupoArray[j]-totalAluCol)/pow(((double)cupoArray[j]/2),2));
     }
     return totalcostCupo;
 }
@@ -1199,9 +1217,10 @@ int* SimulatedAnnealing::summaryPreferences(const int* currentSolution,
     }
 
     std::cout << "Asignados en preferencia numero ->";
-    for (int p = 0; p < saParams.max_choices+1; ++p){
+    for (int p = 0; p < saParams.max_choices; ++p){
     std::cout << (p+1) << ":" << asignacion_por_pref[p] << "  ";
 }
+    std::cout << "99:" << asignacion_por_pref[14] << "  ";
     std::cout << "\n";
 
     return asignacion_por_pref; 
@@ -1227,6 +1246,12 @@ void SimulatedAnnealing::summaryCostoCupo(const int* currentSolution,
     //[2] = colegios en sobrecupo
     int* resumen = new int[3]();
 
+    std::ofstream fout("summaryCupos.txt");
+    if (!fout.is_open()) {
+        std::cerr << "Error abriendo summaryCupos.txt\n";
+        return;
+    }
+
     for (int j = 0; j < n_colegios; ++j) {
         int capacidad = (int)std::floor(colegios[j].num_alu * 1.1); 
         int ocup = ocupados[j];
@@ -1234,13 +1259,15 @@ void SimulatedAnnealing::summaryCostoCupo(const int* currentSolution,
 
         if (vacantes > 0) {
             resumen[0]++;          // colegios con cupos
+            //std::cout << "col con cupo: "<< j<< " | Vacantes: " << vacantes << "\n";
             resumen[1] += vacantes; // cupos restantes totales
         }
         if (ocup > capacidad) {
             resumen[2]++;          // colegios en sobrecupo
         }
+        fout << colegios[j].rbd << "\t" << capacidad << "\t" << ocup << "\n";
     }
-
+    fout.close();
     std::cout << "\n" << "Colegios aun con vacantes: " << resumen[0]
             << " | Vacantes totales restantes: " << resumen[1] << " | colegios en sobrecupo: " << resumen[2] << "\n";
 
@@ -1517,10 +1544,12 @@ void SimulatedAnnealing::asignacionSAE(
 
     //estadisticas sacadas en funcion de la preferencia asignada
     std::cout << "Asignados en preferencia numero ->";
-    for (int p = 0; p < saParams.max_choices+1; ++p){
+    for (int p = 0; p < saParams.max_choices; ++p){
     std::cout << (p+1) << ":" << asignacion_por_pref[p] << "  ";
 }
-    std::cout << "\n" << "Colegios aun con vacantes: " << colegios_con_vac_final
+    std::cout << "99: " << asignacion_por_pref[14] << "\n";
+
+    std::cout << "Colegios aun con vacantes: " << colegios_con_vac_final
             << " | Vacantes totales restantes: " << total_vacantes_restantes << "\n";
     
     
@@ -1531,6 +1560,59 @@ void SimulatedAnnealing::asignacionSAE(
     std::ofstream out("asignacion_sae.txt");
     for (int i = 0; i < saParams.n_students; ++i) {
         out << i << "," << sol_idx[i] << "\n";
+    }
+
+}
+
+
+
+
+
+
+void SimulatedAnnealing::balanceCostoCupo(
+    int* currentSolution,
+    const std::vector<Info_alu>& alumnos,
+    const std::vector<Info_colegio>& colegios
+){
+
+    std::vector<int> capacidad(saParams.n_colegios);
+    std::vector<int> ocupados(saParams.n_colegios, 0);
+
+    for (int j = 0; j < saParams.n_colegios; ++j) {
+        capacidad[j] = (int)std::floor(colegios[j].num_alu * 1.1);
+    }
+
+    for (int i = 0; i < saParams.n_students; ++i) {
+        ocupados[currentSolution[i]]++;
+    }
+
+
+    std::unordered_map<int, std::vector<int>> alus_sobrecupo;
+    std::unordered_map<int, int> vacantes_col;
+
+    for (int j = 0; j < saParams.n_colegios; ++j) {
+        vacantes_col[j] = capacidad[j] - ocupados[j];
+        if (vacantes_col[j] < 0) { //colegio en sobrecupo
+            int count = 0;
+            for (int i = 0; i < saParams.n_students && count < fabs(vacantes_col[j]); ++i) {
+                if (currentSolution[i] == j) {
+                    alus_sobrecupo[j].push_back(i); //guardar ids de estudiantes
+                    count++;
+                }
+            }
+        }
+    }
+
+
+    // imprimir resultados
+    std::cout << "Sobrecupo:" << std::endl;
+    for (auto& kv : alus_sobrecupo) {
+        std::cout << "Colegio " << kv.first+1 << " tiene " << kv.second.size() << " estudiantes en exceso." << std::endl;
+    }
+
+    std::cout << "Vacantes:" << std::endl;
+    for (auto& kv : vacantes_col) {
+        std::cout << "Colegio " << kv.first+1 << " tiene " << kv.second << " vacantes." << std::endl;
     }
 
 }

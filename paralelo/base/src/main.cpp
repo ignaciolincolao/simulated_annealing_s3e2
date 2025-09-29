@@ -34,9 +34,9 @@ int main(int argc, char *argv[])
                 .activated_files = {true,true,true,true,true}};
 
     double alp1 = 0.1;  //distancia
-    double alp2 = 0.05; //segregacion
-    double alp3 = 0.5;  //costocupo
-    double alp4 = 0.35; //penalty parents
+    double alp2 = 0.25; //segregacion
+    double alp3 = 0.4;  //costocupo
+    double alp4 = 0.25; //penalty parents
     SimulatedParams* saParams = new SimulatedParams{
         .seed = 1574067955,
         .n_students = 0,
@@ -67,7 +67,7 @@ int main(int argc, char *argv[])
     AcceptanceParams* acParams = new AcceptanceParams{
         .Th = 1.1};
     CoolingParams* csParams = new CoolingParams{
-        .coolingRate = 0.92};
+        .coolingRate = 0.99};
     LengthParams* ltParams = new LengthParams{
         .len1 = 5,
         .len2 = 5,
@@ -81,7 +81,7 @@ int main(int argc, char *argv[])
         .k_reheating_init = 0};
 
     CUDAParams* cuParams = new CUDAParams{
-        .n_block = 89,
+        .n_block = 94,
         .n_thread = 32,
         .selectThread = 0,
         .selectBlock = 0};
