@@ -39,19 +39,24 @@ double temp;
 double coolingRate;
 float len1;
 float len2;
-int count = 0;
 
-void algorithm_sample(double a_dist, double a_seg, double a_costcup, double a_penalty, float a_curve, float a_max_pref, string timestr, string pathSave,int argc, char *argv[]){
+
+
+
+void algorithm_sample(int indice, string timestr, string pathSave,int argc, char *argv[]){
     random_device rd;
     mt19937 mt(rd());
+
 
     RecordParams* rMgrParams = new RecordParams{
                 .prefijo_save = string(timestr),
                 .ruta_save = "../save/",
-                //.ruta_save = "../../save/",
                 .name_exp = "base",
                 .activated_files = {false,true,false,false,false}};
 
+    double alp1 =  15.0;
+    double alp2 = 30.0;
+    double alp3 = 25.0;
     seed = mt();
     SimulatedParams* saParams = new SimulatedParams{
         .seed = seed,
@@ -61,26 +66,17 @@ void algorithm_sample(double a_dist, double a_seg, double a_costcup, double a_pe
         .count = 0,
         .c_cooling_temperature = 0,
         .c_accepta = 0,
-        .p = 0.00010,
-        .k = 0.01,
-        .pMax = 0.3,
-        .pInit = 0.01,
-        .temp = 32768.0,
-        .min_temp = 0.00000009,
-        .alpha1 = a_dist,
-        .alpha2 = a_seg,
-        .alpha3 = a_costcup,
-        .alpha4 = a_penalty,
+        .temp = 1.0,
+        .min_temp = 0.0000009,
+        .alpha1 = alp1,
+        .alpha2 = alp2,
+        .alpha3 = alp3,
         .max_dist = 0.0,
         .min_dist = 0.0,
         .init_dist = 0.0,
         .costPrevious = 0.0,
         .costCurrent = 0.0,
-        .alpha = {a_dist, a_seg, a_costcup, a_penalty},
-        .max_choices = 10,
-        .penalty_curve = a_curve,      //parametro que indica que tan curva es la maquina
-        .penalty_max_pref = a_max_pref   //maxima penalidad por la ultima preferencia
-    };
+        .alpha = {alp1, alp2, alp3}};
 
     AcceptanceParams* acParams = new AcceptanceParams{
         .Th = 1.1};
@@ -99,7 +95,7 @@ void algorithm_sample(double a_dist, double a_seg, double a_costcup, double a_pe
         .k_reheating_init = 0};
 
     CUDAParams* cuParams = new CUDAParams{
-        .n_block = 94,
+        .n_block = 32,
         .n_thread = 32,
         .selectThread = 0,
         .selectBlock = 0};
@@ -112,6 +108,49 @@ void algorithm_sample(double a_dist, double a_seg, double a_costcup, double a_pe
         .reheatingmethod = "TR0"
     };
 
+
+    int block_threads[36][2] = {
+                                {1,32}, // 32
+                                {2,32}, // 64
+                                {1,64}, 
+                                {8,32}, // 256
+                                {4,64},
+                                {2,128},
+                                {1,256},
+                                {16,32}, // 512
+                                {8,64},
+                                {4,128},
+                                {2,256},
+                                {1,512},
+                                {32,32}, // 1024
+                                {16,64},
+                                {8,128},
+                                {4,256},
+                                {2,512},
+                                {1,1024},
+                                {64,32},  // 2048
+                                {32,64},
+                                {16,128},
+                                {8,256},
+                                {4,512},
+                                {2,1024},
+                                {128,32}, // 4096
+                                {64,64},
+                                {32,128},
+                                {16,256},
+                                {8,512},
+                                {4,1024},
+                                {256,32}, // 8192
+                                {128,64},
+                                {64,128},
+                                {32,256},
+                                {16,512},
+                                {8,1024}
+                            };
+    n_block = block_threads[indice][0];
+    n_thread = block_threads[indice][1];
+    cuParams->n_block = n_block;
+    cuParams->n_thread = n_thread;
     if(argc < 2){
         temp= 1602.26;
         coolingRate= 0.98;
@@ -129,14 +168,14 @@ void algorithm_sample(double a_dist, double a_seg, double a_costcup, double a_pe
     csParams->coolingRate = coolingRate;
     ltParams->len1 = len1;
     ltParams->len2 = len2;
-    cout<< " | n_iter= " << count
-        << " | a_dist= " << a_dist
-        << " | a_seg= " << a_seg
-        << " | a_costcup= " << a_costcup
-        << " | a_penalty= " << a_penalty
-        << " | a_curve= " << a_curve
-        << " | a_max_pref= " << a_max_pref
+    cout << "temp= "<< saParams->temp 
+        <<" | coolingRate= " << csParams->coolingRate 
+        << " | len1= " << ltParams->len1
+        << " | len2= " << ltParams->len2
+        << " | n_block= " << cuParams->n_block
+        << " | n_thread= " << cuParams->n_thread
         << endl;
+
     SimulatedAnnealing *simulatedAnneling = SimulatedFactory::createSimulatedAnnealing(
             simStruct,
             rMgrParams,
@@ -150,7 +189,6 @@ void algorithm_sample(double a_dist, double a_seg, double a_costcup, double a_pe
 
     double val = simulatedAnneling->runGPU();
     it = simulatedAnneling->saParams.count;
-    count++;
 
 
     std::ifstream inFile(pathSave);
@@ -225,26 +263,10 @@ random_device rd;
     char timestr[20];
     strftime(timestr, sizeof(timestr), "%Y-%m-%d T:%H-%M", time_info);
     const std::string file_name = "../save/"+string(timestr)+"seed_iteration.csv";
-    //const std::string file_name = "../../save/"+string(timestr)+"seed_iteration.csv";
-    int init = 0; 
-
-    for (double a_dist = 0.1; a_dist <= 1.0; a_dist+=0.1){
-        for (double a_seg = 0.1; a_seg <= 1.0; a_seg+=0.1){
-            for (double a_costcup = 0.1; a_costcup <= 1.0; a_costcup+=0.1){
-                for (double a_penalty = 0.1; a_penalty <= 1.0; a_penalty+=0.1){
-                    for (float a_curve = 0.1; a_curve <= 1.0; a_curve+=0.1){
-                        for (float a_max_pref = 0.1; a_max_pref<= 0.6; a_max_pref+=0.1){
-                            for (int i=0; i<5; i++){
-                                if (count < init){
-                                    continue;
-                                }else{
-                                    algorithm_sample(a_dist, a_seg, a_costcup, a_penalty, a_curve,a_max_pref, timestr, file_name,argc,argv);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+    
+    for (int x=0; x < 36; x++){
+        for(int y=0;y < 30; y++){
+        algorithm_sample(x, timestr, file_name,argc,argv);
         }
     }
 

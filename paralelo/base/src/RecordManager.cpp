@@ -163,7 +163,7 @@ void RecordManager::SaveInfoInit(double costBestSolution,
                                  double meanDist,
                                  double S,
                                  double costCupo,
-                                 size_t penaltyParents)
+                                 double penaltyParents)
 {
     info << "--------------- Primeros datos -------------\n";
     info << "Primer costo de solución: " << costBestSolution << "\n";
@@ -181,7 +181,7 @@ void RecordManager::SaveInfoFinish(
     double meanDist,
     double S,
     double costCupo,
-    size_t penaltyParents)
+    double penaltyParents)
 {
     info << "--------------- Resultado Final ----------------"
          << "\n";
@@ -241,7 +241,7 @@ void RecordManager::SaveGraphicsUpdateSolutionRBD(int *solution, Info_colegio *p
     infoGraphicsBestSolutionRBD << "\n";
 }
 
-void RecordManager::SaveGraphicsInit(double meanDist, double S, double costCupo, double costCurrentSolution, size_t penaltyParents)
+void RecordManager::SaveGraphicsInit(double meanDist, double S, double costCupo, double costCurrentSolution, double penaltyParents)
 {
     infoGraphics << std::fixed << std::setprecision(13);
     infoGraphics << saParams.count << ","
@@ -250,9 +250,9 @@ void RecordManager::SaveGraphicsInit(double meanDist, double S, double costCupo,
                  << S << ","                                        // Indice de duncan
                  << costCupo << ","                                 // Costo cupo de las escuelas
                  << penaltyParents << ","                           // Penalty sin normalizar
-                 << penaltyParents/saParams.n_students << ","         // Penalty normalizado
+                 << penaltyParents/saParams.n_students << ","       // Penalty normalizado
                  << costCurrentSolution << ","                      // Solución actual
-                 << saParams.temp << "\n";                           // Temperatura actual
+                 << saParams.temp << "\n";                          // Temperatura actual
                  
 }
 
@@ -291,7 +291,7 @@ void RecordManager::SaveInfoRegister(
     double meanDist,
     double S,
     double costCupo,
-    size_t penaltyParents,
+    double penaltyParents,
     double coolingRate,
     double k_reheating_init,
     double e_const,
@@ -346,7 +346,9 @@ void RecordManager::SaveInfoRegister(
                  << "," << "Th"
                  << "," << "n_block"
                  << "," << "n_thread"
-                 << "," << "rMgrParams.name_exp";
+                 << "," << "rMgrParams.name_exp"
+                 << "," << "saParams.penalty_curve"
+                 << "," << "saParams.penalty_max_pref";
         for (int i=0; i < vector_percentage.size(); i++){
             infoRegister << "," << "percentage_" << vector_percentage[i];
         }
@@ -389,7 +391,9 @@ void RecordManager::SaveInfoRegister(
                  << "," << Th
                  << "," << n_block
                  << "," << n_thread
-                 << "," << rMgrParams.name_exp;
+                 << "," << rMgrParams.name_exp
+                 << "," << saParams.penalty_curve
+                 << "," << saParams.penalty_max_pref;
     for (int i=0; i < vector_percentage.size(); i++){
         infoRegister << "," << vector_it_percentage.at(i);
     }
@@ -437,6 +441,8 @@ void RecordManager::SaveInfoRegister(
         {"n_block",n_block},
         {"n_thread",n_thread},
         {"rMgrParams.name_exp",rMgrParams.name_exp},
+        {"saParams.penalty_curve",saParams.penalty_curve},
+        {"saParams.penalty_max_pref",saParams.penalty_max_pref},
     };
     for (int i=0; i < vector_percentage.size(); i++){
         data["percentage_"+std::to_string(vector_percentage[i])] = vector_it_percentage.at(i);

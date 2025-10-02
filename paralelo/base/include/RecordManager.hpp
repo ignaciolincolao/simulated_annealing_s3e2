@@ -86,7 +86,7 @@ public:
                       double meanDist,
                       double S,
                       double costCupo,
-                      size_t penaltyParents);
+                      double penaltyParents);
 
     void SaveInfoFinish(double costPreviousSolution,
                         double costBestSolution,
@@ -95,7 +95,7 @@ public:
                         double meanDist,
                         double S,
                         double costCupo,
-                        size_t penaltyParents);
+                        double penaltyParents);
 
     void SaveInfoRegister(
         double time_taken,
@@ -103,7 +103,7 @@ public:
         double meanDist,
         double S,
         double costCupo,
-        size_t penaltyParents,
+        double penaltyParents,
         double coolingRate,
         double k_reheating_init,
         double e_const,
@@ -125,7 +125,7 @@ public:
                           double S,
                           double costCupo,
                           double costCurrentSolution,
-                          size_t penaltyParents);
+                          double penaltyParents);
 
     void SaveGraphicsFinish();
     void AllGraphicsFinish();

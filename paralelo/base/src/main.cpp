@@ -38,7 +38,8 @@ int main(int argc, char *argv[])
     double alp3 = 0.3; //costocupo
     double alp4 = 0.4; //penalty parents
     SimulatedParams* saParams = new SimulatedParams{
-        .seed = 1574067955,
+        //.seed = 1574067955,
+        .seed = 1574067956,
         .n_students = 0,
         .n_colegios = 0,
         .count_rechaso = 0,
@@ -63,8 +64,8 @@ int main(int argc, char *argv[])
         .alpha = {alp1, alp2, alp3, alp4},
         //.max_choices = 14 //cantidad maxima de elecciones de padres a considerar
         .max_choices = 10,
-        .penalty_max_pref = 0.35f, //maxima penalidad por la ultima preferencia
-        .penalty_curve = 1.0f      //parametro que indica que tan curva es la maquina
+        .penalty_curve = 1.0f,      //parametro que indica que tan curva es la maquina
+        .penalty_max_pref = 0.35f   //maxima penalidad por la ultima preferencia
     };
 
     AcceptanceParams* acParams = new AcceptanceParams{

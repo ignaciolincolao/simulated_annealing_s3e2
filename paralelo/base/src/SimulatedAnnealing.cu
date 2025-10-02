@@ -300,8 +300,8 @@ double SimulatedAnnealing::runGPU(){
     balanceCostoCupo(bestSolution,dataSet->students, dataSet->colegios);
     
     //llamar a la funcion que lo calcula por el algoritmo original del SAE
-    std::vector<int> solution;
-    asignacionSAE(dataSet->students, dataSet->colegios, solution); //743 sin asignar en alguna pref
+    //std::vector<int> solution;
+    //asignacionSAE(dataSet->students, dataSet->colegios, solution); //743 sin asignar en alguna pref
     //fin llamada
 
     
@@ -1610,14 +1610,12 @@ void SimulatedAnnealing::balanceCostoCupo(
     //solucion temporal mientras veo como diseñar una funcion que penalice con el tiempo pero a un recocido simulado
 
     //heuristica por penalty
-    std::random_device rd;
-    std::mt19937 g(rd());
     for (auto& kv : alus_sobrecupo) {
     int colegio_sob = kv.first;
     auto& alumnos_vec = kv.second;
 
     //revolver el vector para dar aleatoriedad
-    std::shuffle(alumnos_vec.begin(), alumnos_vec.end(), g);
+    std::shuffle(alumnos_vec.begin(), alumnos_vec.end(), mt);
 
         for (int alu_id : alumnos_vec) {
             if (vacantes_col[colegio_sob] >= 0) { //mientras aun el colegio esta en sobrecupo ver si puede sacar alumnos
