@@ -60,7 +60,7 @@ SimulatedAnnealing* SimulatedFactory::createSimulatedAnnealing(
             }
             RecordManager *rMgr = new RecordManager(*saParams, *rMgrParams);
             //Dataset* dS = new Dataset("colegios_utm.txt", "alumnos_utm.txt", "parents.txt");
-            Dataset* dS = new Dataset("data_col_utmv2.txt", "data_alu_utmv2.txt", "data_parents_utmv2.txt", saParams->max_choices);
+            Dataset* dS = new Dataset("data_col_utmv3.txt", "data_alu_utmv3.txt", "data_parents_utmv3.txt", saParams->max_choices);
 
             SimulatedAnnealing *simulatedAnneling = new SimulatedAnnealing(aC, cS, lT, rM, dS, rMgr, saParams, cuParams, mt);
             return simulatedAnneling;

@@ -44,6 +44,8 @@ struct SimulatedParams {
     int* shuffle_colegios;
     double alpha[4]; // Valores del alpha con orden Distancia, Segregación, Costo Cupo
     int max_choices; //la cantidad maxima de elecciones a considerar
+    float penalty_max_pref;
+    float penalty_curve;
 
 };
 

@@ -706,6 +706,7 @@ double SimulatedAnnealing::sumCostCupo(int* currentSolution,int *cupoArray){
 /// aleatoriamente
 ///////////////////////////////////////////////////
 
+/*
 void SimulatedAnnealing::newSolution(int *currentSolution,const int *previousSolution){
     //random_device rd;
     //mt19937 mt(rd());
@@ -726,7 +727,7 @@ void SimulatedAnnealing::newSolution(int *currentSolution,const int *previousSol
 
 }
 
-
+*/
 
 
 ///////////////////////////////////////////////////
@@ -1223,7 +1224,7 @@ int* SimulatedAnnealing::summaryPreferences(const int* currentSolution,
     for (int p = 0; p < saParams.max_choices; ++p){
     std::cout << (p+1) << ":" << asignacion_por_pref[p] << "  ";
 }
-    std::cout << "99:" << asignacion_por_pref[14] << "  ";
+    std::cout << "99:" << asignacion_por_pref[saParams.max_choices] << "  ";
     std::cout << "\n";
 
     return asignacion_por_pref; 
@@ -1549,7 +1550,7 @@ void SimulatedAnnealing::asignacionSAE(
     for (int p = 0; p < saParams.max_choices; ++p){
     std::cout << (p+1) << ":" << asignacion_por_pref[p] << "  ";
 }
-    std::cout << "99: " << asignacion_por_pref[14] << "\n";
+    std::cout << "99: " << asignacion_por_pref[saParams.max_choices] << "\n";
 
     std::cout << "Colegios aun con vacantes: " << colegios_con_vac_final
             << " | Vacantes totales restantes: " << total_vacantes_restantes << "\n";
@@ -1609,9 +1610,14 @@ void SimulatedAnnealing::balanceCostoCupo(
     //solucion temporal mientras veo como diseñar una funcion que penalice con el tiempo pero a un recocido simulado
 
     //heuristica por penalty
+    std::random_device rd;
+    std::mt19937 g(rd());
     for (auto& kv : alus_sobrecupo) {
     int colegio_sob = kv.first;
     auto& alumnos_vec = kv.second;
+
+    //revolver el vector para dar aleatoriedad
+    std::shuffle(alumnos_vec.begin(), alumnos_vec.end(), g);
 
         for (int alu_id : alumnos_vec) {
             if (vacantes_col[colegio_sob] >= 0) { //mientras aun el colegio esta en sobrecupo ver si puede sacar alumnos

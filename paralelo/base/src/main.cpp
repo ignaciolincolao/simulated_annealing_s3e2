@@ -33,9 +33,9 @@ int main(int argc, char *argv[])
                 .name_exp = "base",
                 .activated_files = {true,true,true,true,true}};
 
-    double alp1 = 0.1;  //distancia
+    double alp1 = 0.1; //distancia
     double alp2 = 0.2; //segregacion
-    double alp3 = 0.3;  //costocupo
+    double alp3 = 0.3; //costocupo
     double alp4 = 0.4; //penalty parents
     SimulatedParams* saParams = new SimulatedParams{
         .seed = 1574067955,
@@ -61,7 +61,10 @@ int main(int argc, char *argv[])
         .costPrevious = 0.0,
         .costCurrent = 0.0,
         .alpha = {alp1, alp2, alp3, alp4},
-        .max_choices = 14 //cantidad maxima de elecciones de padres a considerar
+        //.max_choices = 14 //cantidad maxima de elecciones de padres a considerar
+        .max_choices = 10,
+        .penalty_max_pref = 0.35f, //maxima penalidad por la ultima preferencia
+        .penalty_curve = 1.0f      //parametro que indica que tan curva es la maquina
     };
 
     AcceptanceParams* acParams = new AcceptanceParams{

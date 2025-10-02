@@ -146,7 +146,7 @@ class CUDAWrapper{
         void previousSolution(int idx);
         void getPreviousSolutionUnitTest(double& costPrevSolUnitTest);
 
-        void compute_penalty_matrix(int* h_preferences_matrix, int* h_num_preferences, float* h_penalty_matrix, float alpha = 1.0f, float max_pref_penalty = 0.35f); 
+        void compute_penalty_matrix(int* h_preferences_matrix, int* h_num_preferences, float* h_penalty_matrix); 
 };
 
 

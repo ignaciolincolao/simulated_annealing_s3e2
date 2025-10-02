@@ -430,10 +430,7 @@ void CUDAWrapper::getPreviousSolutionUnitTest(double& costPrevSolUnitTest)
 void CUDAWrapper::compute_penalty_matrix(
     int* h_preferences_matrix,        //matriz de preferencias en CPU
     int* h_num_preferences,           //número de preferencias por estudiante
-    float* h_penalty_matrix,          //matriz de penalizaciones en CPU (salida)
-
-    float alpha,              //curvatura exponencial (recomendado: 0.5 - 2.0)
-    float max_pref_penalty    //penalización máxima para preferencias (recomendado: 0.3 - 0.8)
+    float* h_penalty_matrix          //matriz de penalizaciones en CPU (salida)
 ) {
     //necesitamos hacer esta reservera al inicio, ya que el metodo global se ejecuta cuando ya se hizo el primer computo CPU
     cudaMalloc((void **) &d_preferences_matrix, saParams.n_students * saParams.max_choices * sizeof(int)); //matriz de preferencias
@@ -456,7 +453,7 @@ void CUDAWrapper::compute_penalty_matrix(
     compute_preference_penalty_matrix<<<grid_size, block_size>>>(
         d_preferences_matrix, d_num_preferences, d_penalty_matrix,
         saParams.n_students, saParams.n_colegios, saParams.max_choices,
-        alpha, max_pref_penalty  // Los nuevos parámetros configurables
+        saParams.penalty_curve, saParams.penalty_max_pref  // Los nuevos parámetros configurables
     );
    
     cudaError_t error;
