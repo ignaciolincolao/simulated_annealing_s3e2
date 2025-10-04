@@ -146,7 +146,7 @@ public:
     void asignacionSAE(const std::vector<Info_alu> &alumnos, const std::vector<Info_colegio> &colegios,std::vector<int> &solution);
     double calcCostoCupo(double p_costCupo);
 
-    void balanceCostoCupo(int* currentSolution, const std::vector<Info_alu> &alumnos, const std::vector<Info_colegio> &colegios);
+    int balanceCostoCupo(int* currentSolution, const std::vector<Info_alu> &alumnos, const std::vector<Info_colegio> &colegios);
 };
 
 #endif

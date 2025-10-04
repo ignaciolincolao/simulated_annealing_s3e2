@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <cuda_runtime.h>
 #include <structData.cuh>
+#include <cstdint> 
 
 using std::size_t;
 

@@ -297,7 +297,7 @@ double SimulatedAnnealing::runGPU(){
     cout << "--------------- Finalizo con exito ----------------" << "\n";
 
 
-    balanceCostoCupo(bestSolution,dataSet->students, dataSet->colegios);
+    int unassigned = balanceCostoCupo(bestSolution,dataSet->students, dataSet->colegios);
     
     //llamar a la funcion que lo calcula por el algoritmo original del SAE
     //std::vector<int> solution;
@@ -358,7 +358,8 @@ double SimulatedAnnealing::runGPU(){
         acParams.Th,
         cuParams.n_block,
         cuParams.n_thread,
-        bestSolution
+        bestSolution,
+        unassigned
     );
     recordManager->closeRecordRegister();
     #endif
@@ -1572,7 +1573,7 @@ void SimulatedAnnealing::asignacionSAE(
 
 
 
-void SimulatedAnnealing::balanceCostoCupo(
+int SimulatedAnnealing::balanceCostoCupo(
     int* currentSolution,
     const std::vector<Info_alu>& alumnos,
     const std::vector<Info_colegio>& colegios
@@ -1643,7 +1644,6 @@ void SimulatedAnnealing::balanceCostoCupo(
         const auto& vec = kv.second;
         sobrantes.insert(sobrantes.end(), vec.begin(), vec.end());
     }
-    if (sobrantes.empty()) return;
 
     // 2) Helper: construir índices de colegios con vacantes (>0)
     auto rebuild_schools_with_vac = [&]() {
@@ -1654,7 +1654,6 @@ void SimulatedAnnealing::balanceCostoCupo(
         return idx;
     };
     std::vector<int> schools_with_vac_idx = rebuild_schools_with_vac();
-    if (schools_with_vac_idx.empty()) return;
 
     // 3) Bucle principal
     while (!sobrantes.empty() && !schools_with_vac_idx.empty()) {
@@ -1739,23 +1738,19 @@ void SimulatedAnnealing::balanceCostoCupo(
         // o puedes optar por reconstruir cada K asignaciones si quieres.
     }
 
+    double var1 = meanDist(bestSolution, distMat)/saParams.max_dist;
+    double var2 = S(bestSolution, alumnosSep, totalVuln);
+    double var3 = costCupo(bestSolution, cupoArray);
+    double var4 = penaltyParents(bestSolution,h_penalty_matrix)/saParams.n_students;
+    double costSolution21 = alpha[0]*var1 + alpha[1]*var2 + alpha[2]*var3 + alpha[3]*var4;
     cout << "----- Fase 2.1-----\n";
-    cout << "distancia: " << meanDist(bestSolution, distMat)/saParams.max_dist << "\n"; //lo normalice
-    cout << "Segregación: " << S(bestSolution, alumnosSep, totalVuln) << "\n";
-    cout << "CostoCupo: " << costCupo(bestSolution, cupoArray) << "\n";
-    cout << "Penalty final: " << penaltyParents(bestSolution,h_penalty_matrix)/saParams.n_students << "\n";
+    cout << "Costo solucion: " << costSolution21 << "\n";
+    cout << "distancia: " << var1 << "\n"; //lo normalice
+    cout << "Segregación: " << var2 << "\n";
+    cout << "CostoCupo: " << var3 << "\n";
+    cout << "Penalty final: " << var4 << "\n";
     int* summaryPrefs = summaryPreferences(bestSolution, dataSet->students);
     summaryCostoCupo(currentSolution, colegios);
-    // imprimir resultados
-    /*
-    std::cout << "Sobrecupo:" << std::endl;
-    for (auto& kv : alus_sobrecupo) {
-        std::cout << "Colegio " << kv.first+1 << " tiene " << kv.second.size() << " estudiantes en exceso." << std::endl;
-    }
 
-    std::cout << "Vacantes:" << std::endl;
-    for (auto& kv : vacantes_col) {
-        std::cout << "Colegio " << kv.first+1 << " tiene " << kv.second << " vacantes." << std::endl;
-    }
-    */
+    return summaryPrefs[saParams.max_choices];
 }

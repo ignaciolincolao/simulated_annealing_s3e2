@@ -119,7 +119,8 @@ public:
         double Th,
         int n_block,
         int n_thread,
-        int *solution);
+        int *solution,
+        int unnasigned);
 
     void SaveGraphicsInit(double meanDist,
                           double S,

@@ -307,7 +307,8 @@ void RecordManager::SaveInfoRegister(
     double Th,
     int n_block,
     int n_thread,
-    int *solution)
+    int *solution,
+    int unnasigned)
 {
     if(empty_files[1]){
         infoRegister << "time" << ","
@@ -348,7 +349,8 @@ void RecordManager::SaveInfoRegister(
                  << "," << "n_thread"
                  << "," << "rMgrParams.name_exp"
                  << "," << "saParams.penalty_curve"
-                 << "," << "saParams.penalty_max_pref";
+                 << "," << "saParams.penalty_max_pref"
+                 << "," << "unnasigned";
         for (int i=0; i < vector_percentage.size(); i++){
             infoRegister << "," << "percentage_" << vector_percentage[i];
         }
@@ -393,7 +395,8 @@ void RecordManager::SaveInfoRegister(
                  << "," << n_thread
                  << "," << rMgrParams.name_exp
                  << "," << saParams.penalty_curve
-                 << "," << saParams.penalty_max_pref;
+                 << "," << saParams.penalty_max_pref
+                 << "," << unnasigned;
     for (int i=0; i < vector_percentage.size(); i++){
         infoRegister << "," << vector_it_percentage.at(i);
     }
@@ -443,6 +446,7 @@ void RecordManager::SaveInfoRegister(
         {"rMgrParams.name_exp",rMgrParams.name_exp},
         {"saParams.penalty_curve",saParams.penalty_curve},
         {"saParams.penalty_max_pref",saParams.penalty_max_pref},
+        {"unnasigned",unnasigned}
     };
     for (int i=0; i < vector_percentage.size(); i++){
         data["percentage_"+std::to_string(vector_percentage[i])] = vector_it_percentage.at(i);

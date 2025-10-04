@@ -41,7 +41,7 @@ float len1;
 float len2;
 int count = 0;
 
-void algorithm_sample(double a_dist, double a_seg, double a_costcup, double a_penalty, float a_curve, float a_max_pref, string timestr, string pathSave,int argc, char *argv[]){
+void algorithm_sample(const double config[4], float a_max_pref, float a_curve, string timestr, string pathSave,int argc, char *argv[]){
     random_device rd;
     mt19937 mt(rd());
 
@@ -67,16 +67,16 @@ void algorithm_sample(double a_dist, double a_seg, double a_costcup, double a_pe
         .pInit = 0.01,
         .temp = 32768.0,
         .min_temp = 0.00000009,
-        .alpha1 = a_dist,
-        .alpha2 = a_seg,
-        .alpha3 = a_costcup,
-        .alpha4 = a_penalty,
+        .alpha1 = 0.3,
+        .alpha2 = 0.2,
+        .alpha3 = 0.1,
+        .alpha4 = 0.4,
         .max_dist = 0.0,
         .min_dist = 0.0,
         .init_dist = 0.0,
         .costPrevious = 0.0,
         .costCurrent = 0.0,
-        .alpha = {a_dist, a_seg, a_costcup, a_penalty},
+        .alpha = {config[0], config[1], config[2], config[3]},
         .max_choices = 10,
         .penalty_curve = a_curve,      //parametro que indica que tan curva es la maquina
         .penalty_max_pref = a_max_pref   //maxima penalidad por la ultima preferencia
@@ -130,10 +130,10 @@ void algorithm_sample(double a_dist, double a_seg, double a_costcup, double a_pe
     ltParams->len1 = len1;
     ltParams->len2 = len2;
     cout<< " | n_iter= " << count
-        << " | a_dist= " << a_dist
-        << " | a_seg= " << a_seg
-        << " | a_costcup= " << a_costcup
-        << " | a_penalty= " << a_penalty
+        << " | a_dist= " << config[0]
+        << " | a_seg= "  << config[1]
+        << " | a_costcup= " << config[2]
+        << " | a_penalty= " << config[3]
         << " | a_curve= " << a_curve
         << " | a_max_pref= " << a_max_pref
         << endl;
@@ -228,27 +228,31 @@ random_device rd;
     //const std::string file_name = "../../save/"+string(timestr)+"seed_iteration.csv";
     int init = 0; 
 
-    for (double a_dist = 0.1; a_dist <= 1.0; a_dist+=0.1){
-        for (double a_seg = 0.1; a_seg <= 1.0; a_seg+=0.1){
-            for (double a_costcup = 0.1; a_costcup <= 1.0; a_costcup+=0.1){
-                for (double a_penalty = 0.1; a_penalty <= 1.0; a_penalty+=0.1){
-                    for (float a_curve = 0.1; a_curve <= 1.0; a_curve+=0.1){
-                        for (float a_max_pref = 0.1; a_max_pref<= 0.6; a_max_pref+=0.1){
-                            for (int i=0; i<5; i++){
-                                if (count < init){
-                                    continue;
-                                }else{
-                                    algorithm_sample(a_dist, a_seg, a_costcup, a_penalty, a_curve,a_max_pref, timestr, file_name,argc,argv);
-                                }
-                            }
-                        }
+    double a_curve_values[] = {0.001, 0.01, 0.05, 0.1, 0.2,
+                               0.3, 0.5, 0.7, 0.8, 1.0};
+
+    double a_max_pref_values[] = {0.35, 0.4, 0.45, 0.5, 0.55, 0.6};
+
+    double configs[4][4] = {
+        {0.3,0.2,0.1,0.4},
+        {0.3,0.2,0.4,0.1},
+        {0.2,0.1,0.3,0.4},
+        {0.2,0.1,0.4,0.3}
+    };
+
+    for (auto& config : configs) {
+        for (double a_curve : a_curve_values) {
+            for (double a_max_pref : a_max_pref_values) {
+                for (int i=0; i<20; i++){
+                    if (count < init){
+                        continue;
+                    }else{
+                        algorithm_sample(config, a_max_pref, a_curve, timestr, file_name,argc,argv);
                     }
                 }
             }
         }
     }
-
-
     
     
     return (EXIT_SUCCESS);

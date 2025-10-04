@@ -104,11 +104,11 @@ else()
 
 
     find_package(nlohmann_json REQUIRED)
-    add_executable(paralelo src/main.cpp ${all_SRCS} alumnos_utm.txt colegios_utm.txt parents.txt)
-    add_executable(grid_executable src/test/grid.cpp ${all_SRCS}  alumnos_utm.txt colegios_utm.txt parents.txt)
-    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/data/alumnos_utm.txt ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
-    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/data/colegios_utm.txt ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
-    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/data/parents.txt ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
+    add_executable(paralelo src/main.cpp ${all_SRCS} data_alu_utmv4.txt data_col_utmv4.txt data_parents_utmv4.txt)
+    add_executable(grid_executable src/test/grid.cpp ${all_SRCS}  data_alu_utmv4.txt data_col_utmv4.txt data_parents_utmv4.txt)
+    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/data/data_alu_utmv4.txt ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
+    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/data/data_col_utmv4.txt ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
+    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/data/data_parents_utmv4.txt ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
 
     target_link_libraries(grid_executable PRIVATE nlohmann_json::nlohmann_json)
     target_link_libraries(paralelo PRIVATE nlohmann_json::nlohmann_json)
