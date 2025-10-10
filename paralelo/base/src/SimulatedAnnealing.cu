@@ -300,8 +300,8 @@ double SimulatedAnnealing::runGPU(){
     int unassigned = balanceCostoCupo(bestSolution,dataSet->students, dataSet->colegios);
     
     //llamar a la funcion que lo calcula por el algoritmo original del SAE
-    //std::vector<int> solution;
-    //asignacionSAE(dataSet->students, dataSet->colegios, solution); //743 sin asignar en alguna pref
+    std::vector<int> solution;
+    asignacionSAE(dataSet->students, dataSet->colegios, solution); //743 sin asignar en alguna pref
     //fin llamada
 
     
