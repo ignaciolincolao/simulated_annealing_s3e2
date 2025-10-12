@@ -291,13 +291,16 @@ double SimulatedAnnealing::runGPU(){
     cout << "distancia: " << meanDist(bestSolution, distMat)/saParams.max_dist << "\n"; //lo normalice
     cout << "Segregación: " << S(bestSolution, alumnosSep, totalVuln) << "\n";
     cout << "CostoCupo: " << costCupo(bestSolution, cupoArray) << "\n";
+    cout << "CostoCupoBeta: " << sumCostoCupo_beta(bestSolution, cupoArray)/saParams.n_students << "\n";
     cout << "Penalty final: " << penaltyParents(bestSolution,h_penalty_matrix)/saParams.n_students << "\n";
+
     int* summaryPrefs = summaryPreferences(bestSolution, dataSet->students);
     summaryCostoCupo(bestSolution, dataSet->colegios);
+    cout << saParams.temp_init<< "\n";
     cout << "--------------- Finalizo con exito ----------------" << "\n";
 
-
-    int unassigned = balanceCostoCupo(bestSolution,dataSet->students, dataSet->colegios);
+    int unassigned =summaryPrefs[saParams.max_choices];
+    //int unassigned = balanceCostoCupo(bestSolution,dataSet->students, dataSet->colegios);
     
     //llamar a la funcion que lo calcula por el algoritmo original del SAE
     std::vector<int> solution;
@@ -507,10 +510,12 @@ void SimulatedAnnealing::inicializationValues(T* wrapper){
     currentVars[1] = sumS(currentSolution, alumnosSep, totalVuln);
     currentVars[2] = sumCostCupo(currentSolution,cupoArray);
     currentVars[3] = penaltyParents(currentSolution,h_penalty_matrix);
+    currentVars[4] = sumCostoCupo_beta(currentSolution,cupoArray);
     previousVars[0] = currentVars[0];
     previousVars[1] = currentVars[1];
     previousVars[2] = currentVars[2];
     previousVars[3] = currentVars[3];
+    previousVars[4] = currentVars[4];
     
     //porque llama a sumdist y luego le hace la misma division
     //o sea hay una funcion adicional que lo unico que hace es no hacer una division
@@ -684,6 +689,16 @@ double SimulatedAnnealing::calcCostoCupo(double p_costCupo) {
     return costCupoEscuela;
 }
 
+double SimulatedAnnealing::calcCostoCupo_beta(double p_costCupo) {
+    const double k = 10.0;  // controla la pendiente del crecimiento exponencial
+    const double S = 1.0;   // factor de escala (ajústalo al resto de tus costos)
+
+    double over = fmax(0.0, p_costCupo - 1.0);
+    double penalty = S * (exp(k * over) - 1.0);
+
+    return penalty;
+}
+
 
 
 double SimulatedAnnealing::sumCostCupo(int* currentSolution,int *cupoArray){
@@ -698,6 +713,23 @@ double SimulatedAnnealing::sumCostCupo(int* currentSolution,int *cupoArray){
         }
         double p_costCupo = double(totalAluCol)/cupoArray[j];
         totalcostCupo += calcCostoCupo(p_costCupo);
+        //totalcostCupo+= (double)totalAluCol*fabs(((double)cupoArray[j]-totalAluCol)/pow(((double)cupoArray[j]/2),2));
+    }
+    return totalcostCupo;
+}
+
+double SimulatedAnnealing::sumCostoCupo_beta(int* currentSolution,int *cupoArray){
+    double totalcostCupo = 0.0;
+    int totalAluCol = 0;
+    for(int j=0;j<saParams.n_colegios;j++){
+        totalAluCol = 0;
+        for(int i=0; i<saParams.n_students; i++){
+            if(currentSolution[i]==j){
+                totalAluCol++;
+            }
+        }
+        double p_costCupo = double(totalAluCol)/cupoArray[j];
+        totalcostCupo += calcCostoCupo_beta(p_costCupo);
         //totalcostCupo+= (double)totalAluCol*fabs(((double)cupoArray[j]-totalAluCol)/pow(((double)cupoArray[j]/2),2));
     }
     return totalcostCupo;

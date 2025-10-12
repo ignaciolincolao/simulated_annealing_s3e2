@@ -19,7 +19,13 @@ __global__ void newSolution_kernel(
     const double* __restrict__ d_currentVars,
     const uint8_t *__restrict__ d_choices,
     size_t pitch,
-    const float * __restrict__ d_penalty_matrix //matriz de penalidades
+    const float * __restrict__ d_penalty_matrix, //matriz de penalidades
+    const double temp,               //parametros que saco para determinar en que posicion de la solucion estoy, son para la 
+    const double temp_init,          //la descomposicion de costcupo en alpha y beta, donde al inicio costcupoAlpha (calculo original)
+    const double temp_min,            //toma mayor peso y al final manda costCupoBeta (calculo que evita sobre cupo)
+    const double costCupoFactorAlpha //son controlados por el factor alpha, en donde este indica el valor minimo que toma en la 
+                                     //ponderacion el CostCupoAlpha, esto para que siempre tenga un peso significativo en el calculo
+
 ) {
     int tid = blockIdx.x * blockDim.x + threadIdx.x;
     int aluchange,
@@ -31,6 +37,7 @@ __global__ void newSolution_kernel(
             col_solution,
             alu_solution;
     double  totalcostCupo= 0.0,
+            totalcostCupo_beta= 0.0,
             totalSesc= 0.0,
             sumDist = 0.0,
             penalty = 0.0,
@@ -48,6 +55,7 @@ __global__ void newSolution_kernel(
     totalSesc = d_currentVars[1];
     totalcostCupo = d_currentVars[2];
     penalty = d_currentVars[3];
+    totalcostCupo_beta = d_currentVars[4];
     ////////////////////////////////////////////////////////////////
     /////// Descuenta antes de mover
     ////////////////////////////////////////////////////////////////
@@ -66,6 +74,7 @@ __global__ void newSolution_kernel(
 
     double p_costCupo = double(totalAluCol)/d_cupoArray[currentSchool];
     totalcostCupo -= calcCostoCupo(p_costCupo);
+    totalcostCupo_beta -= calcCostoCupo_beta(p_costCupo);
     //totalcostCupo -= (double)totalAluCol * fabs((double)d_cupoArray[currentSchool] - totalAluCol) / pow(((double)d_cupoArray[currentSchool] * 0.5), 2);
 
     // seg de la escuela nueva
@@ -78,6 +87,7 @@ __global__ void newSolution_kernel(
     // costcupo escuela nueva
     p_costCupo = double(totalAluCol)/d_cupoArray[newSchool];
     totalcostCupo -= calcCostoCupo(p_costCupo);
+    totalcostCupo_beta -= calcCostoCupo_beta(p_costCupo);
     //totalcostCupo -= (double)totalAluCol * fabs((double)d_cupoArray[newSchool] - totalAluCol) / pow(((double)d_cupoArray[newSchool] * 0.5), 2);
 
     //penalty += calcPenalty(newSchool, choices);
@@ -97,6 +107,7 @@ __global__ void newSolution_kernel(
     // costcupo escuela actual
     p_costCupo = double(totalAluCol)/d_cupoArray[currentSchool];
     totalcostCupo += calcCostoCupo(p_costCupo);
+    totalcostCupo_beta += calcCostoCupo_beta(p_costCupo);
     //totalcostCupo += (double)totalAluCol * fabs((double)d_cupoArray[currentSchool] - totalAluCol) / pow(((double)d_cupoArray[currentSchool] * 0.5), 2);
     
     // seg de la escuela antigua
@@ -109,11 +120,14 @@ __global__ void newSolution_kernel(
     // costcupo escuela antigua
     p_costCupo = double(totalAluCol)/d_cupoArray[newSchool];
     totalcostCupo += calcCostoCupo(p_costCupo);
+    totalcostCupo_beta += calcCostoCupo_beta(p_costCupo);
     //totalcostCupo += ((double)totalAluCol * fabs((double)d_cupoArray[newSchool] - totalAluCol) / pow(((double)d_cupoArray[newSchool] * 0.5), 2));
 
+    double costCupoFactor = calcCostoCupo_factor(temp,temp_init,temp_min,costCupoFactorAlpha);
     cost_solution = d_alpha[0] * (sumDist / (d_n_students * d_max_dist));
     cost_solution += d_alpha[1] * (totalSesc * 0.5);
-    cost_solution += d_alpha[2] * (totalcostCupo / d_n_colegios);
+    cost_solution += d_alpha[2] * costCupoFactor * (totalcostCupo / d_n_colegios);
+    cost_solution += d_alpha[2] * (1-costCupoFactor) * (totalcostCupo_beta / d_n_colegios);
     cost_solution += d_alpha[3] * (penalty/d_n_students);
     //printf("alpha 1 valor: %f\n", d_alpha[0]);
     //printf("alpha 2 valor: %f\n", d_alpha[1]);
@@ -205,7 +219,13 @@ __global__ void calculateSolution(
     double *d_costCurrentSolution,
     int id_select,
     int * d_prevMove, //para pruebas unitarias
-    const float * __restrict__ d_penalty_matrix //matriz de penalidades
+    const float * __restrict__ d_penalty_matrix, //matriz de penalidades
+    const double temp,               //parametros que saco para determinar en que posicion de la solucion estoy, son para la 
+    const double temp_init,          //la descomposicion de costcupo en alpha y beta, donde al inicio costcupoAlpha (calculo original)
+    const double temp_min,            //toma mayor peso y al final manda costCupoBeta (calculo que evita sobre cupo)
+    const double costCupoFactorAlpha //son controlados por el factor alpha, en donde este indica el valor minimo que toma en la 
+                                     //ponderacion el CostCupoAlpha, esto para que siempre tenga un peso significativo en el calculo
+
 ){
 
     int aluchange,
@@ -217,13 +237,15 @@ __global__ void calculateSolution(
     currentSchool;
 
     double  totalcostCupo= 0.0,
+            totalcostCupo_beta= 0.0,
             totalSesc= 0.0,
             penalty = 0.0,
             sumDist = 0.0,
             var1,
             var2,
             var3,
-            var4;
+            var4,
+            var5;
     /// Inicializa arrays
 
     aluchange = d_array_current_Solution[id_select].stu;
@@ -241,6 +263,7 @@ __global__ void calculateSolution(
     totalSesc = d_currentVars[1];
     totalcostCupo = d_currentVars[2];
     penalty = d_currentVars[3];
+    totalcostCupo_beta = d_currentVars[4];
     //printf("GPU: %lf |%lf |%lf |%lf \n",sumDist,totalSesc,totalcostCupo,penalty);
     ////////////////////////////////////////////////////////////////
     /////// Descuenta antes de mover
@@ -260,6 +283,7 @@ __global__ void calculateSolution(
     double p_costCupo = double(totalAluCol)/d_cupoArray[currentSchool];
 
     totalcostCupo -= calcCostoCupo(p_costCupo);
+    totalcostCupo_beta -= calcCostoCupo_beta(p_costCupo);
     //totalcostCupo-=(double)totalAluCol*fabs((double)d_cupoArray[currentSchool]-totalAluCol)/pow(((double)d_cupoArray[currentSchool]*0.5),2);
     
 
@@ -276,6 +300,7 @@ __global__ void calculateSolution(
     
     p_costCupo = double(totalAluCol)/d_cupoArray[newSchool];
     totalcostCupo -= calcCostoCupo(p_costCupo);
+    totalcostCupo_beta -= calcCostoCupo_beta(p_costCupo);
     //totalcostCupo-=(double)totalAluCol*fabs((double)d_cupoArray[newSchool]-totalAluCol)/pow(((double)d_cupoArray[newSchool]*0.5),2);
     
     ////////////////////////////////////////////////////////////////
@@ -309,6 +334,7 @@ __global__ void calculateSolution(
     //costocupo escuela actual
     p_costCupo = double(totalAluCol)/d_cupoArray[currentSchool];
     totalcostCupo += calcCostoCupo(p_costCupo);
+    totalcostCupo_beta += calcCostoCupo_beta(p_costCupo);
     //totalcostCupo+=(double)totalAluCol*fabs((double)d_cupoArray[currentSchool]-totalAluCol)/pow(((double)d_cupoArray[currentSchool]*0.5),2);
 
     //seg de la escuela antigua
@@ -324,11 +350,8 @@ __global__ void calculateSolution(
     p_costCupo = double(totalAluCol)/d_cupoArray[newSchool];
 
     totalcostCupo += calcCostoCupo(p_costCupo);
+    totalcostCupo_beta += calcCostoCupo_beta(p_costCupo);
     //totalcostCupo+=((double)totalAluCol*fabs((double)d_cupoArray[newSchool]-totalAluCol)/pow(((double)d_cupoArray[newSchool]*0.5),2));
-
-    //double aaa = p_abs*(4*p_costCupo*(1-p_costCupo)) +(1-p_abs);
-    //printf("col: %d | alu_col %d |cupo %d | porcentaje %f | abs %d res: %f \n",newSchool,totalAluCol, d_cupoArray[newSchool],p_costCupo,p_abs,aaa);
-    //(1*p_abs) * (4*p_costCupo*fabs(1-p_costCupo)) + (1-p_abs)
     
 
     //Calculo de penalty
@@ -347,6 +370,7 @@ __global__ void calculateSolution(
     d_currentVars[1] = totalSesc;
     d_currentVars[2] = totalcostCupo;
     d_currentVars[3] = penalty;
+    d_currentVars[4] = totalcostCupo_beta;
 
     var1 = (sumDist/d_n_students);
     var1= (var1/d_max_dist);
@@ -354,10 +378,15 @@ __global__ void calculateSolution(
     var2 = (totalSesc*0.5);
     var3 = (totalcostCupo /d_n_colegios);
     var4 = (penalty / d_n_students);
+    var5 = (totalcostCupo_beta /d_n_colegios);
+
+    double costCupoFactor = calcCostoCupo_factor(temp,temp_init,temp_min,costCupoFactorAlpha);
 
     //printf("Original var1: %f, var2: %f, var3: %f, var4: %f \n", var1,var2,var3,var4);
+    //printf("factor: %f, var3: %f, var5: %f, caclA: %f calcB %f\n", costCupoFactor,var3,var5,(d_alpha[2] *costCupoFactor* var3),(d_alpha[2] *(1-costCupoFactor)* var5));
 
-    d_costCurrentSolution[0] = (double)((d_alpha[0] * var1) + (d_alpha[1] * var2) + (d_alpha[2] * var3) + (d_alpha[3] * var4));
+    d_costCurrentSolution[0] = (double)((d_alpha[0] * var1) + (d_alpha[1] * var2) + (d_alpha[2] *costCupoFactor* var3)+ 
+                                (d_alpha[2] *(1-costCupoFactor)* var5) + (d_alpha[3] * var4));
 }
 
 
@@ -418,6 +447,30 @@ inline __device__ double calcCostoCupo(double p_costCupo) {
     return costCupoEscuela;
 }
 
+inline __device__ double calcCostoCupo_beta(double p_costCupo) {
+    const double k = 10.0;  //controla la pendiente del crecimiento exponencial
+    const double S = 1.0;   //factor de escala 
+
+    //penalidad, 0 si no hay sobrecupo, 1 creciendo exponencialmente si hay sobrecupo
+    double over = fmax(0.0, p_costCupo - 1.0);
+    double costCupoEscuela  = S * (exp(k * over) - 1.0);
+
+    return costCupoEscuela;
+}
+
+__device__ inline double calcCostoCupo_factor(double T, double temp_init, double temp_min, double costCupoFactorAlpha) {
+
+    double logProgress = log(temp_init / T);
+    double logTotal    = log(temp_init / temp_min);
+    double progress = fmin(fmax(logProgress / logTotal, 0.0), 1.0);
+    
+    double w = pow(progress, 2.5); //posicion en la que estamos
+    //w va de 0 a 1 indicandonos el porcentaje de la ejecucion en la que vamos
+    //el objetivo es convertir esto en un factor para ver la subponderacion de alpha y beta
+    double w_factor = w > (1-costCupoFactorAlpha) ? costCupoFactorAlpha : (1-w);
+
+    return w_factor;
+}
 
 
 

@@ -147,6 +147,9 @@ public:
     double calcCostoCupo(double p_costCupo);
 
     int balanceCostoCupo(int* currentSolution, const std::vector<Info_alu> &alumnos, const std::vector<Info_colegio> &colegios);
+
+    double sumCostoCupo_beta(int *currentSolution,int *cupoArray);
+    double calcCostoCupo_beta(double p_costCupo);
 };
 
 #endif

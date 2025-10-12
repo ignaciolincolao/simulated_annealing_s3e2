@@ -81,9 +81,9 @@ void CUDAWrapper::memInit(
     cudaMalloc((void **) &d_costCurrentSolution, 1 * sizeof(double));
     cudaMalloc((void **) &d_costBestSolution, 1 * sizeof(double));
     cudaMalloc((void **) &d_costPreviousSolution, 1 * sizeof(double));
-    cudaMalloc((void **) &d_currentVars, 4 * sizeof(double));
-    cudaMalloc((void **) &d_bestVars, 4 * sizeof(double));
-    cudaMalloc((void **) &d_previousVars, 4 * sizeof(double));
+    cudaMalloc((void **) &d_currentVars, 5 * sizeof(double));
+    cudaMalloc((void **) &d_bestVars, 5 * sizeof(double));
+    cudaMalloc((void **) &d_previousVars, 5 * sizeof(double));
     cudaMalloc((void **) &d_shuffle_colegios, saParams.max_changes_school  * sizeof(int));
     cudaMalloc((void **) &d_shuffle_students, saParams.max_changes_students * sizeof(int));
     cudaMalloc((void **) &d_aluxcol,saParams.n_colegios * sizeof(int));
@@ -143,9 +143,9 @@ void CUDAWrapper::memInit(
     cudaMemcpyAsync(d_previousAluxcol, aluxcol, saParams.n_colegios * sizeof(int), cudaMemcpyHostToDevice,streams[6]);
     cudaMemcpyAsync(d_aluVulxCol, aluVulxCol, saParams.n_colegios * sizeof(int), cudaMemcpyHostToDevice,streams[7]);
     cudaMemcpyAsync(d_previousAluVulxCol, aluVulxCol,saParams.n_colegios * sizeof(int), cudaMemcpyHostToDevice,streams[8]);
-    cudaMemcpyAsync(d_currentVars, currentVars, 4 * sizeof(double), cudaMemcpyHostToDevice,streams[9]);
-    cudaMemcpyAsync(d_previousVars, currentVars, 4 * sizeof(double), cudaMemcpyHostToDevice,streams[0]);
-    cudaMemcpyAsync(d_bestVars, currentVars, 4 * sizeof(double), cudaMemcpyHostToDevice,streams[1]);
+    cudaMemcpyAsync(d_currentVars, currentVars, 5 * sizeof(double), cudaMemcpyHostToDevice,streams[9]);
+    cudaMemcpyAsync(d_previousVars, currentVars, 5 * sizeof(double), cudaMemcpyHostToDevice,streams[0]);
+    cudaMemcpyAsync(d_bestVars, currentVars, 5 * sizeof(double), cudaMemcpyHostToDevice,streams[1]);
     cudaMemcpyAsync(d_alumnosSep, alumnosSep, saParams.n_students * sizeof(int), cudaMemcpyHostToDevice,streams[2]);
     cudaMemcpyAsync(d_cupoArray, cupoArray, saParams.n_colegios * sizeof(int), cudaMemcpyHostToDevice,streams[3]);
 
@@ -167,7 +167,7 @@ void CUDAWrapper::memCopyPrevToCurrent(){
     copyMemSolution<<<numberOfBlocks,threadsPerBlock,0,streams[0]>>>(d_currentSolution, d_previousSolution,saParams.n_students);
     copyMemCol<<<numberOfBlocks,threadsPerBlock,0,streams[1]>>>(d_aluxcol, d_previousAluxcol,saParams.n_colegios);
     copyMemCol<<<numberOfBlocks,threadsPerBlock,0,streams[2]>>>(d_aluVulxCol, d_previousAluVulxCol,saParams.n_colegios);
-    copyVars<<<1,4,0,streams[3]>>>(d_currentVars, d_previousVars);
+    copyVars<<<1,5,0,streams[3]>>>(d_currentVars, d_previousVars);
     errSync  = cudaGetLastError();
     errAsync = cudaDeviceSynchronize();
     if (errSync != cudaSuccess) 
@@ -192,8 +192,8 @@ void CUDAWrapper::AcceptanceBestSolution(){
     copyMemSolution<<<numberOfBlocks,threadsPerBlock,0,streams[1]>>>(d_previousSolution, d_currentSolution,saParams.n_students);
     copyMemCol<<<numberOfBlocks,threadsPerBlock,0,streams[2]>>>(d_previousAluxcol, d_aluxcol,saParams.n_colegios);
     copyMemCol<<<numberOfBlocks,threadsPerBlock,0,streams[3]>>>(d_previousAluVulxCol, d_aluVulxCol,saParams.n_colegios);
-    copyVars<<<1,4,0,streams[4]>>>(d_previousVars, d_currentVars);
-    copyVars<<<1,4,0,streams[5]>>>(d_bestVars, d_currentVars);
+    copyVars<<<1,5,0,streams[4]>>>(d_previousVars, d_currentVars);
+    copyVars<<<1,5,0,streams[5]>>>(d_bestVars, d_currentVars);
     copyCost<<<1,1,0,streams[6]>>>(d_costBestSolution,d_costCurrentSolution);
     copyCost<<<1,1,0,streams[7]>>>(d_costPreviousSolution,d_costCurrentSolution);
     //for (int i = 0; i < NUM_STREAMS; ++i) { cudaStreamSynchronize(streams[i]); }
@@ -209,7 +209,7 @@ void CUDAWrapper::AcceptanceSolution(){
     copyMemSolution<<<numberOfBlocks,threadsPerBlock,0,streams[0]>>>(d_previousSolution, d_currentSolution,saParams.n_students);
     copyMemCol<<<numberOfBlocks,threadsPerBlock,0,streams[1]>>>(d_previousAluxcol, d_aluxcol,saParams.n_colegios);
     copyMemCol<<<numberOfBlocks,threadsPerBlock,0,streams[2]>>>(d_previousAluVulxCol, d_aluVulxCol,saParams.n_colegios);
-    copyVars<<<1,4,0,streams[3]>>>(d_previousVars, d_currentVars);
+    copyVars<<<1,5,0,streams[3]>>>(d_previousVars, d_currentVars);
     copyCost<<<1,1,0,streams[4]>>>(d_costPreviousSolution,d_costCurrentSolution);
     //for (int i = 0; i < NUM_STREAMS; ++i) { cudaStreamSynchronize(streams[i]); }
     errSync = cudaGetLastError();
@@ -235,7 +235,12 @@ void CUDAWrapper::newSolution(){
                                 d_currentVars,
                                 d_choices,
                                 pitch,
-                                d_penalty_matrix);
+                                d_penalty_matrix,
+                                saParams.temp,
+                                saParams.temp_init,
+                                saParams.min_temp,
+                                saParams.costCupoFactorAlpha
+                            );
     CUDAWrapper::synchronizeBucle();
 
 
@@ -286,8 +291,11 @@ void CUDAWrapper::newSolutionUpdate(double& costCurrentSolution, int id_select)
         d_costCurrentSolution,
         id_select,
         d_prevMove, //para pruebas unitarias
-        d_penalty_matrix
-
+        d_penalty_matrix,
+        saParams.temp,
+        saParams.temp_init,
+        saParams.min_temp,
+        saParams.costCupoFactorAlpha
 );
         getCurrentSolutionGpuToHost(costCurrentSolution);
         synchronizeBucle();
@@ -370,15 +378,15 @@ void CUDAWrapper::mallocHost(
     cudaMallocHost((void**)&matrestest,sizeof(double) * saParams.n_students * saParams.n_colegios); 
     cudaMallocHost((void**)&saParams.shuffle_student, sizeof(int)*saParams.n_students);
     cudaMallocHost((void**)&saParams.shuffle_colegios, sizeof(int)*saParams.n_colegios);
-    cudaMallocHost((void**)&currentVars,4 * sizeof(double));
-    cudaMallocHost((void**)&previousVars,4 * sizeof(double)); 
-    cudaMallocHost((void**)&bestVars,4 * sizeof(double)); 
+    cudaMallocHost((void**)&currentVars,5 * sizeof(double));
+    cudaMallocHost((void**)&previousVars,5 * sizeof(double)); 
+    cudaMallocHost((void**)&bestVars,5 * sizeof(double)); 
     errSync  = cudaGetLastError();
     errAsync = cudaDeviceSynchronize();
 }
 
 void CUDAWrapper::UpdateCurrentVarsHostToGPU(double*& currentVars){
-    cudaMemcpy(d_currentVars, currentVars, 4 * sizeof(double),cudaMemcpyHostToDevice);
+    cudaMemcpy(d_currentVars, currentVars, 5 * sizeof(double),cudaMemcpyHostToDevice);
     errSync  = cudaGetLastError();
     errAsync = cudaDeviceSynchronize();
     

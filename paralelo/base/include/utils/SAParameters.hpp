@@ -46,6 +46,7 @@ struct SimulatedParams {
     int max_choices; //la cantidad maxima de elecciones a considerar
     float penalty_curve;
     float penalty_max_pref;
+    float costCupoFactorAlpha;
 
 };
 
