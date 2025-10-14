@@ -281,13 +281,10 @@ double SimulatedAnnealing::runGPU(){
     time_taken *= 1e-9;
     cudaWrapper->copySolutionToHost(bestSolution, previousSolution);
 
-    double cost_solution_original = calCosto(bestSolution,distMat,ptr_alpha, alumnosSep, totalVuln, cupoArray);
-
     cout << "--------------- Resultado Final ----------------" << "\n";
     cout << "Numero de Ciclos: " << saParams.count << "\n";
     cout << "Costo de la solución previa: " << costPreviousSolution << "\n";
     cout << "Costo de la mejor solución: " << costBestSolution << "\n";
-    cout << "Costo de la mejor solución (original): " << cost_solution_original << "\n";
     cout << "Costo de la solución actual: " << costCurrentSolution << "\n";
     cout << "Tiempo de ejecución de SA: " << time_taken << "\n";
     cout << "distancia: " << meanDist(bestSolution, distMat)/saParams.max_dist << "\n"; //lo normalice
@@ -296,7 +293,7 @@ double SimulatedAnnealing::runGPU(){
     cout << "Penalty final: " << penaltyParents(bestSolution,h_penalty_matrix)/saParams.n_students << "\n";
 
     int* summaryPrefs = summaryPreferences(bestSolution, dataSet->students);
-    int alu_sobrecupo = summaryCostoCupo(bestSolution, dataSet->colegios);
+    int* data_costocupo = summaryCostoCupo(bestSolution, dataSet->colegios);
     cout << "--------------- Finalizo con exito ----------------" << "\n";
 
     int unassigned =summaryPrefs[saParams.max_choices];
@@ -363,8 +360,9 @@ double SimulatedAnnealing::runGPU(){
         cuParams.n_thread,
         bestSolution,
         unassigned,
-        cost_solution_original,
-        alu_sobrecupo
+        data_costocupo[1],
+        data_costocupo[0],
+        data_costocupo[2]
 
     );
     recordManager->closeRecordRegister();
@@ -1246,7 +1244,7 @@ int* SimulatedAnnealing::summaryPreferences(const int* currentSolution,
 }
 
 
-int SimulatedAnnealing::summaryCostoCupo(const int* currentSolution,
+int* SimulatedAnnealing::summaryCostoCupo(const int* currentSolution,
                                           const std::vector<Info_colegio>& colegios)
 {
     int n_colegios = saParams.n_colegios;
@@ -1286,9 +1284,10 @@ int SimulatedAnnealing::summaryCostoCupo(const int* currentSolution,
         fout << colegios[j].rbd << "\t" << capacidad << "\t" << ocup << "\n";
     }
     fout.close();
+    resumen[1] = resumen[1] - 277;
     std::cout << "\n" << "Colegios aun con vacantes: " << resumen[0]
             << " | Vacantes totales restantes: " << resumen[1] << " | colegios en sobrecupo: " << resumen[2] << "\n";
-    return resumen[1]-277;
+    return resumen;
 
 }
 

@@ -121,8 +121,9 @@ public:
         int n_thread,
         int *solution,
         int unnasigned,
-        double cost_solution_original,
-        int alu_sobrecupo
+        int alu_sobrecupo,
+        int col_con_cupo,
+        int col_sobrecupo
     );
 
     void SaveGraphicsInit(double meanDist,

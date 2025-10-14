@@ -309,8 +309,9 @@ void RecordManager::SaveInfoRegister(
     int n_thread,
     int *solution,
     int unnasigned,
-    double cost_solution_original,
-    int alu_sobrecupo
+    int alu_sobrecupo,
+    int col_con_cupo,
+    int col_sobrecupo
 )
 {
     if(empty_files[1]){
@@ -352,8 +353,9 @@ void RecordManager::SaveInfoRegister(
                  << "," << "n_thread"
                  << "," << "rMgrParams.name_exp"
                  << "," << "unnasigned"
-                 << "," << "cost_solution_original"
-                 << "," << "alu_sobrecupo";
+                 << "," << "alu_sobrecupo"
+                 << "," << "col_con_cupo"
+                 << "," << "col_sobrecupo";
 
         for (int i=0; i < vector_percentage.size(); i++){
             infoRegister << "," << "percentage_" << vector_percentage[i];
@@ -399,8 +401,9 @@ void RecordManager::SaveInfoRegister(
                  << "," << n_thread
                  << "," << rMgrParams.name_exp
                  << "," << unnasigned
-                 << "," << cost_solution_original
-                 << "," << alu_sobrecupo;
+                 << "," << alu_sobrecupo
+                 << "," << col_con_cupo
+                 << "," << col_sobrecupo;
     for (int i=0; i < vector_percentage.size(); i++){
         infoRegister << "," << vector_it_percentage.at(i);
     }
@@ -449,8 +452,9 @@ void RecordManager::SaveInfoRegister(
         {"n_thread",n_thread},
         {"rMgrParams.name_exp",rMgrParams.name_exp},
         {"unnasigned",unnasigned},
-        {"cost_solution_original",cost_solution_original},
-        {"alu_sobrecupo",alu_sobrecupo}
+        {"alu_sobrecupo",alu_sobrecupo},
+        {"col_con_cupo",col_con_cupo},
+        {"col_sobrecupo",col_sobrecupo}
     };
     for (int i=0; i < vector_percentage.size(); i++){
         data["percentage_"+std::to_string(vector_percentage[i])] = vector_it_percentage.at(i);
