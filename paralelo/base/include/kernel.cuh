@@ -28,15 +28,8 @@ __global__ void newSolution_kernel(
     const int* __restrict__ d_shuffle_students,
     const int* __restrict__ d_shuffle_colegios,
     const double* __restrict__ d_currentVars,
-    const uint8_t *__restrict__ d_choices,
     size_t pitch,
-    const float * __restrict__ d_penalty_matrix, //matriz de penalidades
-    const double temp,               //parametros que saco para determinar en que posicion de la solucion estoy, son para la 
-    const double temp_init,          //la descomposicion de costcupo en alpha y beta, donde al inicio costcupoAlpha (calculo original)
-    const double temp_min,            //toma mayor peso y al final manda costCupoBeta (calculo que evita sobre cupo)
-    const double costCupoFactorAlpha //son controlados por el factor alpha, en donde este indica el valor minimo que toma en la 
-                                     //ponderacion el CostCupoAlpha, esto para que siempre tenga un peso significativo en el calculo
-
+    const float * __restrict__ d_penalty_matrix //matriz de penalidades
 );
 
 __global__ void reduce_kernel(
@@ -65,17 +58,11 @@ __global__ void calculateSolution(
     int* d_currentSolution,
     const double* __restrict__ d_distMat,
     size_t pitch,
-    uint8_t *d_choices,
     double *d_currentVars,
     double *d_costCurrentSolution,
     int idx,
     int * d_prevMove, //para pruebas unitarias
-    const float * __restrict__ d_penalty_matrix, //matriz de penalidades
-    const double temp,               //parametros que saco para determinar en que posicion de la solucion estoy, son para la 
-    const double temp_init,          //la descomposicion de costcupo en alpha y beta, donde al inicio costcupoAlpha (calculo original)
-    const double temp_min,            //toma mayor peso y al final manda costCupoBeta (calculo que evita sobre cupo)
-    const double costCupoFactorAlpha //son controlados por el factor alpha, en donde este indica el valor minimo que toma en la 
-                                     //ponderacion el CostCupoAlpha, esto para que siempre tenga un peso significativo en el calculo
+    const float * __restrict__ d_penalty_matrix //matriz de penalidades
     );
 
 __global__ void calculatePreviousSolution(
@@ -87,7 +74,6 @@ __global__ void calculatePreviousSolution(
     int* d_currentSolution,
     const double* __restrict__ d_distMat,
     size_t pitch,
-    uint8_t *d_choices,
     double *d_currentVars,
     double *d_costPrevSolUnitTest,
     int idx,
@@ -132,8 +118,7 @@ inline __device__ double cu_round_n(double x);
 inline __device__ double calcPenalty(double currentSolution, uint8_t *choices);
 
 inline __device__ double calcCostoCupo(double p_costCupo);
-inline __device__ double calcCostoCupo_beta(double p_costCupo);
-inline __device__ double calcCostoCupo_factor(double T, double temp_init, double temp_min, double costCupoFactorAlpha);
+inline __device__ double calcCostoCupo_sobrecupo(double p_costCupo);
 
 
 __global__ void compute_preference_penalty_matrix(

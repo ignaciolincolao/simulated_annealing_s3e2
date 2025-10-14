@@ -308,7 +308,10 @@ void RecordManager::SaveInfoRegister(
     int n_block,
     int n_thread,
     int *solution,
-    int unnasigned)
+    int unnasigned,
+    double cost_solution_original,
+    int alu_sobrecupo
+)
 {
     if(empty_files[1]){
         infoRegister << "time" << ","
@@ -348,9 +351,10 @@ void RecordManager::SaveInfoRegister(
                  << "," << "n_block"
                  << "," << "n_thread"
                  << "," << "rMgrParams.name_exp"
-                 << "," << "saParams.penalty_curve"
-                 << "," << "saParams.penalty_max_pref"
-                 << "," << "unnasigned";
+                 << "," << "unnasigned"
+                 << "," << "cost_solution_original"
+                 << "," << "alu_sobrecupo";
+
         for (int i=0; i < vector_percentage.size(); i++){
             infoRegister << "," << "percentage_" << vector_percentage[i];
         }
@@ -394,9 +398,9 @@ void RecordManager::SaveInfoRegister(
                  << "," << n_block
                  << "," << n_thread
                  << "," << rMgrParams.name_exp
-                 << "," << saParams.penalty_curve
-                 << "," << saParams.penalty_max_pref
-                 << "," << unnasigned;
+                 << "," << unnasigned
+                 << "," << cost_solution_original
+                 << "," << alu_sobrecupo;
     for (int i=0; i < vector_percentage.size(); i++){
         infoRegister << "," << vector_it_percentage.at(i);
     }
@@ -444,9 +448,9 @@ void RecordManager::SaveInfoRegister(
         {"n_block",n_block},
         {"n_thread",n_thread},
         {"rMgrParams.name_exp",rMgrParams.name_exp},
-        {"saParams.penalty_curve",saParams.penalty_curve},
-        {"saParams.penalty_max_pref",saParams.penalty_max_pref},
-        {"unnasigned",unnasigned}
+        {"unnasigned",unnasigned},
+        {"cost_solution_original",cost_solution_original},
+        {"alu_sobrecupo",alu_sobrecupo}
     };
     for (int i=0; i < vector_percentage.size(); i++){
         data["percentage_"+std::to_string(vector_percentage[i])] = vector_it_percentage.at(i);

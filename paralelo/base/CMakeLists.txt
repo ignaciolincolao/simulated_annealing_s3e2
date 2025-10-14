@@ -9,7 +9,7 @@ if (WIN32)
 endif (WIN32)
 
 if (UNIX)
-    set(CMAKE_CUDA_COMPILER /usr/local/cuda/bin/nvcc)
+    set(CMAKE_CUDA_COMPILER /usr/bin/nvcc)
     set(CMAKE_CUDA_ARCHITECTURES 52 60 61 75 86 89) 
 endif (UNIX)
 
@@ -82,12 +82,7 @@ file(GLOB_RECURSE all_SRCS
 list(REMOVE_ITEM all_SRCS "${PROJECT_SOURCE_DIR}/src/main.cpp")
 list(REMOVE_ITEM all_SRCS "${PROJECT_SOURCE_DIR}/src/test/grid.cpp")
 
-# =============================
-# Excluir cualquier cosa de unitTest
-# =============================
-list(FILTER all_SRCS EXCLUDE REGEX ".*/unitTest/.*")
 
-#-------------------------------
 
 option(BUILD_SHARED_LIB "Build Shared Library" OFF)
 
@@ -160,25 +155,3 @@ include(CPack)
 
 
 
-# =============================
-#mi ejecutable de pruebas unitarias
-# =============================
-file(GLOB TEST_SOURCES
-    "${PROJECT_SOURCE_DIR}/src/unitTest/*.cpp"
-    "${PROJECT_SOURCE_DIR}/src/unitTest/*.cu"
-)
-
-if(TEST_SOURCES)
-    enable_testing()
-    find_package(GTest REQUIRED)
-
-    add_executable(unit_tests ${TEST_SOURCES})
-    target_link_libraries(unit_tests PRIVATE
-        GTest::GTest
-        GTest::Main
-    )
-
-    add_test(NAME run_unit_tests COMMAND unit_tests)
-endif()
-
-#-------------------------------------------------------

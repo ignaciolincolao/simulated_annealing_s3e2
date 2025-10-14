@@ -89,7 +89,6 @@ double SimulatedAnnealing::runGPU(){
         aluVulxCol,
         matrestest,
         alpha,
-        choices_parents,
         currentVars);
 
 
@@ -282,29 +281,30 @@ double SimulatedAnnealing::runGPU(){
     time_taken *= 1e-9;
     cudaWrapper->copySolutionToHost(bestSolution, previousSolution);
 
+    double cost_solution_original = calCosto(bestSolution,distMat,ptr_alpha, alumnosSep, totalVuln, cupoArray);
+
     cout << "--------------- Resultado Final ----------------" << "\n";
     cout << "Numero de Ciclos: " << saParams.count << "\n";
     cout << "Costo de la solución previa: " << costPreviousSolution << "\n";
     cout << "Costo de la mejor solución: " << costBestSolution << "\n";
+    cout << "Costo de la mejor solución (original): " << cost_solution_original << "\n";
     cout << "Costo de la solución actual: " << costCurrentSolution << "\n";
     cout << "Tiempo de ejecución de SA: " << time_taken << "\n";
     cout << "distancia: " << meanDist(bestSolution, distMat)/saParams.max_dist << "\n"; //lo normalice
     cout << "Segregación: " << S(bestSolution, alumnosSep, totalVuln) << "\n";
     cout << "CostoCupo: " << costCupo(bestSolution, cupoArray) << "\n";
-    cout << "CostoCupoBeta: " << sumCostoCupo_beta(bestSolution, cupoArray)/saParams.n_students << "\n";
     cout << "Penalty final: " << penaltyParents(bestSolution,h_penalty_matrix)/saParams.n_students << "\n";
 
     int* summaryPrefs = summaryPreferences(bestSolution, dataSet->students);
-    summaryCostoCupo(bestSolution, dataSet->colegios);
-    cout << saParams.temp_init<< "\n";
+    int alu_sobrecupo = summaryCostoCupo(bestSolution, dataSet->colegios);
     cout << "--------------- Finalizo con exito ----------------" << "\n";
 
     int unassigned =summaryPrefs[saParams.max_choices];
     //int unassigned = balanceCostoCupo(bestSolution,dataSet->students, dataSet->colegios);
     
     //llamar a la funcion que lo calcula por el algoritmo original del SAE
-    std::vector<int> solution;
-    asignacionSAE(dataSet->students, dataSet->colegios, solution); //743 sin asignar en alguna pref
+    //std::vector<int> solution;
+    //asignacionSAE(dataSet->students, dataSet->colegios, solution); //743 sin asignar en alguna pref
     //fin llamada
 
     
@@ -362,7 +362,10 @@ double SimulatedAnnealing::runGPU(){
         cuParams.n_block,
         cuParams.n_thread,
         bestSolution,
-        unassigned
+        unassigned,
+        cost_solution_original,
+        alu_sobrecupo
+
     );
     recordManager->closeRecordRegister();
     #endif
@@ -393,7 +396,6 @@ void SimulatedAnnealing::inicializationValues(T* wrapper){
 
     aluxcol= (int *)malloc(sizeof(int)*saParams.n_colegios);
     aluVulxCol = (int *)malloc(sizeof(int)*saParams.n_colegios);
-    choices_parents = (uint8_t *)malloc(5 * saParams.n_students);
     previousAluxCol = (int *)malloc(sizeof(int)*saParams.n_colegios);
     previousAluVulxCol = (int *)malloc(sizeof(int)*saParams.n_colegios);
     bestAluxCol = (int *)malloc(sizeof(int)*saParams.n_colegios);
@@ -510,12 +512,10 @@ void SimulatedAnnealing::inicializationValues(T* wrapper){
     currentVars[1] = sumS(currentSolution, alumnosSep, totalVuln);
     currentVars[2] = sumCostCupo(currentSolution,cupoArray);
     currentVars[3] = penaltyParents(currentSolution,h_penalty_matrix);
-    currentVars[4] = sumCostoCupo_beta(currentSolution,cupoArray);
     previousVars[0] = currentVars[0];
     previousVars[1] = currentVars[1];
     previousVars[2] = currentVars[2];
     previousVars[3] = currentVars[3];
-    previousVars[4] = currentVars[4];
     
     //porque llama a sumdist y luego le hace la misma division
     //o sea hay una funcion adicional que lo unico que hace es no hacer una division
@@ -684,12 +684,14 @@ double SimulatedAnnealing::calcCostoCupo(double p_costCupo) {
     int l_izq = p_costCupo <= 0.5 && p_costCupo >= 0.0; 
     int l_der = p_costCupo > 0.5 && p_costCupo <= 1.0; 
 
-    double costCupoEscuela =  l_izq*(pow(2.0, r)*pow(p_costCupo, r)) + l_der*(pow(2.0, s) * pow(1.0 - p_costCupo, s))+(1-(l_izq+l_der));
+    double penalty_sobrecupo = calcCostoCupo_sobrecupo(p_costCupo);
+
+    double costCupoEscuela =  l_izq*(pow(2.0, r)*pow(p_costCupo, r)) + l_der*(pow(2.0, s) * pow(1.0 - p_costCupo, s))+penalty_sobrecupo;
     //cout <<l_izq<< l_der<<"p_costCupo: "<<p_costCupo<<" | result: "<<costCupoEscuela<<" l_der"<< l_der*pow(2.0, s) * pow(1.0 - p_costCupo, s)<<"\n";
     return costCupoEscuela;
 }
 
-double SimulatedAnnealing::calcCostoCupo_beta(double p_costCupo) {
+double SimulatedAnnealing::calcCostoCupo_sobrecupo(double p_costCupo) {
     const double k = 10.0;  // controla la pendiente del crecimiento exponencial
     const double S = 1.0;   // factor de escala (ajústalo al resto de tus costos)
 
@@ -718,22 +720,7 @@ double SimulatedAnnealing::sumCostCupo(int* currentSolution,int *cupoArray){
     return totalcostCupo;
 }
 
-double SimulatedAnnealing::sumCostoCupo_beta(int* currentSolution,int *cupoArray){
-    double totalcostCupo = 0.0;
-    int totalAluCol = 0;
-    for(int j=0;j<saParams.n_colegios;j++){
-        totalAluCol = 0;
-        for(int i=0; i<saParams.n_students; i++){
-            if(currentSolution[i]==j){
-                totalAluCol++;
-            }
-        }
-        double p_costCupo = double(totalAluCol)/cupoArray[j];
-        totalcostCupo += calcCostoCupo_beta(p_costCupo);
-        //totalcostCupo+= (double)totalAluCol*fabs(((double)cupoArray[j]-totalAluCol)/pow(((double)cupoArray[j]/2),2));
-    }
-    return totalcostCupo;
-}
+
 ///////////////////////////////////////////////////
 /// Genera una nueva solución en donde asigna a un estudiante a una escuela
 /// aleatoriamente
@@ -866,10 +853,6 @@ void SimulatedAnnealing::initializeArray(int *aluxcol, int *previousAluxCol, int
     ///////////////////////////////////////////////////
     for(int x=0; x < saParams.n_students; x++) {
         alumnosSep[x] = students[x].sep;
-        //agregar las preferencias de los padres (creo que esto es unicamente para la prueba CPU)
-        for (std::size_t i = 0; i < 5; i++){
-            choices_parents[x * 5 + i] = students[x].choices[i];
-        }
     }
 }
 
@@ -974,7 +957,6 @@ void SimulatedAnnealing::ValidateGPU(){
         aluVulxCol,
         matrestest,
         alpha,
-        choices_parents,
         currentVars);
 
 
@@ -1264,7 +1246,7 @@ int* SimulatedAnnealing::summaryPreferences(const int* currentSolution,
 }
 
 
-void SimulatedAnnealing::summaryCostoCupo(const int* currentSolution,
+int SimulatedAnnealing::summaryCostoCupo(const int* currentSolution,
                                           const std::vector<Info_colegio>& colegios)
 {
     int n_colegios = saParams.n_colegios;
@@ -1286,7 +1268,6 @@ void SimulatedAnnealing::summaryCostoCupo(const int* currentSolution,
     std::ofstream fout("summaryCupos.txt");
     if (!fout.is_open()) {
         std::cerr << "Error abriendo summaryCupos.txt\n";
-        return;
     }
 
     for (int j = 0; j < n_colegios; ++j) {
@@ -1307,6 +1288,7 @@ void SimulatedAnnealing::summaryCostoCupo(const int* currentSolution,
     fout.close();
     std::cout << "\n" << "Colegios aun con vacantes: " << resumen[0]
             << " | Vacantes totales restantes: " << resumen[1] << " | colegios en sobrecupo: " << resumen[2] << "\n";
+    return resumen[1]-277;
 
 }
 

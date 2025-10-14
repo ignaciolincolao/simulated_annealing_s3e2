@@ -65,8 +65,7 @@ int main(int argc, char *argv[])
         //.max_choices = 14 //cantidad maxima de elecciones de padres a considerar
         .max_choices = 14,
         .penalty_curve = 0.5f,      //parametro que indica que tan curva es la maquina
-        .penalty_max_pref = 0.5f,   //maxima penalidad por la ultima preferencia
-        .costCupoFactorAlpha =0.8f //valor minimo que toma el factor alpha del costcupo (calculo original)
+        .penalty_max_pref = 0.5f   //maxima penalidad por la ultima preferencia
     };
 
     AcceptanceParams* acParams = new AcceptanceParams{

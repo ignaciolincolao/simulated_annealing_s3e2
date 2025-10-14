@@ -120,7 +120,10 @@ public:
         int n_block,
         int n_thread,
         int *solution,
-        int unnasigned);
+        int unnasigned,
+        double cost_solution_original,
+        int alu_sobrecupo
+    );
 
     void SaveGraphicsInit(double meanDist,
                           double S,

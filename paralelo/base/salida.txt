@@ -1,0 +1,484 @@
+ | n_iter= 0 | a_dist= 0.1 | a_seg= 0.1 | a_costcup= 0.1 | a_penalty= 0.7
+--------------- Primeros datos -------------
+Primer costo de solución: 0.698374
+Primer distancia: 0.183257
+Primer Segregación: 0.299405
+Primer CostoCupo: 2.24348e-05
+Penalty inicial: 0.928723
+
+--------------- Resultado Final ----------------
+Numero de Ciclos: 79129
+Costo de la solución previa: 0.295398
+Costo de la mejor solución: 0.295324
+Costo de la mejor solución (original): 0.295324
+Costo de la solución actual: 0.295411
+Tiempo de ejecución de SA: 7.07516
+distancia: 0.114904
+Segregación: 0.0140902
+CostoCupo: 0.00387717
+Penalty final: 0.40291
+Asignados en preferencia numero ->1:1064  2:474  3:293  4:132  5:57  6:39  7:13  8:6  9:2  10:2  99:918  
+
+Colegios aun con vacantes: 29 | Vacantes totales restantes: 278 | colegios en sobrecupo: 1
+--------------- Finalizo con exito ----------------
+ | n_iter= 1 | a_dist= 0.1 | a_seg= 0.1 | a_costcup= 0.1 | a_penalty= 0.7
+--------------- Primeros datos -------------
+Primer costo de solución: 0.698374
+Primer distancia: 0.183257
+Primer Segregación: 0.299405
+Primer CostoCupo: 2.24348e-05
+Penalty inicial: 0.928723
+
+--------------- Resultado Final ----------------
+Numero de Ciclos: 80389
+Costo de la solución previa: 0.295141
+Costo de la mejor solución: 0.295141
+Costo de la mejor solución (original): 0.295141
+Costo de la solución actual: 0.295475
+Tiempo de ejecución de SA: 7.1255
+distancia: 0.113133
+Segregación: 0.0168895
+CostoCupo: 0.00351871
+Penalty final: 0.402552
+Asignados en preferencia numero ->1:1065  2:473  3:294  4:126  5:61  6:40  7:15  8:6  9:2  10:2  99:916  
+
+Colegios aun con vacantes: 29 | Vacantes totales restantes: 278 | colegios en sobrecupo: 1
+--------------- Finalizo con exito ----------------
+ | n_iter= 2 | a_dist= 0.1 | a_seg= 0.1 | a_costcup= 0.1 | a_penalty= 0.7
+--------------- Primeros datos -------------
+Primer costo de solución: 0.698374
+Primer distancia: 0.183257
+Primer Segregación: 0.299405
+Primer CostoCupo: 2.24348e-05
+Penalty inicial: 0.928723
+
+--------------- Resultado Final ----------------
+Numero de Ciclos: 77617
+Costo de la solución previa: 0.294732
+Costo de la mejor solución: 0.294695
+Costo de la mejor solución (original): 0.294695
+Costo de la solución actual: 0.294966
+Tiempo de ejecución de SA: 6.92445
+distancia: 0.112086
+Segregación: 0.0156443
+CostoCupo: 0.00333427
+Penalty final: 0.402269
+Asignados en preferencia numero ->1:1061  2:477  3:295  4:132  5:59  6:39  7:13  8:7  9:2  10:1  99:914  
+
+Colegios aun con vacantes: 28 | Vacantes totales restantes: 278 | colegios en sobrecupo: 1
+--------------- Finalizo con exito ----------------
+ | n_iter= 3 | a_dist= 0.1 | a_seg= 0.1 | a_costcup= 0.1 | a_penalty= 0.7
+--------------- Primeros datos -------------
+Primer costo de solución: 0.698374
+Primer distancia: 0.183257
+Primer Segregación: 0.299405
+Primer CostoCupo: 2.24348e-05
+Penalty inicial: 0.928723
+
+--------------- Resultado Final ----------------
+Numero de Ciclos: 79129
+Costo de la solución previa: 0.295099
+Costo de la mejor solución: 0.295099
+Costo de la mejor solución (original): 0.295099
+Costo de la solución actual: 0.295099
+Tiempo de ejecución de SA: 7.05002
+distancia: 0.111924
+Segregación: 0.0160469
+CostoCupo: 0.00442812
+Penalty final: 0.402656
+Asignados en preferencia numero ->1:1055  2:471  3:305  4:134  5:59  6:41  7:14  8:6  9:2  10:2  99:911  
+
+Colegios aun con vacantes: 32 | Vacantes totales restantes: 278 | colegios en sobrecupo: 1
+--------------- Finalizo con exito ----------------
+ | n_iter= 4 | a_dist= 0.1 | a_seg= 0.1 | a_costcup= 0.1 | a_penalty= 0.7
+--------------- Primeros datos -------------
+Primer costo de solución: 0.698374
+Primer distancia: 0.183257
+Primer Segregación: 0.299405
+Primer CostoCupo: 2.24348e-05
+Penalty inicial: 0.928723
+
+--------------- Resultado Final ----------------
+Numero de Ciclos: 79255
+Costo de la solución previa: 0.294553
+Costo de la mejor solución: 0.294552
+Costo de la mejor solución (original): 0.294552
+Costo de la solución actual: 0.296903
+Tiempo de ejecución de SA: 7.05292
+distancia: 0.112978
+Segregación: 0.0159065
+CostoCupo: 0.00626129
+Penalty final: 0.401482
+Asignados en preferencia numero ->1:1062  2:471  3:298  4:137  5:59  6:41  7:12  8:8  9:2  10:1  99:909  
+
+Colegios aun con vacantes: 32 | Vacantes totales restantes: 279 | colegios en sobrecupo: 1
+--------------- Finalizo con exito ----------------
+ | n_iter= 5 | a_dist= 0.1 | a_seg= 0.1 | a_costcup= 0.1 | a_penalty= 0.7
+--------------- Primeros datos -------------
+Primer costo de solución: 0.698374
+Primer distancia: 0.183257
+Primer Segregación: 0.299405
+Primer CostoCupo: 2.24348e-05
+Penalty inicial: 0.928723
+
+--------------- Resultado Final ----------------
+Numero de Ciclos: 79003
+Costo de la solución previa: 0.295317
+Costo de la mejor solución: 0.295189
+Costo de la mejor solución (original): 0.295189
+Costo de la solución actual: 0.296511
+Tiempo de ejecución de SA: 7.01378
+distancia: 0.114772
+Segregación: 0.0155226
+CostoCupo: 0.00332539
+Penalty final: 0.40261
+Asignados en preferencia numero ->1:1067  2:470  3:295  4:128  5:58  6:42  7:13  8:6  9:2  10:2  99:917  
+
+Colegios aun con vacantes: 30 | Vacantes totales restantes: 278 | colegios en sobrecupo: 1
+--------------- Finalizo con exito ----------------
+ | n_iter= 6 | a_dist= 0.1 | a_seg= 0.1 | a_costcup= 0.1 | a_penalty= 0.7
+--------------- Primeros datos -------------
+Primer costo de solución: 0.698374
+Primer distancia: 0.183257
+Primer Segregación: 0.299405
+Primer CostoCupo: 2.24348e-05
+Penalty inicial: 0.928723
+
+--------------- Resultado Final ----------------
+Numero de Ciclos: 79759
+Costo de la solución previa: 0.294923
+Costo de la mejor solución: 0.294923
+Costo de la mejor solución (original): 0.294923
+Costo de la solución actual: 0.295362
+Tiempo de ejecución de SA: 7.08367
+distancia: 0.112673
+Segregación: 0.0139872
+CostoCupo: 0.00416926
+Penalty final: 0.402628
+Asignados en preferencia numero ->1:1053  2:481  3:298  4:133  5:59  6:40  7:13  8:7  9:2  10:2  99:912  
+
+Colegios aun con vacantes: 26 | Vacantes totales restantes: 278 | colegios en sobrecupo: 1
+--------------- Finalizo con exito ----------------
+ | n_iter= 7 | a_dist= 0.1 | a_seg= 0.1 | a_costcup= 0.1 | a_penalty= 0.7
+--------------- Primeros datos -------------
+Primer costo de solución: 0.698374
+Primer distancia: 0.183257
+Primer Segregación: 0.299405
+Primer CostoCupo: 2.24348e-05
+Penalty inicial: 0.928723
+
+--------------- Resultado Final ----------------
+Numero de Ciclos: 78877
+Costo de la solución previa: 0.295891
+Costo de la mejor solución: 0.295888
+Costo de la mejor solución (original): 0.295888
+Costo de la solución actual: 0.295912
+Tiempo de ejecución de SA: 7.00988
+distancia: 0.112502
+Segregación: 0.0144647
+CostoCupo: 0.00414486
+Penalty final: 0.403966
+Asignados en preferencia numero ->1:1054  2:479  3:296  4:135  5:57  6:37  7:14  8:5  9:2  10:2  99:919  
+
+Colegios aun con vacantes: 28 | Vacantes totales restantes: 278 | colegios en sobrecupo: 1
+--------------- Finalizo con exito ----------------
+ | n_iter= 8 | a_dist= 0.1 | a_seg= 0.1 | a_costcup= 0.1 | a_penalty= 0.7
+--------------- Primeros datos -------------
+Primer costo de solución: 0.698374
+Primer distancia: 0.183257
+Primer Segregación: 0.299405
+Primer CostoCupo: 2.24348e-05
+Penalty inicial: 0.928723
+
+--------------- Resultado Final ----------------
+Numero de Ciclos: 79129
+Costo de la solución previa: 0.293828
+Costo de la mejor solución: 0.293798
+Costo de la mejor solución (original): 0.293798
+Costo de la solución actual: 0.294053
+Tiempo de ejecución de SA: 7.03346
+distancia: 0.113183
+Segregación: 0.0153073
+CostoCupo: 0.00402429
+Penalty final: 0.400781
+Asignados en preferencia numero ->1:1065  2:477  3:290  4:132  5:64  6:40  7:13  8:7  9:2  10:2  99:908  
+
+Colegios aun con vacantes: 28 | Vacantes totales restantes: 278 | colegios en sobrecupo: 1
+--------------- Finalizo con exito ----------------
+ | n_iter= 9 | a_dist= 0.1 | a_seg= 0.1 | a_costcup= 0.1 | a_penalty= 0.7
+--------------- Primeros datos -------------
+Primer costo de solución: 0.698374
+Primer distancia: 0.183257
+Primer Segregación: 0.299405
+Primer CostoCupo: 2.24348e-05
+Penalty inicial: 0.928723
+
+--------------- Resultado Final ----------------
+Numero de Ciclos: 79759
+Costo de la solución previa: 0.294452
+Costo de la mejor solución: 0.294449
+Costo de la mejor solución (original): 0.294449
+Costo de la solución actual: 0.29446
+Tiempo de ejecución de SA: 7.09213
+distancia: 0.112251
+Segregación: 0.0157379
+CostoCupo: 0.00655326
+Penalty final: 0.401422
+Asignados en preferencia numero ->1:1052  2:486  3:298  4:133  5:60  6:41  7:14  8:5  9:2  10:2  99:907  
+
+Colegios aun con vacantes: 26 | Vacantes totales restantes: 279 | colegios en sobrecupo: 1
+--------------- Finalizo con exito ----------------
+ | n_iter= 10 | a_dist= 0.1 | a_seg= 0.1 | a_costcup= 0.1 | a_penalty= 0.7
+--------------- Primeros datos -------------
+Primer costo de solución: 0.698374
+Primer distancia: 0.183257
+Primer Segregación: 0.299405
+Primer CostoCupo: 2.24348e-05
+Penalty inicial: 0.928723
+
+--------------- Resultado Final ----------------
+Numero de Ciclos: 80011
+Costo de la solución previa: 0.295007
+Costo de la mejor solución: 0.295007
+Costo de la mejor solución (original): 0.295007
+Costo de la solución actual: 0.297357
+Tiempo de ejecución de SA: 7.14519
+distancia: 0.112998
+Segregación: 0.016852
+CostoCupo: 0.00400129
+Penalty final: 0.402317
+Asignados en preferencia numero ->1:1064  2:474  3:285  4:142  5:59  6:39  7:13  8:6  9:2  10:2  99:914  
+
+Colegios aun con vacantes: 30 | Vacantes totales restantes: 278 | colegios en sobrecupo: 1
+--------------- Finalizo con exito ----------------
+ | n_iter= 11 | a_dist= 0.1 | a_seg= 0.1 | a_costcup= 0.1 | a_penalty= 0.7
+--------------- Primeros datos -------------
+Primer costo de solución: 0.698374
+Primer distancia: 0.183257
+Primer Segregación: 0.299405
+Primer CostoCupo: 2.24348e-05
+Penalty inicial: 0.928723
+
+--------------- Resultado Final ----------------
+Numero de Ciclos: 80137
+Costo de la solución previa: 0.294486
+Costo de la mejor solución: 0.294486
+Costo de la mejor solución (original): 0.294486
+Costo de la solución actual: 0.295545
+Tiempo de ejecución de SA: 7.11146
+distancia: 0.113263
+Segregación: 0.0170861
+CostoCupo: 0.00406674
+Penalty final: 0.401491
+Asignados en preferencia numero ->1:1064  2:474  3:296  4:131  5:62  6:37  7:15  8:7  9:2  10:1  99:911  
+
+Colegios aun con vacantes: 29 | Vacantes totales restantes: 278 | colegios en sobrecupo: 1
+--------------- Finalizo con exito ----------------
+ | n_iter= 12 | a_dist= 0.1 | a_seg= 0.1 | a_costcup= 0.1 | a_penalty= 0.7
+--------------- Primeros datos -------------
+Primer costo de solución: 0.698374
+Primer distancia: 0.183257
+Primer Segregación: 0.299405
+Primer CostoCupo: 2.24348e-05
+Penalty inicial: 0.928723
+
+--------------- Resultado Final ----------------
+Numero de Ciclos: 79885
+Costo de la solución previa: 0.294457
+Costo de la mejor solución: 0.294443
+Costo de la mejor solución (original): 0.294443
+Costo de la solución actual: 0.294573
+Tiempo de ejecución de SA: 7.08825
+distancia: 0.112436
+Segregación: 0.0172359
+CostoCupo: 0.00611647
+Penalty final: 0.401235
+Asignados en preferencia numero ->1:1065  2:474  3:295  4:131  5:60  6:39  7:15  8:7  9:2  10:2  99:910  
+
+Colegios aun con vacantes: 26 | Vacantes totales restantes: 279 | colegios en sobrecupo: 1
+--------------- Finalizo con exito ----------------
+ | n_iter= 13 | a_dist= 0.1 | a_seg= 0.1 | a_costcup= 0.1 | a_penalty= 0.7
+--------------- Primeros datos -------------
+Primer costo de solución: 0.698374
+Primer distancia: 0.183257
+Primer Segregación: 0.299405
+Primer CostoCupo: 2.24348e-05
+Penalty inicial: 0.928723
+
+--------------- Resultado Final ----------------
+Numero de Ciclos: 79381
+Costo de la solución previa: 0.294856
+Costo de la mejor solución: 0.29485
+Costo de la mejor solución (original): 0.29485
+Costo de la solución actual: 0.295133
+Tiempo de ejecución de SA: 7.06257
+distancia: 0.113295
+Segregación: 0.0149609
+CostoCupo: 0.00392861
+Penalty final: 0.402331
+Asignados en preferencia numero ->1:1063  2:473  3:297  4:128  5:59  6:40  7:15  8:8  9:2  10:1  99:914  
+
+Colegios aun con vacantes: 29 | Vacantes totales restantes: 278 | colegios en sobrecupo: 1
+--------------- Finalizo con exito ----------------
+ | n_iter= 14 | a_dist= 0.1 | a_seg= 0.1 | a_costcup= 0.1 | a_penalty= 0.7
+--------------- Primeros datos -------------
+Primer costo de solución: 0.698374
+Primer distancia: 0.183257
+Primer Segregación: 0.299405
+Primer CostoCupo: 2.24348e-05
+Penalty inicial: 0.928723
+
+--------------- Resultado Final ----------------
+Numero de Ciclos: 77743
+Costo de la solución previa: 0.295123
+Costo de la mejor solución: 0.295123
+Costo de la mejor solución (original): 0.295123
+Costo de la solución actual: 0.295777
+Tiempo de ejecución de SA: 6.93589
+distancia: 0.112281
+Segregación: 0.0157941
+CostoCupo: 0.00364889
+Penalty final: 0.402786
+Asignados en preferencia numero ->1:1066  2:476  3:287  4:128  5:61  6:38  7:16  8:7  9:2  10:1  99:918  
+
+Colegios aun con vacantes: 28 | Vacantes totales restantes: 278 | colegios en sobrecupo: 1
+--------------- Finalizo con exito ----------------
+ | n_iter= 15 | a_dist= 0.1 | a_seg= 0.1 | a_costcup= 0.1 | a_penalty= 0.7
+--------------- Primeros datos -------------
+Primer costo de solución: 0.698374
+Primer distancia: 0.183257
+Primer Segregación: 0.299405
+Primer CostoCupo: 2.24348e-05
+Penalty inicial: 0.928723
+
+--------------- Resultado Final ----------------
+Numero de Ciclos: 79885
+Costo de la solución previa: 0.294456
+Costo de la mejor solución: 0.294456
+Costo de la mejor solución (original): 0.294456
+Costo de la solución actual: 0.294477
+Tiempo de ejecución de SA: 7.11261
+distancia: 0.112718
+Segregación: 0.0135378
+CostoCupo: 0.00394141
+Penalty final: 0.402052
+Asignados en preferencia numero ->1:1060  2:475  3:302  4:126  5:60  6:40  7:14  8:7  9:2  10:2  99:912  
+
+Colegios aun con vacantes: 27 | Vacantes totales restantes: 278 | colegios en sobrecupo: 1
+--------------- Finalizo con exito ----------------
+ | n_iter= 16 | a_dist= 0.1 | a_seg= 0.1 | a_costcup= 0.1 | a_penalty= 0.7
+--------------- Primeros datos -------------
+Primer costo de solución: 0.698374
+Primer distancia: 0.183257
+Primer Segregación: 0.299405
+Primer CostoCupo: 2.24348e-05
+Penalty inicial: 0.928723
+
+--------------- Resultado Final ----------------
+Numero de Ciclos: 79381
+Costo de la solución previa: 0.295425
+Costo de la mejor solución: 0.295424
+Costo de la mejor solución (original): 0.295424
+Costo de la solución actual: 0.295713
+Tiempo de ejecución de SA: 7.07372
+distancia: 0.112803
+Segregación: 0.0139497
+CostoCupo: 0.00370549
+Penalty final: 0.403398
+Asignados en preferencia numero ->1:1063  2:477  3:287  4:132  5:61  6:39  7:11  8:7  9:2  10:1  99:920  
+
+Colegios aun con vacantes: 32 | Vacantes totales restantes: 278 | colegios en sobrecupo: 1
+--------------- Finalizo con exito ----------------
+ | n_iter= 17 | a_dist= 0.1 | a_seg= 0.1 | a_costcup= 0.1 | a_penalty= 0.7
+--------------- Primeros datos -------------
+Primer costo de solución: 0.698374
+Primer distancia: 0.183257
+Primer Segregación: 0.299405
+Primer CostoCupo: 2.24348e-05
+Penalty inicial: 0.928723
+
+--------------- Resultado Final ----------------
+Numero de Ciclos: 79003
+Costo de la solución previa: 0.294622
+Costo de la mejor solución: 0.294617
+Costo de la mejor solución (original): 0.294617
+Costo de la solución actual: 0.294692
+Tiempo de ejecución de SA: 7.03841
+distancia: 0.112324
+Segregación: 0.0139685
+CostoCupo: 0.00370229
+Penalty final: 0.402311
+Asignados en preferencia numero ->1:1060  2:481  3:291  4:130  5:58  6:45  7:11  8:6  9:2  10:2  99:914  
+
+Colegios aun con vacantes: 32 | Vacantes totales restantes: 278 | colegios en sobrecupo: 1
+--------------- Finalizo con exito ----------------
+ | n_iter= 18 | a_dist= 0.1 | a_seg= 0.1 | a_costcup= 0.1 | a_penalty= 0.7
+--------------- Primeros datos -------------
+Primer costo de solución: 0.698374
+Primer distancia: 0.183257
+Primer Segregación: 0.299405
+Primer CostoCupo: 2.24348e-05
+Penalty inicial: 0.928723
+
+--------------- Resultado Final ----------------
+Numero de Ciclos: 79759
+Costo de la solución previa: 0.294795
+Costo de la mejor solución: 0.294792
+Costo de la mejor solución (original): 0.294792
+Costo de la solución actual: 0.294812
+Tiempo de ejecución de SA: 7.08049
+distancia: 0.112054
+Segregación: 0.0130978
+CostoCupo: 0.00447767
+Penalty final: 0.402613
+Asignados en preferencia numero ->1:1067  2:464  3:296  4:132  5:61  6:40  7:15  8:7  9:2  10:1  99:915  
+
+Colegios aun con vacantes: 27 | Vacantes totales restantes: 278 | colegios en sobrecupo: 1
+--------------- Finalizo con exito ----------------
+ | n_iter= 19 | a_dist= 0.1 | a_seg= 0.1 | a_costcup= 0.1 | a_penalty= 0.7
+--------------- Primeros datos -------------
+Primer costo de solución: 0.698374
+Primer distancia: 0.183257
+Primer Segregación: 0.299405
+Primer CostoCupo: 2.24348e-05
+Penalty inicial: 0.928723
+
+--------------- Resultado Final ----------------
+Numero de Ciclos: 79633
+Costo de la solución previa: 0.295372
+Costo de la mejor solución: 0.295058
+Costo de la mejor solución (original): 0.295058
+Costo de la solución actual: 0.295393
+Tiempo de ejecución de SA: 7.07007
+distancia: 0.113969
+Segregación: 0.0149234
+CostoCupo: 0.00145896
+Penalty final: 0.402889
+Asignados en preferencia numero ->1:1059  2:478  3:294  4:131  5:63  6:35  7:14  8:7  9:2  10:1  99:916  
+
+Colegios aun con vacantes: 27 | Vacantes totales restantes: 277 | colegios en sobrecupo: 0
+--------------- Finalizo con exito ----------------
+ | n_iter= 20 | a_dist= 0.1 | a_seg= 0.1 | a_costcup= 0.1 | a_penalty= 0.7
+--------------- Primeros datos -------------
+Primer costo de solución: 0.698374
+Primer distancia: 0.183257
+Primer Segregación: 0.299405
+Primer CostoCupo: 2.24348e-05
+Penalty inicial: 0.928723
+
+--------------- Resultado Final ----------------
+Numero de Ciclos: 79633
+Costo de la solución previa: 0.294698
+Costo de la mejor solución: 0.294684
+Costo de la mejor solución (original): 0.294684
+Costo de la solución actual: 0.294708
+Tiempo de ejecución de SA: 7.08612
+distancia: 0.112599
+Segregación: 0.0148017
+CostoCupo: 0.00370146
+Penalty final: 0.402249
+Asignados en preferencia numero ->1:1055  2:479  3:295  4:140  5:62  6:37  7:11  8:6  9:2  10:2  99:911  
+
+Colegios aun con vacantes: 27 | Vacantes totales restantes: 278 | colegios en sobrecupo: 1
+--------------- Finalizo con exito ----------------
+ | n_iter= 21 | a_dist= 0.1 | a_seg= 0.1 | a_costcup= 0.1 | a_penalty= 0.7

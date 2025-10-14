@@ -41,7 +41,7 @@ float len1;
 float len2;
 int count = 0;
 
-void algorithm_sample(const double config[4], float a_max_pref, float a_curve, string timestr, string pathSave,int argc, char *argv[]){
+void algorithm_sample(const double config[4],  string timestr, string pathSave,int argc, char *argv[]){
     random_device rd;
     mt19937 mt(rd());
 
@@ -67,10 +67,10 @@ void algorithm_sample(const double config[4], float a_max_pref, float a_curve, s
         .pInit = 0.01,
         .temp = 32768.0,
         .min_temp = 0.00000009,
-        .alpha1 = 0.3,
-        .alpha2 = 0.2,
-        .alpha3 = 0.1,
-        .alpha4 = 0.4,
+        .alpha1 = config[0],
+        .alpha2 = config[1],
+        .alpha3 = config[2],
+        .alpha4 = config[3],
         .max_dist = 0.0,
         .min_dist = 0.0,
         .init_dist = 0.0,
@@ -78,8 +78,8 @@ void algorithm_sample(const double config[4], float a_max_pref, float a_curve, s
         .costCurrent = 0.0,
         .alpha = {config[0], config[1], config[2], config[3]},
         .max_choices = 10,
-        .penalty_curve = a_curve,      //parametro que indica que tan curva es la maquina
-        .penalty_max_pref = a_max_pref   //maxima penalidad por la ultima preferencia
+        .penalty_curve = 0.5f,      //parametro que indica que tan curva es la maquina
+        .penalty_max_pref = 0.5f   //maxima penalidad por la ultima preferencia
     };
 
     AcceptanceParams* acParams = new AcceptanceParams{
@@ -134,8 +134,6 @@ void algorithm_sample(const double config[4], float a_max_pref, float a_curve, s
         << " | a_seg= "  << config[1]
         << " | a_costcup= " << config[2]
         << " | a_penalty= " << config[3]
-        << " | a_curve= " << a_curve
-        << " | a_max_pref= " << a_max_pref
         << endl;
     SimulatedAnnealing *simulatedAnneling = SimulatedFactory::createSimulatedAnnealing(
             simStruct,
@@ -228,31 +226,46 @@ random_device rd;
     //const std::string file_name = "../../save/"+string(timestr)+"seed_iteration.csv";
     int init = 0; 
 
-    double a_curve_values[] = {0.001, 0.01, 0.05, 0.1, 0.2,
-                               0.3, 0.5, 0.7, 0.8, 1.0};
 
-    double a_max_pref_values[] = {0.35, 0.4, 0.45, 0.5, 0.55, 0.6};
 
-    double configs[4][4] = {
-        {0.3,0.2,0.1,0.4},
-        {0.3,0.2,0.4,0.1},
-        {0.2,0.1,0.3,0.4},
-        {0.2,0.1,0.4,0.3}
-    };
 
-    for (auto& config : configs) {
-        for (double a_curve : a_curve_values) {
-            for (double a_max_pref : a_max_pref_values) {
-                for (int i=0; i<20; i++){
+    
+
+    double delta_in = 0.10;  // paso deseado (puedes cambiarlo)
+
+    // Elegimos L redondeando 0.6/delta_in y definimos delta_eff := 0.6/L
+    // para garantizar suma exacta 1: 0.4 + L*delta_eff = 1.0
+    double L_real = 0.6 / delta_in;
+    long L = lround(L_real);               // redondeo al entero más cercano
+    double delta_eff = 0.6 / (double)L;    // paso ajustado exacto
+    double eps = 1e-12;
+    // Rejilla en el simplex truncado: p_i = 0.1 + k_i*delta_eff, sum k_i = L
+    // Iteramos con 3 bucles y cerramos con k4 = L - k1 - k2 - k3.
+
+    for (long k1 = 0; k1 <= L; ++k1) {
+        for (long k2 = 0; k2 <= L - k1; ++k2) {
+            for (long k3 = 0; k3 <= L - k1 - k2; ++k3) {
+                long k4 = L - k1 - k2 - k3;
+
+                double p1 = 0.1 + k1 * delta_eff;
+                double p2 = 0.1 + k2 * delta_eff;
+                double p3 = 0.1 + k3 * delta_eff;
+                double p4 = 0.1 + k4 * delta_eff;
+
+                // Verificación numérica de suma 1 (tolerancia eps)
+                for (int i=0; i<50; i++){
                     if (count < init){
                         continue;
                     }else{
-                        algorithm_sample(config, a_max_pref, a_curve, timestr, file_name,argc,argv);
+                        double config[4] = {p1, p2, p3, p4};
+                        algorithm_sample(config, timestr, file_name,argc,argv);
                     }
                 }
             }
         }
     }
+
+
     
     
     return (EXIT_SUCCESS);
