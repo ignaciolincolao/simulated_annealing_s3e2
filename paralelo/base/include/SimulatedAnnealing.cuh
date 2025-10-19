@@ -135,7 +135,7 @@ public:
     void UpdateProb(int it);
     
     void ValidateGPU();
-    DataResult cpu_one_tid_newSolution(int tid) const;
+    DataResult cpu_one_tid_newSolution(int aluchange, int newSchool);
 
     double penaltyParents(int *currentSolution, float* h_penalty_matrix);
    

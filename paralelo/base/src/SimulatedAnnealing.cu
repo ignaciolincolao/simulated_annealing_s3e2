@@ -91,7 +91,6 @@ double SimulatedAnnealing::runGPU(){
         alpha,
         currentVars);
 
-
     cout << "--------------- Primeros datos -------------\n";
     cout << "Primer costo de solución: " << costBestSolution << "\n";
     cout << "Primer distancia: " << meanDist(currentSolution, distMat)/saParams.max_dist << "\n"; //lo normalize
@@ -943,7 +942,6 @@ double SimulatedAnnealing::penaltyParents(int *currentSolution, float* h_penalty
 
 void SimulatedAnnealing::ValidateGPU(){
     CUDAWrapper* cudaWrapper = new CUDAWrapper(cuParams, saParams, mt);
-    // cout << "test" << endl;
     inicializationValues(cudaWrapper);
     cudaWrapper->memInit(previousSolution,
         bestSolution,
@@ -959,13 +957,7 @@ void SimulatedAnnealing::ValidateGPU(){
 
 
     std::vector<int> solution;
-
-    // Llamada a la función
-    asignacionSAE(dataSet->students, dataSet->colegios, solution);
-
-    /*
-    //error max detectado de 2e-16 (ciclo 54)
-    int n_ciclos = 1000;
+    int n_ciclos = 100000;
     std::vector<DataResult> sol;
     int id_select= 0;
     DataResult cpu;
@@ -993,9 +985,8 @@ void SimulatedAnnealing::ValidateGPU(){
 
         auto r = sol[id_select];
         //mostrar accion realizada
-        //cout << "accion: -> stu= " << r.stu << " -> col= " << r.col << " costo=" << r.costSolution << "\n";
+        cout << "iteracion: "<< ciclo << " accion: -> stu= " << r.stu << " -> col= " << r.col << " costo=" << r.costSolution << "\n";
         
-        //2nd kernel (se cambia a un alu de col)
         cudaWrapper->newSolutionUpdate(costCurrentSolution, id_select);
         cudaWrapper->previousSolution(id_select);
         cudaWrapper->getPreviousSolutionUnitTest(previousSolutionUnitTest);
@@ -1015,11 +1006,10 @@ void SimulatedAnnealing::ValidateGPU(){
                 saParams.c_accepta++;
                 saParams.count_rechaso = 0;
 
-                cpu = cpu_one_tid_newSolution(r.stu); //funcion CPU que imita al kernel
+                cpu = cpu_one_tid_newSolution(r.stu, r.col); //funcion CPU que imita al kernel
 
                 dif = costTempSol - costBestSolution;
                 if (dif>0){
-                    /*
                     if (dif > epsilon){
                         cout << "iteracion N " << ciclo+1 << " : Resultado no es igual a CPU, error de "<< dif<< "\n";
                         cout << "accion realizada: -> stu= " << r.stu << " -> col= " << r.col << " costo=" << r.costSolution << "\n";  
@@ -1056,102 +1046,58 @@ void SimulatedAnnealing::ValidateGPU(){
     cout << setprecision(16) << "Total GPU: " << costBestSolution << "\n";
     cout << setprecision(16) << "Error maximo: " << max_error << " ciclo: " << ciclo_max_error << "\n";
 
-
-
-    //comprobacion del primer kernel
-    /*
-    int mismatches = 0;
-    double eps = 1e-9;
-    const int N = (int)sol.size();
-    for (int tid = 0; tid < N; ++tid) {
-        DataResult cpu = cpu_one_tid_newSolution(tid);
-        const DataResult& gpu = sol[tid];
-
-        bool ok_stu = (cpu.stu == gpu.stu);
-        bool ok_col = (cpu.col == gpu.col);
-
-        bool ok_cost;
-        const double SENT = static_cast<double>(0xffffffffffffffffULL);
-        if (cpu.costSolution >= 1e18 || gpu.costSolution >= 1e18) {
-            ok_cost = ( (cpu.costSolution >= 1e18) && (gpu.costSolution >= 1e18) );
-        } else {
-            ok_cost = std::fabs(cpu.costSolution - gpu.costSolution) <= eps;
-        }
-
-        if (!(ok_stu && ok_col && ok_cost)) {
-            if (mismatches < 10) {
-                std::cout << "Mismatch tid " << tid
-                          << " CPU(stu=" << cpu.stu << ", col=" << cpu.col
-                          << ", cost=" << cpu.costSolution << ") vs "
-                          << "GPU(stu=" << gpu.stu << ", col=" << gpu.col
-                          << ", cost=" << gpu.costSolution << ")\n";
-            }
-            ++mismatches;
-        }
-    }
-
-    std::cout << "[validateGPU_newSolution] "
-              << (mismatches ? "Fallos=" : "OK. fallos=")
-              << mismatches << " de " << N << "\n";
-
-    */
-
-
     delete cudaWrapper;
 }
 
 //imitacion del kernel de un movimiento a la vez, pero en CPU para pruebas unitarias 
-DataResult SimulatedAnnealing::cpu_one_tid_newSolution(int tid) const {
-    const int n_students   = saParams.n_students;
-    const int n_colegios   = saParams.n_colegios;
-    const int aluchange    = tid;
-    const int newSchool    = saParams.shuffle_colegios[0]; // igual que el kernel actual
-    const int currentSchool= currentSolution[aluchange];
+DataResult SimulatedAnnealing::cpu_one_tid_newSolution(int aluchange, int newSchool) {
+    int n_students   = saParams.n_students;
+    int n_colegios   = saParams.n_colegios;
+    int currentSchool= currentSolution[aluchange];
 
     DataResult out;
     out.stu = aluchange;
     out.col = newSchool;
 
-    // Sentinela si no hay movimiento (igual que kernel)
-    if (newSchool == currentSchool) {
-        out.costSolution = static_cast<double>(0xffffffffffffffffULL);
-        return out;
-    }
-
-    // Snapshot de agregados
+    //copia de los valores
     double sumDist     = currentVars[0];
     double totalSesc   = currentVars[1];
     double totalCupo   = currentVars[2];
     double penalty     = currentVars[3];
 
-    // Matriz de distancias en HOST es contigua: stride = n_colegios
-    const size_t stride = static_cast<size_t>(n_colegios);
+    ////////////////////////////////////////////////////////////////
+    /////// Descuenta antes de mover
+    ////////////////////////////////////////////////////////////////
 
-    // --- Descontar antes de mover ---
-    sumDist -= matrestest[static_cast<size_t>(aluchange) * stride + currentSchool];
+    // Distancia
+    sumDist -= distMat[aluchange][currentSchool];
 
+    // Seg de la escuela actual
     int totA = aluxcol[currentSchool];
     int vulA = aluVulxCol[currentSchool];
     int novA = totA - vulA;
-    totalSesc -= std::fabs( (vulA/(double)totalVuln) - (novA/(double)(n_students - totalVuln)) );
-    penalty   -= h_penalty_matrix[aluchange*saParams.n_colegios +currentSchool];
-    totalCupo -= (double)totA * std::fabs((double)cupoArray[currentSchool] - totA)
-                 / std::pow(cupoArray[currentSchool]*0.5, 2);
+    totalSesc -= std::fabs((vulA/(double)totalVuln) - (novA/(double)(n_students - totalVuln)));
+
+    // Costocupo escuela actual 
+    double p_costCupo = (double)totA/cupoArray[currentSchool];
+    totalCupo -= calcCostoCupo(p_costCupo);
 
     //std::cout << std::setprecision(17) << "CPU Vars: " << totA << " " << cupoArray[currentSchool] << "\n";
-
+    // Seg de la escuela nueva
     int totB = aluxcol[newSchool];
     int vulB = aluVulxCol[newSchool];
     int novB = totB - vulB;
     totalSesc -= std::fabs( (vulB/(double)totalVuln) - (novB/(double)(n_students - totalVuln)) );
     
-    totalCupo -= (double)totB * std::fabs((double)cupoArray[newSchool] - totB)
-                 / std::pow(cupoArray[newSchool]*0.5, 2);
+    //costocupo escuela nueva
+    p_costCupo = (double)totB/cupoArray[newSchool];
+    totalCupo -= calcCostoCupo(p_costCupo);
 
-    //std::cout << std::setprecision(17) << "CPU cost 1: " << totalCupo << "\n";
-    penalty   += h_penalty_matrix[aluchange*saParams.n_colegios +newSchool];
+    ////////////////////////////////////////////////////////////////
+    /////// Realiza Movimiento
+    ////////////////////////////////////////////////////////////////
 
-    //ELimina el estudiante de la escuela actual
+    //elimina el estudiante de la escuela actual
     aluxcol[currentSchool]-=1;
     aluVulxCol[currentSchool]-=alumnosSep[aluchange];
     //Asigna al estudiante a la nueva escuela
@@ -1159,27 +1105,40 @@ DataResult SimulatedAnnealing::cpu_one_tid_newSolution(int tid) const {
     aluxcol[newSchool]+=1;
     aluVulxCol[newSchool]+=alumnosSep[aluchange];
 
-    // --- Sumar después de mover ---
-    sumDist += matrestest[static_cast<size_t>(aluchange) * stride + newSchool];
+    ////////////////////////////////////////////////////////////////
+    ////// Calculó despues de mover
+    //////////////////////////////////////////////////////////////
+
+    //distancia de la nueva escuela
+    sumDist += distMat[aluchange][newSchool];
+
+    //seg de la escuela actual
     int totA2 = aluxcol[currentSchool];
     int vulA2 = aluVulxCol[currentSchool];
     int novA2 = totA2 - vulA2;
     totalSesc += std::fabs( (vulA2/(double)totalVuln) - (novA2/(double)(n_students - totalVuln)) );
 
-    //std::cout << std::setprecision(17) << "CPU Vars 2: " << totA2 << " " << cupoArray[currentSchool] << "\n";
-    totalCupo += (double)totA2 * std::fabs((double)cupoArray[currentSchool] - totA2)
-                 / std::pow(cupoArray[currentSchool]*0.5, 2);
+    //costocupo escuela actual
+    p_costCupo = double(totA2)/cupoArray[currentSchool];
+    totalCupo += calcCostoCupo(p_costCupo);
 
-
-
+    //seg de la escuela antigua
     int totB2 = aluxcol[newSchool];
     int vulB2 = aluVulxCol[newSchool];
     int novB2 = totB2 - vulB2;
     totalSesc += std::fabs( (vulB2/(double)totalVuln) - (novB2/(double)(n_students - totalVuln)) );
 
-    //std::cout << std::setprecision(17) << "CPU cost 2 A: " << totalCupo << "\n";
-    totalCupo += (double)totB2 * std::fabs((double)cupoArray[newSchool] - totB2)
-                 / std::pow(cupoArray[newSchool]*0.5, 2);
+    //costcupo escuela antigua
+    p_costCupo = double(totB2)/cupoArray[newSchool];
+    totalCupo += calcCostoCupo(p_costCupo);
+
+
+    //Calculo de penalty
+    //penalty de la escuela actual
+    penalty   -= h_penalty_matrix[aluchange*saParams.n_colegios +currentSchool];
+
+    //penalty de la escuela nueva
+    penalty   += h_penalty_matrix[aluchange*saParams.n_colegios +newSchool];
 
     //std::cout << std::setprecision(17) << "CPU cost 2 B: " << totalCupo << "\n";
     currentVars[0] = sumDist;
@@ -1284,9 +1243,9 @@ int* SimulatedAnnealing::summaryCostoCupo(const int* currentSolution,
         fout << colegios[j].rbd << "\t" << capacidad << "\t" << ocup << "\n";
     }
     fout.close();
-    resumen[1] = resumen[1] - 277;
     std::cout << "\n" << "Colegios aun con vacantes: " << resumen[0]
             << " | Vacantes totales restantes: " << resumen[1] << " | colegios en sobrecupo: " << resumen[2] << "\n";
+    resumen[1] = resumen[1] - 277;
     return resumen;
 
 }
@@ -1767,3 +1726,9 @@ int SimulatedAnnealing::balanceCostoCupo(
 
     return summaryPrefs[saParams.max_choices];
 }
+
+
+
+
+
+

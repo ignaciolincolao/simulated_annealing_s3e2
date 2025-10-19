@@ -109,8 +109,8 @@ int main(int argc, char *argv[])
             cuParams,
             mt);
 
-    simulatedAnneling->runGPU();
-    //simulatedAnneling->ValidateGPU();
+    //simulatedAnneling->runGPU();
+    simulatedAnneling->ValidateGPU();
     delete simulatedAnneling;
     delete simStruct;
     delete rMgrParams;

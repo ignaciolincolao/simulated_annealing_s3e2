@@ -219,7 +219,7 @@ void CUDAWrapper::AcceptanceSolution(){
 
 void CUDAWrapper::newSolution(){
     newSolution_kernel<<<cuParams.n_block, cuParams.n_thread>>>(
-                        d_array_current_Solution,
+                                d_array_current_Solution,
                                 d_cupoArray,
                                 d_alumnosSep,
                                 d_aluxcol,
