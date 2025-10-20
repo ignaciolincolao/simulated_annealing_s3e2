@@ -148,6 +148,8 @@ public:
     int balanceCostoCupo(int* currentSolution, const std::vector<Info_alu> &alumnos, const std::vector<Info_colegio> &colegios);
 
     double calcCostoCupo_sobrecupo(double p_costCupo);
+
+    void runCPU();
 };
 
 #endif

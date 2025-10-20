@@ -299,8 +299,8 @@ double SimulatedAnnealing::runGPU(){
     //int unassigned = balanceCostoCupo(bestSolution,dataSet->students, dataSet->colegios);
     
     //llamar a la funcion que lo calcula por el algoritmo original del SAE
-    //std::vector<int> solution;
-    //asignacionSAE(dataSet->students, dataSet->colegios, solution); //743 sin asignar en alguna pref
+    std::vector<int> solution;
+    asignacionSAE(dataSet->students, dataSet->colegios, solution); //743 sin asignar en alguna pref
     //fin llamada
 
     
@@ -1042,8 +1042,8 @@ void SimulatedAnnealing::ValidateGPU(){
     double costBestSol = calCosto(bestSolution,distMat,ptr_alpha, alumnosSep, totalVuln, cupoArray);
 
     cout << setprecision(16) << "CPU thread: " << cpu.costSolution << "\n";
-    cout << setprecision(16) << "Total CPU: " << costBestSol << "\n";
-    cout << setprecision(16) << "Total GPU: " << costBestSolution << "\n";
+    cout << setprecision(16) << "Total CPU:  " << costBestSol << "\n";
+    cout << setprecision(16) << "Total GPU:  " << costBestSolution << "\n";
     cout << setprecision(16) << "Error maximo: " << max_error << " ciclo: " << ciclo_max_error << "\n";
 
     delete cudaWrapper;
@@ -1732,3 +1732,202 @@ int SimulatedAnnealing::balanceCostoCupo(
 
 
 
+
+
+
+void SimulatedAnnealing::runCPU() {
+    CUDAWrapper* cudaWrapper = new CUDAWrapper(cuParams, saParams, mt);
+    inicializationValues(cudaWrapper);
+    cudaWrapper->memInit(previousSolution,
+        bestSolution,
+        currentSolution,
+        cupoArray,
+        alumnosSep,
+        totalVuln,
+        aluxcol,
+        aluVulxCol,
+        matrestest,
+        alpha,
+        currentVars);
+    
+    int n_students   = saParams.n_students;
+    int n_colegios   = saParams.n_colegios;
+    DataResult solution;
+    auto start = std::chrono::high_resolution_clock::now();
+
+    cout << "--------------- Primeros datos -------------\n";
+    cout << "Primer costo de solución: " << costBestSolution << "\n";
+    cout << "Primer distancia: " << meanDist(currentSolution, distMat)/saParams.max_dist << "\n"; //lo normalize
+    cout << "Primer Segregación: " << S(currentSolution, alumnosSep, totalVuln) << "\n";
+    cout << "Primer CostoCupo: " << costCupo(currentSolution, cupoArray) << "\n";
+    cout << "Penalty inicial: " << penaltyParents(currentSolution,h_penalty_matrix)/saParams.n_students << "\n\n";
+
+    while(saParams.temp > saParams.min_temp){
+
+        shuffle(saParams.shuffle_student, saParams.max_changes_students, dist);
+        shuffle(saParams.shuffle_colegios, saParams.max_changes_school, dist2);
+        int newSchool = saParams.shuffle_colegios[0];
+        double cost_solution;
+        double min_cost = 1.0;
+
+        //verion CPU primer kernel, mover a todos los estudiantes a una misma escuela, uno a la vez, y comparar el mejor Z
+        for (int i=0; i<saParams.n_students; i++){
+            int aluchange = saParams.shuffle_student[i];
+            int currentSchool= currentSolution[aluchange];
+            cost_solution = 0.0;
+
+            double sumDist     = currentVars[0];
+            double totalSesc   = currentVars[1];
+            double totalCupo   = currentVars[2];
+            double penalty     = currentVars[3];
+
+            ////////////////////////////////////////////////////////////////
+            /////// Descuenta antes de mover
+            ////////////////////////////////////////////////////////////////
+
+            // Distancia
+            sumDist -= distMat[aluchange][currentSchool];
+
+            // Seg de la escuela actual
+            int totA = aluxcol[currentSchool];
+            int vulA = aluVulxCol[currentSchool];
+            int novA = totA - vulA;
+            totalSesc -= std::fabs((vulA/(double)totalVuln) - (novA/(double)(n_students - totalVuln)));
+
+            // Costocupo escuela actual 
+            double p_costCupo = (double)totA/cupoArray[currentSchool];
+            totalCupo -= calcCostoCupo(p_costCupo);
+
+            //std::cout << std::setprecision(17) << "CPU Vars: " << totA << " " << cupoArray[currentSchool] << "\n";
+            // Seg de la escuela nueva
+            int totB = aluxcol[newSchool];
+            int vulB = aluVulxCol[newSchool];
+            int novB = totB - vulB;
+            totalSesc -= std::fabs( (vulB/(double)totalVuln) - (novB/(double)(n_students - totalVuln)) );
+            
+            //costocupo escuela nueva
+            p_costCupo = (double)totB/cupoArray[newSchool];
+            totalCupo -= calcCostoCupo(p_costCupo);
+
+            ////////////////////////////////////////////////////////////////
+            ////// Calculó despues de mover
+            //////////////////////////////////////////////////////////////
+
+            //distancia de la nueva escuela
+            sumDist += distMat[aluchange][newSchool];
+
+            //seg de la escuela actual
+            int totA2 = aluxcol[currentSchool] -1;
+            int vulA2 = aluVulxCol[currentSchool] -alumnosSep[aluchange];
+            int novA2 = totA2 - vulA2;
+            totalSesc += std::fabs( (vulA2/(double)totalVuln) - (novA2/(double)(n_students - totalVuln)) );
+
+            //costocupo escuela actual
+            p_costCupo = double(totA2)/cupoArray[currentSchool];
+            totalCupo += calcCostoCupo(p_costCupo);
+
+            //seg de la escuela antigua
+            int totB2 = aluxcol[newSchool] +1;
+            int vulB2 = aluVulxCol[newSchool] +alumnosSep[aluchange];
+            int novB2 = totB2 - vulB2;
+            totalSesc += std::fabs( (vulB2/(double)totalVuln) - (novB2/(double)(n_students - totalVuln)) );
+
+            //costcupo escuela antigua
+            p_costCupo = double(totB2)/cupoArray[newSchool];
+            totalCupo += calcCostoCupo(p_costCupo);
+
+
+            //Calculo de penalty
+            //penalty de la escuela actual
+            penalty   -= h_penalty_matrix[aluchange*saParams.n_colegios +currentSchool];
+
+            //penalty de la escuela nueva
+            penalty   += h_penalty_matrix[aluchange*saParams.n_colegios +newSchool];
+
+
+            // Combinar con alphas (mismas normalizaciones que el kernel)
+            cost_solution += alpha[0]*(sumDist / (double)n_students) / saParams.max_dist;
+            cost_solution += alpha[1]*(totalSesc * 0.5);
+            cost_solution += alpha[2]*(totalCupo / (double)n_colegios);
+            cost_solution += alpha[3]*(penalty / n_students);
+
+            if (cost_solution < min_cost){
+                min_cost = cost_solution;
+                solution.costSolution = cost_solution;
+                solution.stu = aluchange;
+                solution.col = newSchool;
+            }
+
+        }
+        //verion CPU del segundo kernel, realizar el mejor movimiento del paso anterior
+        DataResult movimiento = cpu_one_tid_newSolution(solution.stu, solution.col);
+        costCurrentSolution = movimiento.costSolution;
+        //cout << costCurrentSolution << " Kernel: "<< solution.costSolution<< "\n";
+        //verificar error
+        if(costCurrentSolution<0.00 || isnan(costCurrentSolution)){
+            cout << "error" << endl;
+            cout << saParams.count << endl;
+            std::cout << saParams.shuffle_colegios[cuParams.selectThread] << "\n";
+            std::cout << saParams.shuffle_student[cuParams.selectBlock] << "\n";
+            std::cout << "distancia: " << meanDist(currentSolution,distMat) << "\n";
+            std::cout << "Segregación: " << S(currentSolution,alumnosSep, totalVuln) << "\n";
+            std::cout << "CostoCupo: " << costCupo(currentSolution,cupoArray) << "\n";
+            std::cout << "Penalty: " << penaltyParents(currentSolution,h_penalty_matrix) << "\n";
+            std::cout << costCurrentSolution;
+            exit(1);
+        }
+
+        //copypaste del ciclo original
+        if(costCurrentSolution < costBestSolution){
+            costBestSolution = costCurrentSolution;
+            costPreviousSolution = costCurrentSolution;
+            memcpy(bestSolution, currentSolution, n_students * sizeof(int));
+            saParams.c_accepta++;
+            saParams.count_rechaso = 0;
+            //cout << costCurrentSolution << " | " << saParams.count <<  endl;
+
+        }
+        else {
+            if(acceptanceCriterion->apply(costPreviousSolution,costCurrentSolution,dist_accepta ) == 1) {
+                //cudaWrapper->AcceptanceSolution();
+                costPreviousSolution = costCurrentSolution;
+                saParams.count_rechaso = 0;
+                saParams.c_accepta++;
+            }
+            else {
+                saParams.count_rechaso++;
+            }
+        }
+        //supongo que esto hace bajar la temperatura
+        if(lengthTemperature->apply()){
+            coolingScheme->apply();
+        }
+        reheatingMethod->apply();
+        saParams.count_trials++;
+        saParams.count++;
+
+        if (saParams.count % 20000 == 0) {
+            //printf("Iteración actual: %d | temp: %f \n", saParams.count, saParams.temp);
+        }
+    }
+
+    auto end = std::chrono::high_resolution_clock::now();
+    double time_taken = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+    time_taken *= 1e-9;
+
+    cout << "--------------- Resultado Final ----------------" << "\n";
+    cout << "Numero de Ciclos: " << saParams.count << "\n";
+    cout << "Costo de la solución previa: " << costPreviousSolution << "\n";
+    cout << "Costo de la mejor solución: " << costBestSolution << "\n";
+    cout << "Costo de la solución actual: " << costCurrentSolution << "\n";
+    cout << "Tiempo de ejecución de SA: " << time_taken << "\n";
+    cout << "distancia: " << meanDist(bestSolution, distMat)/saParams.max_dist << "\n"; //lo normalice
+    cout << "Segregación: " << S(bestSolution, alumnosSep, totalVuln) << "\n";
+    cout << "CostoCupo: " << costCupo(bestSolution, cupoArray) << "\n";
+    cout << "Penalty final: " << penaltyParents(bestSolution,h_penalty_matrix)/saParams.n_students << "\n";
+
+    int* summaryPrefs = summaryPreferences(bestSolution, dataSet->students);
+    int* data_costocupo = summaryCostoCupo(bestSolution, dataSet->colegios);
+    cout << "--------------- Finalizo con exito ----------------" << "\n";
+    
+}
