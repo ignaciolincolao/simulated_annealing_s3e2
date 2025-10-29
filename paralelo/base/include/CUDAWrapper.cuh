@@ -84,7 +84,9 @@ class CUDAWrapper{
         //variables de la update del penalty
         int *d_preferences_matrix, *d_num_preferences;
         float *d_penalty_matrix;
+        GPU_move *d_matrix_solution;
 
+        std::ofstream time_GPU;
 
     public:
         CUDAWrapper(CUDAParams& cuParams_,SimulatedParams& saParams, mt19937& mt);

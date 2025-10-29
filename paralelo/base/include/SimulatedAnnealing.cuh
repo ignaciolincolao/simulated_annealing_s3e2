@@ -149,7 +149,7 @@ public:
 
     double calcCostoCupo_sobrecupo(double p_costCupo);
 
-    void runCPU();
+    double runCPU();
 };
 
 #endif

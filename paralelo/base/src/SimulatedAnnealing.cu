@@ -148,6 +148,10 @@ double SimulatedAnnealing::runGPU(){
 
     #endif
     saParams.count++;
+
+    //std::ofstream tiempoGPU;
+    //tiempoGPU.open("../../save/tiempo_GPU.txt", std::ios::app);
+
     while(saParams.temp > saParams.min_temp){
         ///////////////////////////////////////////////////
         /// Copia Solución Anterior a la actual
@@ -156,23 +160,30 @@ double SimulatedAnnealing::runGPU(){
         ///////////////////////////////////////////////////
         ///  Selecciona aleatoria mente a los alumnos
         ///////////////////////////////////////////////////
+        //auto start_shuffle = std::chrono::high_resolution_clock::now();
         shuffle(saParams.shuffle_student, saParams.max_changes_students, dist);
         shuffle(saParams.shuffle_colegios, saParams.max_changes_school, dist2);
+
+        //auto end_shuffle = std::chrono::high_resolution_clock::now();
+        //double time_taken_shuffle = std::chrono::duration_cast<std::chrono::nanoseconds>(end_shuffle - start_shuffle).count();
+        //tiempoGPU << std::setprecision(10)<<time_taken_shuffle << ",";
+        //tiempoGPU.flush();
         ///////////////////////////////////////////////////
         ///  Envia datos a GPU
         ///////////////////////////////////////////////////
+    
         cudaWrapper->uploadCurrentMemorySolution();
-
         ///////////////////////////////////////////////////
         ///  Ejecuta los kernel
         //////////////////////////////////////////////////
+        
         cudaWrapper->newSolution();
         cudaWrapper->find_minimum();
+
         //cudaWrapper->sortSolutions();
         //UpdateProb(saParams.count);
         id_select= 0;//selecSolution();
 
-        
         
     
         ///////////////////////////////////////////////////
@@ -180,6 +191,7 @@ double SimulatedAnnealing::runGPU(){
         //////////////////////////////////////////////////
         cudaWrapper->newSolutionUpdate(costCurrentSolution, id_select);
         
+        //auto start_post = std::chrono::high_resolution_clock::now();
         ///////////////////////////////////////////////////
         ///  Verifica Error
         //////////////////////////////////////////////////
@@ -220,7 +232,7 @@ double SimulatedAnnealing::runGPU(){
             costPreviousSolution = costCurrentSolution;
             saParams.c_accepta++;
             saParams.count_rechaso = 0;
-            //cout << costCurrentSolution << " | " << saParams.count << " | " << id_select <<  endl;
+            //cout << costCurrentSolution << " | " << saParams.count <<  endl;
 
 #if SAVE_DATA
     #ifdef ENABLE_OPEN_RECORD_REGISTER       
@@ -271,6 +283,11 @@ double SimulatedAnnealing::runGPU(){
         cudaWrapper->synchronizeBucle();
         saParams.count_trials++;
         saParams.count++;
+
+        //auto end_post = std::chrono::high_resolution_clock::now();
+        //double time_taken_post = std::chrono::duration_cast<std::chrono::nanoseconds>(end_post - start_post).count();
+        //tiempoGPU << std::setprecision(10)<< time_taken_post << "\n";
+
     }
     ///////////////////////////////////////////////////
     /// Obtiene el tiempo de ejecución
@@ -299,8 +316,8 @@ double SimulatedAnnealing::runGPU(){
     //int unassigned = balanceCostoCupo(bestSolution,dataSet->students, dataSet->colegios);
     
     //llamar a la funcion que lo calcula por el algoritmo original del SAE
-    std::vector<int> solution;
-    asignacionSAE(dataSet->students, dataSet->colegios, solution); //743 sin asignar en alguna pref
+    //std::vector<int> solution;
+    //asignacionSAE(dataSet->students, dataSet->colegios, solution); //743 sin asignar en alguna pref
     //fin llamada
 
     
@@ -1735,7 +1752,7 @@ int SimulatedAnnealing::balanceCostoCupo(
 
 
 
-void SimulatedAnnealing::runCPU() {
+double SimulatedAnnealing::runCPU() {
     CUDAWrapper* cudaWrapper = new CUDAWrapper(cuParams, saParams, mt);
     inicializationValues(cudaWrapper);
     cudaWrapper->memInit(previousSolution,
@@ -1762,10 +1779,24 @@ void SimulatedAnnealing::runCPU() {
     cout << "Primer CostoCupo: " << costCupo(currentSolution, cupoArray) << "\n";
     cout << "Penalty inicial: " << penaltyParents(currentSolution,h_penalty_matrix)/saParams.n_students << "\n\n";
 
+    std::ofstream tiempoCPU;
+    tiempoCPU.open("../../save/tiempo_CPU.txt", std::ios::app);
+
     while(saParams.temp > saParams.min_temp){
+        auto start_shuffle = std::chrono::high_resolution_clock::now();
+        memcpy(currentSolution, previousSolution, n_students * sizeof(int));
+        memcpy(aluxcol, previousAluxCol, n_colegios * sizeof(int));
+        memcpy(aluVulxCol, previousAluVulxCol, n_colegios * sizeof(int));
+        memcpy(currentVars, previousVars, 4 * sizeof(double));
 
         shuffle(saParams.shuffle_student, saParams.max_changes_students, dist);
         shuffle(saParams.shuffle_colegios, saParams.max_changes_school, dist2);
+
+        auto end_shuffle = std::chrono::high_resolution_clock::now();
+        double time_taken_shuffle = std::chrono::duration_cast<std::chrono::nanoseconds>(end_shuffle - start_shuffle).count();
+
+        auto start_it = std::chrono::high_resolution_clock::now();
+
         int newSchool = saParams.shuffle_colegios[0];
         double cost_solution;
         double min_cost = 1.0;
@@ -1858,11 +1889,23 @@ void SimulatedAnnealing::runCPU() {
                 solution.col = newSchool;
             }
 
+
         }
+
+        auto end_it = std::chrono::high_resolution_clock::now();
+        double time_taken_it = std::chrono::duration_cast<std::chrono::nanoseconds>(end_it - start_it).count();
+
+        auto start_onesolution = std::chrono::high_resolution_clock::now();
+
         //verion CPU del segundo kernel, realizar el mejor movimiento del paso anterior
         DataResult movimiento = cpu_one_tid_newSolution(solution.stu, solution.col);
         costCurrentSolution = movimiento.costSolution;
-        //cout << costCurrentSolution << " Kernel: "<< solution.costSolution<< "\n";
+
+        auto end_onesolution = std::chrono::high_resolution_clock::now();
+        double time_taken_onesolution = std::chrono::duration_cast<std::chrono::nanoseconds>(end_onesolution - start_onesolution).count();
+
+        auto start_post = std::chrono::high_resolution_clock::now();
+
         //verificar error
         if(costCurrentSolution<0.00 || isnan(costCurrentSolution)){
             cout << "error" << endl;
@@ -1879,9 +1922,16 @@ void SimulatedAnnealing::runCPU() {
 
         //copypaste del ciclo original
         if(costCurrentSolution < costBestSolution){
+            //cudaWrapper->AcceptanceBestSolution();
+            memcpy(bestSolution, currentSolution, n_students * sizeof(int));
+            memcpy(previousSolution, currentSolution, n_students * sizeof(int));
+            memcpy(previousAluxCol, aluxcol, n_colegios * sizeof(int));
+            memcpy(previousAluVulxCol, aluVulxCol, n_colegios * sizeof(int));
+            memcpy(previousVars, currentVars, 4 * sizeof(double));
+            memcpy(bestVars, currentVars, 4 * sizeof(double));
             costBestSolution = costCurrentSolution;
             costPreviousSolution = costCurrentSolution;
-            memcpy(bestSolution, currentSolution, n_students * sizeof(int));
+
             saParams.c_accepta++;
             saParams.count_rechaso = 0;
             //cout << costCurrentSolution << " | " << saParams.count <<  endl;
@@ -1890,7 +1940,12 @@ void SimulatedAnnealing::runCPU() {
         else {
             if(acceptanceCriterion->apply(costPreviousSolution,costCurrentSolution,dist_accepta ) == 1) {
                 //cudaWrapper->AcceptanceSolution();
+                memcpy(previousSolution, currentSolution, n_students * sizeof(int));
+                memcpy(previousAluxCol, aluxcol, n_colegios * sizeof(int));
+                memcpy(previousAluVulxCol, aluVulxCol, n_colegios * sizeof(int));
+                memcpy(previousVars, currentVars, 4 * sizeof(double));
                 costPreviousSolution = costCurrentSolution;
+
                 saParams.count_rechaso = 0;
                 saParams.c_accepta++;
             }
@@ -1898,17 +1953,20 @@ void SimulatedAnnealing::runCPU() {
                 saParams.count_rechaso++;
             }
         }
+
         //supongo que esto hace bajar la temperatura
         if(lengthTemperature->apply()){
             coolingScheme->apply();
         }
+        
         reheatingMethod->apply();
         saParams.count_trials++;
         saParams.count++;
+        
+        auto end_post = std::chrono::high_resolution_clock::now();
+        double time_taken_post = std::chrono::duration_cast<std::chrono::nanoseconds>(end_post - start_post).count();
+        tiempoCPU << std::setprecision(10)<<time_taken_shuffle << "," << time_taken_it<< "," << time_taken_onesolution<< ","<<time_taken_post << "\n";
 
-        if (saParams.count % 20000 == 0) {
-            //printf("Iteración actual: %d | temp: %f \n", saParams.count, saParams.temp);
-        }
     }
 
     auto end = std::chrono::high_resolution_clock::now();
@@ -1930,4 +1988,5 @@ void SimulatedAnnealing::runCPU() {
     int* data_costocupo = summaryCostoCupo(bestSolution, dataSet->colegios);
     cout << "--------------- Finalizo con exito ----------------" << "\n";
     
+    return costBestSolution;
 }

@@ -29,12 +29,24 @@ __global__ void newSolution_kernel(
     const int* __restrict__ d_shuffle_colegios,
     const double* __restrict__ d_currentVars,
     size_t pitch,
-    const float * __restrict__ d_penalty_matrix //matriz de penalidades
+    const float * __restrict__ d_penalty_matrix, //matriz de penalidades
+    GPU_move *d_matrix_solution
 );
+
 
 __global__ void reduce_kernel(
     DataResult *d_array_current_Solution, 
     int N);
+
+__global__ void reduce_kernel_update(DataResult *d_array_current_Solution, 
+                                    int N, 
+                                    GPU_move *d_matrix_solution,
+                                    double *d_currentVars,
+                                    int *aluxcol,
+                                    int *aluvulcol,
+                                    int *d_currentSolution,
+                                    double *d_costCurrentSolution
+                                );
 
 __global__ void all_solution_kernel(
     DataResult *d_array_current_Solution,

@@ -22,6 +22,13 @@ struct DataResult {
     }
 };
 
+
+struct GPU_move {
+    double currentVars[4];   
+    int aluxcol[6]; //1: colegio origen 2: cantidad nueva colegio origen 3: cantidad nueva vulnerables colegio origen
+                    //4: colegio destino 5: cantidad nueva colegio destino 6: cantidad nueva vulnerables colegio origen
+
+};
 #undef HD
 
 #endif

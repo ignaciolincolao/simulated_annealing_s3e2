@@ -97,6 +97,7 @@ void CUDAWrapper::memInit(
     cudaMalloc((void **) &d_prevMove, 2 * sizeof(int)); //guardar movimiento anterior para pruebas unitarias
     cudaMalloc((void **) &d_costPrevSolUnitTest, 1 * sizeof(double)); //guardar el costo del movimiento anterior realizado con el nuevo kernel
 
+    cudaMalloc((void **) &d_matrix_solution, cuParams.n_block*cuParams.n_thread*sizeof(GPU_move));
     ///////////////////////////////////////////////////
     /// Genera arreglos que contendran valores del 0 hasta saParams.n_students y saParams.n_colegios
     ///////////////////////////////////////////////////
@@ -155,6 +156,7 @@ void CUDAWrapper::memInit(
         printf("0 Async kernel error: %s\n", cudaGetErrorString(errAsync));
 
 
+    //time_GPU.open("../../save/tiempo_GPU.txt", std::ios::app);
 
 
 }
@@ -164,6 +166,7 @@ void CUDAWrapper::memCopyPrevToCurrent(){
     copyMemCol<<<numberOfBlocks,threadsPerBlock,0,streams[1]>>>(d_aluxcol, d_previousAluxcol,saParams.n_colegios);
     copyMemCol<<<numberOfBlocks,threadsPerBlock,0,streams[2]>>>(d_aluVulxCol, d_previousAluVulxCol,saParams.n_colegios);
     copyVars<<<1,4,0,streams[3]>>>(d_currentVars, d_previousVars);
+
     errSync  = cudaGetLastError();
     errAsync = cudaDeviceSynchronize();
     if (errSync != cudaSuccess) 
@@ -218,6 +221,12 @@ void CUDAWrapper::AcceptanceSolution(){
 }
 
 void CUDAWrapper::newSolution(){
+    /*
+    cudaEvent_t start, stop;
+    cudaEventCreate(&start);
+    cudaEventCreate(&stop);
+    cudaEventRecord(start);
+    */
     newSolution_kernel<<<cuParams.n_block, cuParams.n_thread>>>(
                                 d_array_current_Solution,
                                 d_cupoArray,
@@ -230,20 +239,60 @@ void CUDAWrapper::newSolution(){
                                 d_shuffle_colegios,
                                 d_currentVars,
                                 pitch,
-                                d_penalty_matrix
+                                d_penalty_matrix,
+                                d_matrix_solution
                             );
+    /*
+    cudaEventRecord(stop);
+    cudaEventSynchronize(stop);
+    float ms = 0;
+    cudaEventElapsedTime(&ms, start, stop);
+
+    time_GPU << std::setprecision(10)<<int(ms*1e6) <<",";
+    time_GPU.flush();
+    */
     CUDAWrapper::synchronizeBucle();
-
-
+    /*
+    cudaEventDestroy(start);
+    cudaEventDestroy(stop);
+    */
 
 }
 
 void CUDAWrapper::find_minimum(){
-
+    /*
+    cudaEvent_t start, stop;
+    cudaEventCreate(&start);
+    cudaEventCreate(&stop);
+    cudaEventRecord(start);
+    */
     reduce_kernel<<<cuParams.n_block,cuParams.n_thread,sizeof(DataResult) *(cuParams.n_thread/32)>>>(d_array_current_Solution,cuParams.n_block*cuParams.n_thread);
+    
+    reduce_kernel_update<<<1,((cuParams.n_block+32-1)/32)*32,sizeof(DataResult) *((((cuParams.n_block+32-1)/32)*32)/32)>>>(
+        d_array_current_Solution,
+        cuParams.n_block,
+        d_matrix_solution,
+        d_currentVars,
+        d_aluxcol,
+        d_aluVulxCol,
+        d_currentSolution,
+        d_costCurrentSolution
+    );
+
+
+    /*
+    cudaEventRecord(stop);
+    cudaEventSynchronize(stop);
+    float ms = 0;
+    cudaEventElapsedTime(&ms, start, stop);
+    time_GPU << std::setprecision(10)<<int((ms)*1e6) <<",";
+    time_GPU.flush();
+    */
     CUDAWrapper::synchronizeBucle();
-    reduce_kernel<<<1,((cuParams.n_block+32-1)/32)*32,sizeof(DataResult) *((((cuParams.n_block+32-1)/32)*32)/32)>>>(d_array_current_Solution,cuParams.n_block);
-    CUDAWrapper::synchronizeBucle();
+/*
+    cudaEventDestroy(start);
+    cudaEventDestroy(stop);
+    */
 }
 
 /*
@@ -268,7 +317,14 @@ void CUDAWrapper::newSolutionRandomSelection(uniform_int_distribution<int> dist,
 
 
 void CUDAWrapper::newSolutionUpdate(double& costCurrentSolution, int id_select)
-{
+{   
+    /*
+    cudaEvent_t start, stop;
+    cudaEventCreate(&start);
+    cudaEventCreate(&stop);
+    cudaEventRecord(start);
+*/
+    /*
         calculateSolution<<<1,1>>>(d_array_current_Solution,
         d_cupoArray,
         d_alumnosSep,
@@ -283,8 +339,23 @@ void CUDAWrapper::newSolutionUpdate(double& costCurrentSolution, int id_select)
         d_prevMove, //para pruebas unitarias
         d_penalty_matrix
 );
+
+    */
         getCurrentSolutionGpuToHost(costCurrentSolution);
+/*
+    cudaEventRecord(stop);
+    cudaEventSynchronize(stop);
+    float ms = 0;
+    cudaEventElapsedTime(&ms, start, stop);
+
+    time_GPU << std::setprecision(10)<<int(ms*1e6) <<",";
+    time_GPU.flush();
+*/
         synchronizeBucle();
+/*   
+    cudaEventDestroy(start);
+    cudaEventDestroy(stop);
+*/
 }
 
 
