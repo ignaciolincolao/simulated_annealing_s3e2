@@ -148,7 +148,16 @@ double SimulatedAnnealing::runGPU(){
 
     #endif
     saParams.count++;
+
+    #ifdef ENABLE_GPU_RECORD_TIME
+    std::ofstream tiempoGPU;
+    tiempoGPU.open("../../save/tiempo_GPU.txt", std::ios::app);
+    #endif
+
     while(saParams.temp > saParams.min_temp){
+        #ifdef ENABLE_GPU_RECORD_TIME
+        auto start_shuffle = std::chrono::high_resolution_clock::now();
+        #endif
         ///////////////////////////////////////////////////
         /// Copia Solución Anterior a la actual
         ///////////////////////////////////////////////////
@@ -158,6 +167,14 @@ double SimulatedAnnealing::runGPU(){
         ///////////////////////////////////////////////////
         shuffle(saParams.shuffle_student, saParams.max_changes_students, dist);
         shuffle(saParams.shuffle_colegios, saParams.max_changes_school, dist2);
+        
+        #ifdef ENABLE_GPU_RECORD_TIME
+        auto end_shuffle = std::chrono::high_resolution_clock::now();
+        double time_taken_shuffle = std::chrono::duration_cast<std::chrono::nanoseconds>(end_shuffle - start_shuffle).count();
+        tiempoGPU << std::setprecision(10)<<time_taken_shuffle << ",";
+        tiempoGPU.flush();
+        #endif
+
         ///////////////////////////////////////////////////
         ///  Envia datos a GPU
         ///////////////////////////////////////////////////
@@ -179,7 +196,10 @@ double SimulatedAnnealing::runGPU(){
         ///  Actualiza la nueva solución en la GPU
         //////////////////////////////////////////////////
         cudaWrapper->newSolutionUpdate(costCurrentSolution, id_select);
-        
+
+        #ifdef ENABLE_GPU_RECORD_TIME
+        auto start_post = std::chrono::high_resolution_clock::now();
+        #endif
         ///////////////////////////////////////////////////
         ///  Verifica Error
         //////////////////////////////////////////////////
@@ -271,6 +291,12 @@ double SimulatedAnnealing::runGPU(){
         cudaWrapper->synchronizeBucle();
         saParams.count_trials++;
         saParams.count++;
+
+        #ifdef ENABLE_GPU_RECORD_TIME
+        auto end_post = std::chrono::high_resolution_clock::now();
+        double time_taken_post = std::chrono::duration_cast<std::chrono::nanoseconds>(end_post - start_post).count();
+        tiempoGPU << std::setprecision(10)<< time_taken_post << "\n";
+        #endif
     }
     ///////////////////////////////////////////////////
     /// Obtiene el tiempo de ejecución
@@ -299,8 +325,8 @@ double SimulatedAnnealing::runGPU(){
     //int unassigned = balanceCostoCupo(bestSolution,dataSet->students, dataSet->colegios);
     
     //llamar a la funcion que lo calcula por el algoritmo original del SAE
-    std::vector<int> solution;
-    asignacionSAE(dataSet->students, dataSet->colegios, solution); //743 sin asignar en alguna pref
+    //std::vector<int> solution;
+    //asignacionSAE(dataSet->students, dataSet->colegios, solution); //743 sin asignar en alguna pref
     //fin llamada
 
     

@@ -154,7 +154,9 @@ void CUDAWrapper::memInit(
     if (errAsync != cudaSuccess)
         printf("0 Async kernel error: %s\n", cudaGetErrorString(errAsync));
 
-
+#ifdef ENABLE_GPU_RECORD_TIME
+    time_GPU.open("../../save/tiempo_GPU.txt", std::ios::app);
+#endif
 
 
 }
@@ -218,6 +220,13 @@ void CUDAWrapper::AcceptanceSolution(){
 }
 
 void CUDAWrapper::newSolution(){
+#ifdef ENABLE_GPU_RECORD_TIME
+    cudaEvent_t start, stop;
+    cudaEventCreate(&start);
+    cudaEventCreate(&stop);
+    cudaEventRecord(start);
+#endif
+
     newSolution_kernel<<<cuParams.n_block, cuParams.n_thread>>>(
                                 d_array_current_Solution,
                                 d_cupoArray,
@@ -232,18 +241,53 @@ void CUDAWrapper::newSolution(){
                                 pitch,
                                 d_penalty_matrix
                             );
+#ifdef ENABLE_GPU_RECORD_TIME
+    cudaEventRecord(stop);
+    cudaEventSynchronize(stop);
+    float ms = 0;
+    cudaEventElapsedTime(&ms, start, stop);
+
+    time_GPU << std::setprecision(10)<<int(ms*1e6) <<",";
+    time_GPU.flush();
+#endif
     CUDAWrapper::synchronizeBucle();
+#ifdef ENABLE_GPU_RECORD_TIME
+    cudaEventDestroy(start);
+    cudaEventDestroy(stop);
+#endif
 
 
 
 }
 
 void CUDAWrapper::find_minimum(){
+#ifdef ENABLE_GPU_RECORD_TIME
+    cudaEvent_t start, stop;
+    cudaEventCreate(&start);
+    cudaEventCreate(&stop);
+    cudaEventRecord(start);
+#endif
 
     reduce_kernel<<<cuParams.n_block,cuParams.n_thread,sizeof(DataResult) *(cuParams.n_thread/32)>>>(d_array_current_Solution,cuParams.n_block*cuParams.n_thread);
     CUDAWrapper::synchronizeBucle();
     reduce_kernel<<<1,((cuParams.n_block+32-1)/32)*32,sizeof(DataResult) *((((cuParams.n_block+32-1)/32)*32)/32)>>>(d_array_current_Solution,cuParams.n_block);
     CUDAWrapper::synchronizeBucle();
+
+#ifdef ENABLE_GPU_RECORD_TIME
+    cudaEventRecord(stop);
+    cudaEventSynchronize(stop);
+    float ms = 0;
+    cudaEventElapsedTime(&ms, start, stop);
+    time_GPU << std::setprecision(10)<<int((ms)*1e6) <<",";
+    time_GPU.flush();
+#endif
+
+    CUDAWrapper::synchronizeBucle();
+
+#ifdef ENABLE_GPU_RECORD_TIME
+    cudaEventDestroy(start);
+    cudaEventDestroy(stop);
+#endif
 }
 
 /*
@@ -269,7 +313,14 @@ void CUDAWrapper::newSolutionRandomSelection(uniform_int_distribution<int> dist,
 
 void CUDAWrapper::newSolutionUpdate(double& costCurrentSolution, int id_select)
 {
-        calculateSolution<<<1,1>>>(d_array_current_Solution,
+#ifdef ENABLE_GPU_RECORD_TIME
+    cudaEvent_t start, stop;
+    cudaEventCreate(&start);
+    cudaEventCreate(&stop);
+    cudaEventRecord(start);
+#endif
+
+    calculateSolution<<<1,1>>>(d_array_current_Solution,
         d_cupoArray,
         d_alumnosSep,
         d_aluxcol,
@@ -283,8 +334,24 @@ void CUDAWrapper::newSolutionUpdate(double& costCurrentSolution, int id_select)
         d_prevMove, //para pruebas unitarias
         d_penalty_matrix
 );
-        getCurrentSolutionGpuToHost(costCurrentSolution);
-        synchronizeBucle();
+    getCurrentSolutionGpuToHost(costCurrentSolution);
+
+#ifdef ENABLE_GPU_RECORD_TIME
+    cudaEventRecord(stop);
+    cudaEventSynchronize(stop);
+    float ms = 0;
+    cudaEventElapsedTime(&ms, start, stop);
+
+    time_GPU << std::setprecision(10)<<int(ms*1e6) <<",";
+    time_GPU.flush();
+#endif
+
+    synchronizeBucle();
+
+#ifdef ENABLE_GPU_RECORD_TIME 
+    cudaEventDestroy(start);
+    cudaEventDestroy(stop);
+#endif
 }
 
 

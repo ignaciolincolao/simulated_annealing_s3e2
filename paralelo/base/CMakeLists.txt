@@ -26,7 +26,7 @@ file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/../save)
 #windows
 #file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/../../save)
 
-option(ENABLE_SAVE_DATA "Habilita el RecordManager" ON)
+option(ENABLE_SAVE_DATA "Habilita el RecordManager" OFF)
 if(ENABLE_SAVE_DATA)
     add_compile_options(-DSAVE_DATA=1)
 else()
@@ -35,12 +35,14 @@ endif()
 
 
 
-option(ENABLE_OPEN_RECORD_INFO "Enable openRecordInfo" ON)
-option(ENABLE_OPEN_RECORD_GRAPHICS "Enable openRecordGraphics" ON)
-option(ENABLE_OPEN_RECORD_GRAPHICS_BEST_SOLUTION "Enable openRecordGraphicsBestSolution" ON)
-option(ENABLE_OPEN_RECORD_GRAPHICS_BEST_SOLUTION_RBD "Enable openRecordGraphicsBestSolutionRBD" ON)
-option(ENABLE_OPEN_RECORD_REGISTER "Enable openRecordRegister" ON)
-option(ENABLE_OPEN_RECORD_MOVE_SOLUTION "Enable openRecordMoveSolution" ON)
+option(ENABLE_OPEN_RECORD_INFO "Enable openRecordInfo" OFF)
+option(ENABLE_OPEN_RECORD_GRAPHICS "Enable openRecordGraphics" OFF)
+option(ENABLE_OPEN_RECORD_GRAPHICS_BEST_SOLUTION "Enable openRecordGraphicsBestSolution" OFF)
+option(ENABLE_OPEN_RECORD_GRAPHICS_BEST_SOLUTION_RBD "Enable openRecordGraphicsBestSolutionRBD" OFF)
+option(ENABLE_OPEN_RECORD_REGISTER "Enable openRecordRegister" OFF)
+option(ENABLE_OPEN_RECORD_MOVE_SOLUTION "Enable openRecordMoveSolution" OFF)
+option(ENABLE_GPU_RECORD_TIME "Enable GPURecordTime" ON)
+
 if (ENABLE_OPEN_RECORD_INFO)
     add_definitions(-DENABLE_OPEN_RECORD_INFO)
 endif()
@@ -67,6 +69,10 @@ endif()
 
 if (ENABLE_OPEN_RECORD_MOVE_SOLUTION)
     add_definitions(-DENABLE_OPEN_RECORD_MOVE_SOLUTION)
+endif()
+
+if (ENABLE_GPU_RECORD_TIME)
+    add_definitions(-DENABLE_GPU_RECORD_TIME)
 endif()
 
 

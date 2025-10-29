@@ -85,6 +85,7 @@ class CUDAWrapper{
         int *d_preferences_matrix, *d_num_preferences;
         float *d_penalty_matrix;
 
+        std::ofstream time_GPU;
 
     public:
         CUDAWrapper(CUDAParams& cuParams_,SimulatedParams& saParams, mt19937& mt);
