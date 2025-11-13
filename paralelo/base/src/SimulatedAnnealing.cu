@@ -149,10 +149,15 @@ double SimulatedAnnealing::runGPU(){
     #endif
     saParams.count++;
 
-    //std::ofstream tiempoGPU;
-    //tiempoGPU.open("../../save/tiempo_GPU.txt", std::ios::app);
+    #ifdef ENABLE_GPU_RECORD_TIME
+    std::ofstream tiempoGPU;
+    tiempoGPU.open("../../save/tiempo_GPU.txt", std::ios::app);
+    #endif
 
     while(saParams.temp > saParams.min_temp){
+        #ifdef ENABLE_GPU_RECORD_TIME
+        auto start_shuffle = std::chrono::high_resolution_clock::now();
+        #endif
         ///////////////////////////////////////////////////
         /// Copia Solución Anterior a la actual
         ///////////////////////////////////////////////////
@@ -160,14 +165,15 @@ double SimulatedAnnealing::runGPU(){
         ///////////////////////////////////////////////////
         ///  Selecciona aleatoria mente a los alumnos
         ///////////////////////////////////////////////////
-        //auto start_shuffle = std::chrono::high_resolution_clock::now();
         shuffle(saParams.shuffle_student, saParams.max_changes_students, dist);
         shuffle(saParams.shuffle_colegios, saParams.max_changes_school, dist2);
 
-        //auto end_shuffle = std::chrono::high_resolution_clock::now();
-        //double time_taken_shuffle = std::chrono::duration_cast<std::chrono::nanoseconds>(end_shuffle - start_shuffle).count();
-        //tiempoGPU << std::setprecision(10)<<time_taken_shuffle << ",";
-        //tiempoGPU.flush();
+        #ifdef ENABLE_GPU_RECORD_TIME
+        auto end_shuffle = std::chrono::high_resolution_clock::now();
+        double time_taken_shuffle = std::chrono::duration_cast<std::chrono::nanoseconds>(end_shuffle - start_shuffle).count();
+        tiempoGPU << std::setprecision(10)<<time_taken_shuffle << ",";
+        tiempoGPU.flush();
+        #endif
         ///////////////////////////////////////////////////
         ///  Envia datos a GPU
         ///////////////////////////////////////////////////
@@ -191,7 +197,9 @@ double SimulatedAnnealing::runGPU(){
         //////////////////////////////////////////////////
         cudaWrapper->newSolutionUpdate(costCurrentSolution, id_select);
         
-        //auto start_post = std::chrono::high_resolution_clock::now();
+        #ifdef ENABLE_GPU_RECORD_TIME
+        auto start_post = std::chrono::high_resolution_clock::now();
+        #endif
         ///////////////////////////////////////////////////
         ///  Verifica Error
         //////////////////////////////////////////////////
@@ -284,9 +292,11 @@ double SimulatedAnnealing::runGPU(){
         saParams.count_trials++;
         saParams.count++;
 
-        //auto end_post = std::chrono::high_resolution_clock::now();
-        //double time_taken_post = std::chrono::duration_cast<std::chrono::nanoseconds>(end_post - start_post).count();
-        //tiempoGPU << std::setprecision(10)<< time_taken_post << "\n";
+        #ifdef ENABLE_GPU_RECORD_TIME
+        auto end_post = std::chrono::high_resolution_clock::now();
+        double time_taken_post = std::chrono::duration_cast<std::chrono::nanoseconds>(end_post - start_post).count();
+        tiempoGPU << std::setprecision(10)<< time_taken_post << "\n";
+        #endif
 
     }
     ///////////////////////////////////////////////////
