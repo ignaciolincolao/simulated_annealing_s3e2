@@ -784,7 +784,8 @@ void SimulatedAnnealing::assignSchoolToArray(int *previousSolution, int *bestSol
          * se asume que las escuelas pueden tener sobre cupo.
          */
 
-        cupoArray[x] = ptr_colegios->num_alu+ ((int)((ptr_colegios->num_alu*10)/100));
+        //cupoArray[x] = ptr_colegios->num_alu+ ((int)((ptr_colegios->num_alu*10)/100));
+        cupoArray[x] = ptr_colegios->cupos;
         ptr_students = ptr_aux;
         ptr_colegios++;
     }
