@@ -47,3 +47,7 @@ sudo apt-get install nlohmann-json3-dev
 
 para windows se puede utilizar vcpkg y decirle a cmake que lea las librerias de vcpkg con la flag:
 -DCMAKE_TOOLCHAIN_FILE=(ruta a vcpkg)/vcpkg/scripts/buildsystems/vcpkg.cmake
+
+
+
+nsys profile --stats=true --cuda-memory-usage=true -o parelelo-reduce-1 paralelo

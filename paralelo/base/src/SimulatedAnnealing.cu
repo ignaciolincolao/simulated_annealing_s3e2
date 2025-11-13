@@ -325,8 +325,8 @@ double SimulatedAnnealing::runGPU(){
     //int unassigned = balanceCostoCupo(bestSolution,dataSet->students, dataSet->colegios);
     
     //llamar a la funcion que lo calcula por el algoritmo original del SAE
-    //std::vector<int> solution;
-    //asignacionSAE(dataSet->students, dataSet->colegios, solution); //743 sin asignar en alguna pref
+    std::vector<int> solution;
+    asignacionSAE(dataSet->students, dataSet->colegios, solution); //743 sin asignar en alguna pref
     //fin llamada
 
     
@@ -793,7 +793,8 @@ void SimulatedAnnealing::assignSchoolToArray(int *previousSolution, int *bestSol
          * se asume que las escuelas pueden tener sobre cupo.
          */
 
-        cupoArray[x] = ptr_colegios->num_alu+ ((int)((ptr_colegios->num_alu*10)/100));
+        //cupoArray[x] = ptr_colegios->num_alu+ ((int)((ptr_colegios->num_alu*10)/100));
+        cupoArray[x] = ptr_colegios->cupos;
         ptr_students = ptr_aux;
         ptr_colegios++;
     }
@@ -1254,7 +1255,7 @@ int* SimulatedAnnealing::summaryCostoCupo(const int* currentSolution,
     }
 
     for (int j = 0; j < n_colegios; ++j) {
-        int capacidad = (int)std::floor(colegios[j].num_alu * 1.1); 
+        int capacidad = colegios[j].cupos; 
         int ocup = ocupados[j];
         int vacantes = capacidad - ocup;
 
@@ -1271,7 +1272,6 @@ int* SimulatedAnnealing::summaryCostoCupo(const int* currentSolution,
     fout.close();
     std::cout << "\n" << "Colegios aun con vacantes: " << resumen[0]
             << " | Vacantes totales restantes: " << resumen[1] << " | colegios en sobrecupo: " << resumen[2] << "\n";
-    resumen[1] = resumen[1] - 277;
     return resumen;
 
 }
@@ -1300,7 +1300,7 @@ void SimulatedAnnealing::asignacionSAE(
     //7: prioridad para aquellos que no cumplen ningun criterio
     solution.assign(saParams.n_students, -1);
 
-    //hash que contiene las vacantes restantes de cada colegio (con 10% sobrecupo)
+    //hash que contiene las vacantes restantes de cada colegio (con 10% sobrecupo) 
     std::unordered_map<int,int> vac_by_rbd;
     vac_by_rbd.reserve(colegios.size()*2);
 
@@ -1315,12 +1315,14 @@ void SimulatedAnnealing::asignacionSAE(
     std::vector<int> asignacion_por_pref(saParams.max_choices + 1, 0);
 
     for (const auto& C : colegios) {
-        int V = (int)std::floor(C.num_alu * 1.1); //mantenemos el sobrecupo del 10%
+        //int V = (int)std::floor(C.num_alu * 1.1); //mantenemos el sobrecupo del 10%
+        int V = C.cupos;                            //ahora el cupo lo indicara el sae
         vac_by_rbd[C.rbd] = V;
         total_vacantes_restantes += V;
 
         //cuota SEP inicial, SAE dice que el 15% de las vacantes se reservan para prioritarios
-        int q = (int)std::ceil(0.15 * (double)V);
+        //int q = (int)std::ceil(0.15 * (double)V);
+        int q = C.vacantes_prio;                    //ahora el cupo lo indicara el sae
         cuota_sep_left[C.rbd] = q;
     }
 
@@ -1335,22 +1337,21 @@ void SimulatedAnnealing::asignacionSAE(
 
         //rellenamos los tickets de loteria solo para alumnos no asignados aún
         for (int i = 0; i < saParams.n_students; ++i){
-            if (solution[i] != -1) continue; //ya asignado en iteraciones previas
+            if (solution[i] != -1) continue; //se ignora si fue asignado en iteraciones previas
 
             const auto& A = alumnos[i];
-            //tambien se ignora si el alumno no tiene la eleccion numero pref
+            //se ignora si el alumno no tiene la eleccion numero pref
             if (A.num_ele <= pref) continue;
 
             //obtenemos a que colegio apunta cada estudiante
             size_t idx = static_cast<size_t>(A.choices[pref])-1;
 
             int rbd_pref = colegios[idx].rbd;       //RBD del colegio de la prefererencia pref
-            int prio;                               //lista de prioridad en la que queda el alumno
-
-            if (A.rbd == rbd_pref)      prio = 1;   //continuidad
-            else if (A.sep == 1)        prio = 4;   //dentro de los cupos SEP
+            int prio = A.prioridades[pref];         //ahora prio la dara el mismo SAE
+            //if (A.rbd == rbd_pref)      prio = 1;   //continuidad
+            //else if (A.sep == 1)        prio = 4;   //dentro de los cupos SEP
             //else if (A.sep == 0)        prio = 4;
-            else                        prio = 7;   //sin preferencia
+            //else                        prio = 7;   //sin preferencia
 
             //guardamos en la lista el alumno (id de arreglo), grado de prioridad y su numero de loteria
             listas[rbd_pref].push_back({ i, prio, lottery_simple(i, rbd_pref) });
@@ -1390,6 +1391,17 @@ void SimulatedAnnealing::asignacionSAE(
                 if (a.lotto != b.lotto) return a.lotto < b.lotto;
                 return a.i < b.i; //en el caso de que el ticket fuera igual se desempatara por mrun del alumno
             });
+/*
+            std::ofstream out("debug_orden.txt", std::ios::app);
+            if (out.is_open()) {
+                out << "\n==== Colegio RBD " << rbd << " ====\n";
+                out << "i\tprio\tlotto\n";
+                for (const auto& p : vec) {
+                    out << p.i << "\t" << p.prio << "\t" << p.lotto << "\n";
+                }
+                out.close();
+            }
+*/
 
             //-------- realizamos las asignaciones-------------
             int asign = 0;
@@ -1537,6 +1549,7 @@ void SimulatedAnnealing::asignacionSAE(
     //cout << "CostoCupo: " << var3 << "\n";
     double var4 = penaltyParents(sol_idx.data(), h_penalty_matrix)/(saParams.n_students);
     //cout << "Penalty: " << var4 << "\n";
+    double costSolution = (double)((ptr_alpha[0] * var1) + (ptr_alpha[1] * var2) + (ptr_alpha[2] * var3) + (ptr_alpha[3] * var4));
 
     std::cout << "--------------- Resultados Algoritmo SAE ----------------" << "\n";
     std::cout << "distancia: " << var1 << "\n"; //lo normalice
