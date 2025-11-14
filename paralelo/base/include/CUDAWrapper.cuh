@@ -63,7 +63,7 @@ class CUDAWrapper{
         int *d_shuffle_students;
         int *d_shuffle_colegios;
         double *d_currentVars, *d_bestVars, *d_previousVars;
-        double *d_costPreviousSolution, *d_costBestSolution, *d_costCurrentSolution;
+        double *d_costPreviousSolution, *d_costCurrentSolution; //*d_costBestSolution; borre el mejor para que este en la memoria del kernel
         int deviceId;
         int numberOfSMs;
         int NUM_STREAMS = 10;
@@ -123,10 +123,11 @@ class CUDAWrapper{
         void getAllCurrentSolutionGpuToHost(double& costCurrentSolution);
 
         void synchronizeBucle();
-        void copySolutionToHost(
-            int* bestSolution,
-            int* previousSolution
-        );
+        void copySolutionToHost(int* bestSolution, 
+                                int* previousSolution, 
+                                double &costBestSolution, 
+                                double &costPreviousSolution, 
+                                double &costCurrentSolution);
         void mallocHost(
             int*& previousSolution,
             int*&  bestSolution,
@@ -148,7 +149,8 @@ class CUDAWrapper{
         void previousSolution(int idx);
         void getPreviousSolutionUnitTest(double& costPrevSolUnitTest);
 
-        void compute_penalty_matrix(int* h_preferences_matrix, int* h_num_preferences, float* h_penalty_matrix); 
+        void compute_penalty_matrix(int* h_preferences_matrix, int* h_num_preferences, float* h_penalty_matrix);
+        void shuffleGPU();
 };
 
 

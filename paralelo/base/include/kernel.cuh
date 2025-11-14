@@ -177,8 +177,8 @@ void coolingCriterionGPU(int &c_accepta,
                          double len2,
                          double coolingRate);
 
-
- __global__ void debugTemp();
+__global__ void shuffleVectorGPU(int *arr, int n, unsigned long long seed, unsigned long long iter);
+__global__ void chooseRandomSchool(int* out, int max, unsigned long long seed, unsigned long long iter);
   
 
 #endif

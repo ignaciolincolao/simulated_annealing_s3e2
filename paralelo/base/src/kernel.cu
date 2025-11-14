@@ -320,7 +320,6 @@ __global__ void reduce_kernel_update(DataResult *d_array_current_Solution,
 
             //memcpy(d_currentVars, d_matrix_solution.d_currentVars, sizeof(double)*4)
             //printf("solucion actual: %f, mejor solucion: %f, temp :%f cooling %f \n",val.costSolution,d_costBestSolution, d_current_temp, d_coolingRate);
-
             if (val.costSolution < d_costBestSolution) {
                 //printf("mejor solucion: %f, iter %d, temp :%f \n",val.costSolution,d_iter, d_current_temp);
                 d_costBestSolution     = val.costSolution;
@@ -946,8 +945,48 @@ void coolingCriterionGPU(int &c_accepta,
     // Si no se cumple ninguna condición, no hace nada (igual que return false)
 }
 
-__global__ void debugTemp()
+__global__ void shuffleVectorGPU(int *arr, int n, unsigned long long seed, unsigned long long iter)
 {
-    printf("GPU d_current_temp = %f\n", d_current_temp);
-    printf("Address of d_current_temp = %p\n", &d_current_temp);
+    extern __shared__ int sh[];  // tamaño dinámico, arr de shared memory
+    int tid = threadIdx.x;
+
+    // 1) Cargar arreglo completo a shared memory (paralelo)
+    for (int i = tid; i < n; i += blockDim.x) {
+        sh[i] = arr[i];
+    }
+    __syncthreads();
+
+    // 2) Solo UN hilo ejecuta Fisher–Yates (correcto y sin sesgo)
+    if (tid == 0)
+    {
+        curandStatePhilox4_32_10_t st;
+        curand_init(seed, iter, 0, &st);
+
+        for (int i = n - 1; i > 0; --i)
+        {
+            int j = curand(&st) % (i + 1);
+
+            // swap dentro de shared
+            int t = sh[i];
+            sh[i] = sh[j];
+            sh[j] = t;
+        }
+    }
+    __syncthreads();
+
+    // 3) Guardar de vuelta a global memory (paralelo)
+    for (int i = tid; i < n; i += blockDim.x) {
+        arr[i] = sh[i];
+    }
+}
+
+__global__ void chooseRandomSchool(int* out, int max, unsigned long long seed, unsigned long long iter)
+{
+    if (threadIdx.x == 0) {
+        curandStatePhilox4_32_10_t st;
+        curand_init(seed, iter, 0, &st);
+
+        int r = curand(&st) % max;
+        out[0] = r;
+    }
 }

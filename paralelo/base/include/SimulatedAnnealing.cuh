@@ -126,6 +126,7 @@ public:
     void assignSchoolToArray(int *previousSolution, int *bestSolution, int *currentSolution, Info_colegio *ptr_colegios, Info_alu *ptr_students, int *cupoArray);
     void calcDist(Info_colegio *ptr_colegios, Info_alu *ptr_students, double **distMat);
     void shuffle(int *values, const int max_change, uniform_int_distribution<int> distri);
+    void shuffle_col(int* values, uniform_int_distribution<int>& distri);
     double getMaxDistance(double **distMat);
     void normalizedAlpha(double *alpha);
     void initializeArray(int *aluxcol, int *previousAluxCol, int *bestAluxCol, int *aluVulxCol, int *previousAluVulxCol, int *bestAluVulxCol, int *alumnosSep, vector<Info_alu> &students,vector<Info_colegio> &colegios);

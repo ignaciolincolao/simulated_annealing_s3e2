@@ -153,8 +153,11 @@ double SimulatedAnnealing::runGPU(){
     std::ofstream tiempoGPU;
     tiempoGPU.open("../../save/tiempo_GPU.txt", std::ios::app);
     #endif
+    shuffle(saParams.shuffle_student, saParams.max_changes_students, dist);
+    cudaWrapper->uploadCurrentMemorySolution();
 
     while(saParams.temp > saParams.min_temp){
+    //for (int i =0; i<1; i++){
         #ifdef ENABLE_GPU_RECORD_TIME
         auto start_shuffle = std::chrono::high_resolution_clock::now();
         #endif
@@ -166,7 +169,14 @@ double SimulatedAnnealing::runGPU(){
         ///  Selecciona aleatoria mente a los alumnos
         ///////////////////////////////////////////////////
         shuffle(saParams.shuffle_student, saParams.max_changes_students, dist);
-        shuffle(saParams.shuffle_colegios, saParams.max_changes_school, dist2);
+        shuffle_col(saParams.shuffle_colegios, dist2);
+        //shuffle(saParams.shuffle_colegios, saParams.max_changes_school, dist2);
+
+        ///////////////////////////////////////////////////
+        ///  Envia datos a GPU
+        ///////////////////////////////////////////////////
+        cudaWrapper->uploadCurrentMemorySolution();
+        //cudaWrapper->shuffleGPU();
 
         #ifdef ENABLE_GPU_RECORD_TIME
         auto end_shuffle = std::chrono::high_resolution_clock::now();
@@ -174,11 +184,9 @@ double SimulatedAnnealing::runGPU(){
         tiempoGPU << std::setprecision(10)<<time_taken_shuffle << ",";
         tiempoGPU.flush();
         #endif
-        ///////////////////////////////////////////////////
-        ///  Envia datos a GPU
-        ///////////////////////////////////////////////////
+
     
-        cudaWrapper->uploadCurrentMemorySolution();
+       
         ///////////////////////////////////////////////////
         ///  Ejecuta los kernel
         //////////////////////////////////////////////////
@@ -190,11 +198,19 @@ double SimulatedAnnealing::runGPU(){
         //UpdateProb(saParams.count);
 
         #ifdef ENABLE_GPU_RECORD_TIME
+        auto start_post = std::chrono::high_resolution_clock::now();
+        #endif
+
+        saParams.count++;
+        if (saParams.count % 1000 == 0){
+            cudaMemcpyFromSymbol(&saParams.temp, d_current_temp, sizeof(double));
+        }
+
+        #ifdef ENABLE_GPU_RECORD_TIME
         auto end_post = std::chrono::high_resolution_clock::now();
         double time_taken_post = std::chrono::duration_cast<std::chrono::nanoseconds>(end_post - start_post).count();
         tiempoGPU << std::setprecision(10)<< time_taken_post << "\n";
         #endif
-        cudaMemcpyFromSymbol(&saParams.temp, d_current_temp, sizeof(double));
 
     }
     ///////////////////////////////////////////////////
@@ -203,7 +219,7 @@ double SimulatedAnnealing::runGPU(){
     auto end = std::chrono::high_resolution_clock::now();
     double time_taken = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
     time_taken *= 1e-9;
-    cudaWrapper->copySolutionToHost(bestSolution, previousSolution);
+    cudaWrapper->copySolutionToHost(bestSolution, previousSolution, costBestSolution, costPreviousSolution, costCurrentSolution);
 
     cout << "--------------- Resultado Final ----------------" << "\n";
     cout << "Numero de Ciclos: " << saParams.count << "\n";
@@ -740,6 +756,16 @@ void SimulatedAnnealing::shuffle(int *values, const int max_change, uniform_int_
     }
 }
 
+void SimulatedAnnealing::shuffle_col(int* values,
+                                        uniform_int_distribution<int>& distri)
+{
+    // Genera un número aleatorio entre [0, max_change-1]
+    int r = distri(mt);
+
+    // Escribe el valor en la posición 0
+    values[0] = r;
+}
+
 ////////////////////////////////////////////////
 ////// Obtiene la maxima distancia que un estudiante podria llegar a recorrer
 ///////////////////////////////////////////////////
@@ -938,7 +964,7 @@ void SimulatedAnnealing::ValidateGPU(){
         //copypaste del original
         if(costCurrentSolution < costBestSolution){
                 cudaWrapper->AcceptanceBestSolution();
-                cudaWrapper->copySolutionToHost(bestSolution, previousSolution);
+                cudaWrapper->copySolutionToHost(bestSolution, previousSolution, costBestSolution, costCurrentSolution, costPreviousSolution);
                 costTempSol = calCosto(bestSolution,distMat,ptr_alpha, alumnosSep, totalVuln, cupoArray);
                 costBestSolution = costCurrentSolution;
                 costPreviousSolution = costCurrentSolution;
@@ -1167,7 +1193,7 @@ int* SimulatedAnnealing::summaryCostoCupo(const int* currentSolution,
     }
 
     for (int j = 0; j < n_colegios; ++j) {
-        int capacidad = (int)std::floor(colegios[j].num_alu * 1.1); 
+        int capacidad = colegios[j].cupos; 
         int ocup = ocupados[j];
         int vacantes = capacidad - ocup;
 
@@ -1184,7 +1210,6 @@ int* SimulatedAnnealing::summaryCostoCupo(const int* currentSolution,
     fout.close();
     std::cout << "\n" << "Colegios aun con vacantes: " << resumen[0]
             << " | Vacantes totales restantes: " << resumen[1] << " | colegios en sobrecupo: " << resumen[2] << "\n";
-    resumen[1] = resumen[1] - 277;
     return resumen;
 
 }

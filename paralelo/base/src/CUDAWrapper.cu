@@ -32,7 +32,7 @@ CUDAWrapper::~CUDAWrapper(){
     for (int i = 0; i < NUM_STREAMS; ++i) { cudaStreamDestroy(streams[i]); }
     cudaFree(d_array_current_Solution);
     cudaFree(d_costCurrentSolution);
-    cudaFree(d_costBestSolution);
+    //cudaFree(d_costBestSolution);
     cudaFree(d_costPreviousSolution);
     cudaFree(d_currentVars);
     cudaFree(d_bestVars);
@@ -194,7 +194,7 @@ void CUDAWrapper::AcceptanceBestSolution(){
     copyMemCol<<<numberOfBlocks,threadsPerBlock,0,streams[3]>>>(d_previousAluVulxCol, d_aluVulxCol,saParams.n_colegios);
     copyVars<<<1,4,0,streams[4]>>>(d_previousVars, d_currentVars);
     copyVars<<<1,4,0,streams[5]>>>(d_bestVars, d_currentVars);
-    copyCost<<<1,1,0,streams[6]>>>(d_costBestSolution,d_costCurrentSolution);
+    //copyCost<<<1,1,0,streams[6]>>>(d_costBestSolution,d_costCurrentSolution);
     copyCost<<<1,1,0,streams[7]>>>(d_costPreviousSolution,d_costCurrentSolution);
     //for (int i = 0; i < NUM_STREAMS; ++i) { cudaStreamSynchronize(streams[i]); }
     errSync  = cudaGetLastError();
@@ -396,7 +396,12 @@ void CUDAWrapper::synchronizeBucle(){
         printf("6 Async kernel error: %s\n", cudaGetErrorString(errAsync));
 }
 
-void CUDAWrapper::copySolutionToHost(int* bestSolution, int* previousSolution){
+void CUDAWrapper::copySolutionToHost(int* bestSolution, int* previousSolution, double &costBestSolution, double &costPreviousSolution, double &costCurrentSolution){
+    //cudaMemcpy(&costBestSolution, d_costBestSolution, sizeof(double), cudaMemcpyDeviceToHost);
+    cudaMemcpyFromSymbol(&costBestSolution, d_costBestSolution, sizeof(double));
+    cudaMemcpy(&costPreviousSolution, d_costPreviousSolution, sizeof(double), cudaMemcpyDeviceToHost);
+    cudaMemcpy(&costCurrentSolution, d_costCurrentSolution, sizeof(double), cudaMemcpyDeviceToHost);
+
     cudaMemcpyAsync(bestSolution, d_bestSolution, saParams.n_students * sizeof(int), cudaMemcpyDeviceToHost,streams[0]);
     cudaMemcpyAsync(previousSolution, d_previousSolution, saParams.n_students * sizeof(int), cudaMemcpyDeviceToHost,streams[1]);
     CUDAWrapper::synchronizeBucle();
@@ -568,4 +573,20 @@ void CUDAWrapper::compute_penalty_matrix(
     cudaFree(d_preferences_matrix);
     cudaFree(d_num_preferences);
 }
+
+void CUDAWrapper::shuffleGPU()
+{
+    shuffleVectorGPU<<<1, 256, saParams.max_changes_students * sizeof(int)>>>(d_shuffle_students, saParams.max_changes_students, saParams.seed, saParams.count);
+    chooseRandomSchool<<<1, 32>>>(d_shuffle_colegios, saParams.n_colegios, saParams.seed, saParams.count);
+    errSync  = cudaGetLastError();
+    errAsync = cudaDeviceSynchronize();
+    if (errSync != cudaSuccess) 
+        printf("10 Sync kernel error: %s\n", cudaGetErrorString(errSync));
+    if (errAsync != cudaSuccess)
+        printf("10 Async kernel error: %s\n", cudaGetErrorString(errAsync));
+}
+
+
+
+
 
