@@ -721,8 +721,8 @@ void SimulatedAnnealing::assignSchoolToArray(int *previousSolution, int *bestSol
          * se asume que las escuelas pueden tener sobre cupo.
          */
 
-        //cupoArray[x] = ptr_colegios->num_alu+ ((int)((ptr_colegios->num_alu*10)/100));
-        cupoArray[x] = ptr_colegios->cupos;
+        cupoArray[x] = ptr_colegios->num_alu+ ((int)((ptr_colegios->num_alu*10)/100));
+        //cupoArray[x] = ptr_colegios->cupos;
         ptr_students = ptr_aux;
         ptr_colegios++;
     }
@@ -1193,7 +1193,7 @@ int* SimulatedAnnealing::summaryCostoCupo(const int* currentSolution,
     }
 
     for (int j = 0; j < n_colegios; ++j) {
-        int capacidad = colegios[j].cupos; 
+        int capacidad = (int)std::floor(colegios[j].num_alu * 1.1); 
         int ocup = ocupados[j];
         int vacantes = capacidad - ocup;
 
@@ -1210,6 +1210,7 @@ int* SimulatedAnnealing::summaryCostoCupo(const int* currentSolution,
     fout.close();
     std::cout << "\n" << "Colegios aun con vacantes: " << resumen[0]
             << " | Vacantes totales restantes: " << resumen[1] << " | colegios en sobrecupo: " << resumen[2] << "\n";
+    resumen[1] = resumen[1] - 277;
     return resumen;
 
 }

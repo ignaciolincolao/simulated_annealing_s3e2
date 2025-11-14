@@ -30,11 +30,9 @@ using std::array;
 struct Info_colegio {
     double latitude = 0.0;
     double longitude = 0.0;
-    int cupos = 0;
     int num_alu = 0;
     int rbd = 0;
     int prioritario = 0;
-    int vacantes_prio = 0; //solo para el calculo SAE
 };
 ///////////////////////////////////////////////////
 /// Estructura de alumnos
@@ -45,8 +43,7 @@ struct Info_alu {
     int sep = 0;
     double latitude = 0.0;
     double longitude = 0.0;
-    array<uint8_t, 20> choices; 
-    array<uint8_t, 20> prioridades; //solo para el calculo SAE
+    array<uint8_t, 15> choices; 
     double mrun = 0;
     int num_ele = 0;
 };
@@ -67,6 +64,7 @@ class Dataset {
 
         //void toCSV(std::string fileName);
 };
+
 
 
 #endif

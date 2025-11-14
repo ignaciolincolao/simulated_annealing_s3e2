@@ -34,8 +34,8 @@ int main(int argc, char *argv[])
                 .activated_files = {true,true,true,true,true}};
 
     double alp1 = 0.2; //distancia
-    double alp2 = 0.3; //segregacion
-    double alp3 = 0.1; //costocupo
+    double alp2 = 0.1; //segregacion
+    double alp3 = 0.3; //costocupo
     double alp4 = 0.4; //penalty parents
     SimulatedParams* saParams = new SimulatedParams{
         //.seed = 1574067955,
@@ -85,8 +85,8 @@ int main(int argc, char *argv[])
         .k_reheating_init = 0};
 
     CUDAParams* cuParams = new CUDAParams{
-        //.n_block = 94,
-        .n_block = 31,
+        .n_block = 94,
+        //.n_block = 31,
         .n_thread = 32,
         .selectThread = 0,
         .selectBlock = 0};

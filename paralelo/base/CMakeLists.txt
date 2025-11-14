@@ -41,7 +41,7 @@ option(ENABLE_OPEN_RECORD_GRAPHICS_BEST_SOLUTION "Enable openRecordGraphicsBestS
 option(ENABLE_OPEN_RECORD_GRAPHICS_BEST_SOLUTION_RBD "Enable openRecordGraphicsBestSolutionRBD" OFF)
 option(ENABLE_OPEN_RECORD_REGISTER "Enable openRecordRegister" OFF)
 option(ENABLE_OPEN_RECORD_MOVE_SOLUTION "Enable openRecordMoveSolution" OFF)
-option(ENABLE_GPU_RECORD_TIME "Enable GPURecordTime" OFF)
+option(ENABLE_GPU_RECORD_TIME "Enable GPURecordTime" ON)
 
 if (ENABLE_OPEN_RECORD_INFO)
     add_definitions(-DENABLE_OPEN_RECORD_INFO)

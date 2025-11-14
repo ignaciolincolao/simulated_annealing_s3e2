@@ -34,13 +34,9 @@ void Dataset::getDataSchool(std::string fileName_school, std::vector<Info_colegi
         getline(linestream, data, ',');
         colegios[cx].longitude = stod(data);
         getline(linestream, data, ',');
-        colegios[cx].cupos = stoi(data);
-        getline(linestream, data, ',');
         colegios[cx].num_alu = stoi(data);
         getline(linestream, data, ',');
         colegios[cx].prioritario = stoi(data);
-        getline(linestream, data, ',');
-        colegios[cx].vacantes_prio = stoi(data);
         cx++;
     }
     info_school.close();
@@ -91,8 +87,6 @@ void Dataset::getDataParents(std::string fileName_parents, std::vector<Info_alu>
         for (int i = 0; i < max_choices; i++) {
             getline(linestream, data, ',');
             students[cx].choices[i] = std::stoi(data);
-            getline(linestream, data, ',');
-            students[cx].prioridades[i] = std::stoi(data);
         }
         cx++;
     }

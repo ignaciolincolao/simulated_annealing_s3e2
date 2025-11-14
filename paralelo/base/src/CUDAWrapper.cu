@@ -149,7 +149,6 @@ void CUDAWrapper::memInit(
 
     errSync  = cudaGetLastError();
     errAsync = cudaDeviceSynchronize();
-    
     //error aca
     if (errSync != cudaSuccess) 
         printf("0 Sync kernel error: %s\n", cudaGetErrorString(errSync));
