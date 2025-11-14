@@ -1,0 +1,491 @@
+#include <RecordManager.hpp>
+#include <nlohmann/json.hpp>
+
+#include <iomanip>
+using json = nlohmann::json;
+
+RecordManager::RecordManager(SimulatedParams &saParams_, RecordParams &params_)
+    : saParams(saParams_), rMgrParams(params_)
+{
+
+    path_names[0] = rMgrParams.ruta_save + rMgrParams.prefijo_save + "-info.txt";
+    path_names[1] = rMgrParams.ruta_save + rMgrParams.prefijo_save + "-info-register.txt";
+    path_names[2] = rMgrParams.ruta_save + rMgrParams.prefijo_save + "-info-graphics.txt";
+    path_names[3] = rMgrParams.ruta_save + rMgrParams.prefijo_save + "-info-graphicsBestSolution.txt";
+    path_names[4] = rMgrParams.ruta_save + rMgrParams.prefijo_save + "-info-graphicMoveSolution.txt";
+    path_names[5] = rMgrParams.ruta_save + rMgrParams.prefijo_save + "-json-graphics.json";
+    path_names[6] = rMgrParams.ruta_save + rMgrParams.prefijo_save + "-info-graphicsBestSolutionRBD.txt";
+    path_names[7] = rMgrParams.ruta_save + rMgrParams.prefijo_save + "-info-simceUpdate.txt";
+
+    vector_percentage = {75, 50, 25, 10, 5, 1,0.75,.5,.25,.1,.05,0};
+    vector_it_percentage.resize(vector_percentage.size(), 0);
+    vector_temp_percentage.resize(vector_percentage.size(),0);
+    empty_files.resize(8,true);
+    vector_activated_files.resize(6,true);
+    vector_activated_files = rMgrParams.activated_files;
+}
+
+RecordManager::~RecordManager()
+{
+    if (info.is_open())
+        info.close();
+    if (infoRegister.is_open())
+        infoRegister.close();
+    if (infoGraphics.is_open())
+        infoGraphics.close();
+    if (infoGraphicsBestSolution.is_open())
+        infoGraphicsBestSolution.close();
+    if (infoGraphicsBestSolutionRBD.is_open())
+        infoGraphicsBestSolutionRBD.close();
+    if (infoSimce.is_open())
+        infoSimce.close();
+    if (infoMove.is_open())
+        infoMove.close();
+    if (infoJson.is_open())
+        infoJson.close();
+
+}
+
+void RecordManager::open_file(const std::size_t n_file, std::ofstream &file)
+{
+    try
+    {
+        std::ifstream file_test(path_names[n_file], std::ios::binary);
+        
+        if (!file_test) {
+            empty_files[n_file] = true;
+        }
+        else{
+            file_test.seekg(0, std::ios::end);
+        
+            empty_files[n_file] = (file_test.tellg() == 0 || file_test.tellg() == -1);
+           
+            file_test.close();
+        }
+        
+        file.open(path_names[n_file], std::ios::out | std::ios::app);
+    }
+    catch (const std::ofstream::failure &error)
+    {
+        std::cerr << "[Error]: No se pudo abrir el archivo: " << path_names[n_file] << std::endl;
+    }
+}
+
+/*
+ * Genera los archivos que contienen información de los estados de estudiantes y escuelas durante
+ * la ejecución del algoritmo
+ */
+void RecordManager::openRecordInfo()
+{
+    open_file(0, info);
+}
+
+void RecordManager::openRecordRegister()
+{
+    open_file(1, infoRegister);
+}
+
+void RecordManager::openRecordGraphics()
+{
+    open_file(2, infoGraphics);
+}
+
+void RecordManager::openRecordGraphicsBestSolution()
+{
+    open_file(3, infoGraphicsBestSolution);
+}
+
+void RecordManager::openRecordGraphicsBestSolutionRBD()
+{
+    open_file(6, infoGraphicsBestSolutionRBD);
+}
+
+void RecordManager::openRecordInfoSimce()
+{
+    open_file(7, infoSimce);
+}
+
+void RecordManager::openRecordMoveSolution()
+{
+    open_file(4, infoMove);
+}
+
+
+void RecordManager::openRecordInfoJson()
+{
+    open_file(5, infoJson);
+}
+
+void RecordManager::closeRecordInfo()
+{
+    info.close();
+}
+
+void RecordManager::closeRecordRegister()
+{
+    infoRegister.close();
+}
+
+void RecordManager::closeRecordGraphics()
+{
+    infoGraphics.close();
+}
+
+void RecordManager::closeRecordGraphicsBestSolution()
+{
+    infoGraphicsBestSolution.close();
+}
+
+void RecordManager::closeRecordGraphicsBestSolutionRBD()
+{
+    infoGraphicsBestSolutionRBD.close();
+}
+
+void RecordManager::closeRecordInfoSimce()
+{
+    infoSimce.close();
+}
+
+void RecordManager::closeRecordMoveSolution()
+{
+    infoMove.close();
+}
+void RecordManager::closeRecordInfoJson()
+{
+    infoJson.close();
+}
+
+
+/*
+ * Escribe la información en los archivos previamente generados
+ */
+void RecordManager::SaveInfoInit(double costBestSolution,
+                                 double meanDist,
+                                 double S,
+                                 double costCupo,
+                                 double penaltyParents)
+{
+    info << "--------------- Primeros datos -------------\n";
+    info << "Primer costo de solución: " << costBestSolution << "\n";
+    info << "Primer distancia: " << meanDist/ saParams.max_dist << "\n";
+    info << "Primer Segregación: " << S << "\n";
+    info << "Primer CostoCupo: " << costCupo << "\n";
+    info << "Penalty inicial: " << penaltyParents/saParams.n_students << "\n\n";
+}
+
+void RecordManager::SaveInfoFinish(
+    double costPreviousSolution,
+    double costBestSolution,
+    double costCurrentSolution,
+    double time_taken,
+    double meanDist,
+    double S,
+    double costCupo,
+    double penaltyParents)
+{
+    info << "--------------- Resultado Final ----------------"
+         << "\n";
+    info << "Numero de Ciclos: " << saParams.count << "\n";
+    info << "Costo de la solución previa: " << costPreviousSolution << "\n";
+    info << "Costo de la mejor solución: " << costBestSolution << "\n";
+    info << "Costo de la solución actual: " << costCurrentSolution << "\n";
+    info << "Tiempo de ejecución de SA: " << time_taken << "\n";
+    info << "distancia: " << meanDist/ saParams.max_dist << "\n";
+    info << "Segregación: " << S << "\n";
+    info << "CostoCupo: " << costCupo << "\n";
+    info << "Penalty Final: " << penaltyParents/saParams.n_students << "\n\n";
+    info << "--------------- Finalizo con exito ----------------"
+         << "\n";
+}
+
+void RecordManager::SaveGraphicsBestSolution(int *solution)
+{
+    for (std::size_t i{}; i < saParams.n_students; i++){
+        infoGraphicsBestSolution << solution[i];
+        if (i!=saParams.n_students-1){
+            infoGraphicsBestSolution << ",";
+        }
+    }
+    infoGraphicsBestSolution << "\n";
+}
+
+void RecordManager::SaveGraphicsFirstSolutionRBD(int *solution, Info_colegio *ptr_colegios, Info_alu *ptr_students)
+{   
+    infoGraphicsBestSolutionRBD << std::fixed << std::setprecision(0);
+    for (std::size_t i{}; i < saParams.n_students; i++){
+        infoGraphicsBestSolutionRBD << ptr_students[i].mrun;
+        if (i!=saParams.n_students-1){
+            infoGraphicsBestSolutionRBD << ",";
+        }
+    }
+    infoGraphicsBestSolutionRBD << "\n";
+
+    for (std::size_t i{}; i < saParams.n_students; i++){
+        infoGraphicsBestSolutionRBD << ptr_colegios[solution[i]].rbd;
+        if (i!=saParams.n_students-1){
+            infoGraphicsBestSolutionRBD << ",";
+        }
+    }
+    infoGraphicsBestSolutionRBD << "\n";
+    
+}
+
+void RecordManager::SaveGraphicsUpdateSolutionRBD(int *solution, Info_colegio *ptr_colegios)
+{   
+    for (std::size_t i{}; i < saParams.n_students; i++){
+        infoGraphicsBestSolutionRBD << ptr_colegios[solution[i]].rbd;
+        if (i!=saParams.n_students-1){
+            infoGraphicsBestSolutionRBD << ",";
+        }
+    }
+    infoGraphicsBestSolutionRBD << "\n";
+}
+
+void RecordManager::SaveGraphicsInit(double meanDist, double S, double costCupo, double costCurrentSolution, double penaltyParents)
+{
+    infoGraphics << std::fixed << std::setprecision(13);
+    infoGraphics << saParams.count << ","
+                 << meanDist / saParams.max_dist << ","             // Distancia promedio recorrida por los estudiantes normalizada
+                 << meanDist << ","                                 // Distancia promedio recorrida por los estudiantes
+                 << S << ","                                        // Indice de duncan
+                 << costCupo << ","                                 // Costo cupo de las escuelas
+                 << penaltyParents << ","                           // Penalty sin normalizar
+                 << penaltyParents/saParams.n_students << ","       // Penalty normalizado
+                 << costCurrentSolution << ","                      // Solución actual
+                 << saParams.temp << "\n";                          // Temperatura actual
+                 
+}
+
+void RecordManager::SaveGraphicsFinish()
+{
+    for (std::size_t x = 0; x < vector_count.size(); x++)
+    {
+        infoGraphics << vector_count.at(x) << ","
+                     << vector_meanDist.at(x) / saParams.max_dist << "," // Distancia promedio recorrida por los estudiantes normalizada
+                     << vector_meanDist.at(x) << ","
+                     << vector_segregation.at(x) << ","
+                     << vector_costoCupo.at(x) << ","
+                     << vector_penalty.at(x) << ","
+                     << vector_penalty.at(x) / saParams.n_students << ","
+                     << vector_costCurrentSolution.at(x) << ","
+                     << std::fixed << vector_temp.at(x) << std::setprecision(13) << "\n";
+    }
+}
+
+void RecordManager::AllMovementFinish()
+{
+    for (std::size_t x = 0; x < vector_historyCostSolution.size(); x++)
+    {
+        infoMove << vector_historyCostSolution.at(x) << ","
+        << vector_historyTemp.at(x)  << ","
+        << vector_historystu.at(x)  << ","
+        << vector_historycol.at(x)  << ","
+        << vector_historyAcceptSolution.at(x)  << "\n";
+    }
+}
+
+
+void RecordManager::SaveInfoRegister(
+    double time_taken,
+    double costBestSolution,
+    double meanDist,
+    double S,
+    double costCupo,
+    double penaltyParents,
+    double coolingRate,
+    double k_reheating_init,
+    double e_const,
+    int n_reheating,
+    int len1_init,
+    int len2_init,
+    double len3_init,
+    double len4_init,
+    int len1,
+    int len2,
+    double len3,
+    double len4,
+    double Th,
+    int n_block,
+    int n_thread,
+    int *solution,
+    int unnasigned,
+    int alu_sobrecupo,
+    int col_con_cupo,
+    int col_sobrecupo
+)
+{
+    if(empty_files[1]){
+        infoRegister << "time" << ","
+                 << "costBestSolution" << ","
+                 << "meanDist_max_dist"
+                 << "," << "meanDist"
+                 << "," << "S"
+                 << "," << "costCupo"
+                 << "," << "penaltyParents"
+                 << "," << "penaltyParentsNorm"
+                 << "," << "saParams.count"
+                 << "," << "saParams.temp_init"
+                 << "," << "saParams.temp"
+                 << "," << "saParams.min_temp"
+                 << "," << "saParams.seed"
+                 << "," << "saParams.alpha1"
+                 << "," << "saParams.alpha2"
+                 << "," << "saParams.alpha3"
+                 << "," << "saParams.alpha4"
+                 << "," << "saParams.alpha[0]"
+                 << "," << "saParams.alpha[1]"
+                 << "," << "saParams.alpha[2]"
+                 << "," << "saParams.alpha[3]"
+                 << "," << "coolingRate"
+                 << "," << "k_reheating_init"
+                 << "," << "e_const"
+                 << "," << "n_reheating"
+                 << "," << "len1_init"
+                 << "," << "len2_init"
+                 << "," << "len3_init"
+                 << "," << "len4_init"
+                 << "," << "len1"
+                 << "," << "len2"
+                 << "," << "len3"
+                 << "," << "len4"
+                 << "," << "Th"
+                 << "," << "n_block"
+                 << "," << "n_thread"
+                 << "," << "rMgrParams.name_exp"
+                 << "," << "unnasigned"
+                 << "," << "alu_sobrecupo"
+                 << "," << "col_con_cupo"
+                 << "," << "col_sobrecupo";
+
+        for (int i=0; i < vector_percentage.size(); i++){
+            infoRegister << "," << "percentage_" << vector_percentage[i];
+        }
+        infoRegister << "\n";
+
+    }
+    infoRegister << std::fixed << time_taken << std::setprecision(9) << ","
+                 << costBestSolution << ","
+                 << meanDist / saParams.max_dist
+                 << "," << meanDist
+                 << "," << S
+                 << "," << costCupo
+                 << "," << penaltyParents
+                 << "," << penaltyParents/saParams.n_students
+                 << "," << saParams.count
+                 << "," << std::fixed << saParams.temp_init << std::setprecision(13)
+                 << "," << std::fixed << saParams.temp << std::setprecision(13)
+                 << "," << saParams.min_temp
+                 << "," << saParams.seed
+                 << "," << saParams.alpha1
+                 << "," << saParams.alpha2
+                 << "," << saParams.alpha3
+                 << "," << saParams.alpha4
+                 << "," << saParams.alpha[0]
+                 << "," << saParams.alpha[1]
+                 << "," << saParams.alpha[2]
+                 << "," << saParams.alpha[3]
+                 << "," << coolingRate
+                 << "," << k_reheating_init
+                 << "," << e_const
+                 << "," << n_reheating
+                 << "," << len1_init
+                 << "," << len2_init
+                 << "," << len3_init
+                 << "," << len4_init
+                 << "," << len1
+                 << "," << len2
+                 << "," << len3
+                 << "," << len4
+                 << "," << Th
+                 << "," << n_block
+                 << "," << n_thread
+                 << "," << rMgrParams.name_exp
+                 << "," << unnasigned
+                 << "," << alu_sobrecupo
+                 << "," << col_con_cupo
+                 << "," << col_sobrecupo;
+    for (int i=0; i < vector_percentage.size(); i++){
+        infoRegister << "," << vector_it_percentage.at(i);
+    }
+    infoRegister << "\n";
+
+    /*
+    Almacena la información en json
+    */
+    openRecordInfoJson();
+    json data = {
+        {"time", time_taken},
+        {"costBestSolution",costBestSolution},  
+        {"meanDist_max_dist",meanDist / saParams.max_dist},
+        {"meanDist",meanDist},
+        {"S",S},
+        {"costCupo",costCupo},
+        {"penaltyParents",penaltyParents},
+        {"PenaltyParentsNorm",penaltyParents/saParams.n_students},
+        {"saParams.count",saParams.count},
+        {"saParams.temp_init",saParams.temp_init},
+        {"saParams.temp",saParams.temp},
+        {"saParams.min_temp",saParams.min_temp},
+        {"saParams.seed",saParams.seed},
+        {"saParams.alpha1",saParams.alpha1},
+        {"saParams.alpha2",saParams.alpha2},
+        {"saParams.alpha3",saParams.alpha3},
+        {"saParams.alpha4",saParams.alpha4},
+        {"saParams.alpha[0]",saParams.alpha[0]},
+        {"saParams.alpha[1]",saParams.alpha[1]},
+        {"saParams.alpha[2]",saParams.alpha[2]},
+        {"saParams.alpha[3]",saParams.alpha[3]},
+        {"coolingRate",coolingRate},
+        {"k_reheating_init",k_reheating_init},
+        {"e_const",e_const},
+        {"n_reheating",n_reheating},
+        {"len1_init",len1_init},
+        {"len2_init",len2_init},
+        {"len3_init",len3_init},
+        {"len4_init",len4_init},
+        {"len1",len1},
+        {"len2",len2},
+        {"len3",len3},
+        {"len4",len4},
+        {"Th",Th},
+        {"n_block",n_block},
+        {"n_thread",n_thread},
+        {"rMgrParams.name_exp",rMgrParams.name_exp},
+        {"unnasigned",unnasigned},
+        {"alu_sobrecupo",alu_sobrecupo},
+        {"col_con_cupo",col_con_cupo},
+        {"col_sobrecupo",col_sobrecupo}
+    };
+    for (int i=0; i < vector_percentage.size(); i++){
+        data["percentage_"+std::to_string(vector_percentage[i])] = vector_it_percentage.at(i);
+    }
+    std::vector<json>info_json;
+    for (std::size_t x = 0; x < vector_count.size(); x++)
+    {
+        json data_solution;
+        data_solution["it"] =  vector_count.at(x);
+        data_solution["meanDist_max_dist"] = vector_meanDist.at(x) / saParams.max_dist;
+        data_solution["meanDist"] = vector_meanDist.at(x);
+        data_solution["S"] = vector_segregation.at(x);
+        data_solution["costCupo"] = vector_costoCupo.at(x);
+        data_solution["penaltyParents"] = penaltyParents/saParams.n_students;
+        data_solution["penaltyParentsNorm"] = vector_penalty.at(x);
+        data_solution["costCurrentSolution"] = vector_costCurrentSolution.at(x);
+        data_solution["temp"] = vector_temp.at(x);
+        info_json.push_back(data_solution);
+    }
+    data["info-graphics"] = info_json;
+    std::vector<double> bestSolution_vector(solution, solution + saParams.n_students);
+    data["bestSolution"] = bestSolution_vector;
+    if(empty_files[1]){
+        infoJson  << std::fixed << data.dump(4) << std::setprecision(9);
+    }
+    else{
+        infoJson << std::fixed << "," << data.dump(4) << std::setprecision(9);
+    }
+    
+    closeRecordInfoJson();
+
+
+}
+

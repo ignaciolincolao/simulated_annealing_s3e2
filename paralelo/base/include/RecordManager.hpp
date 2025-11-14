@@ -1,0 +1,146 @@
+#ifndef RECORD_MANAGER_H
+#define RECORD_MANAGER_H
+
+#include <iostream>
+#include <fstream>
+#include <vector>
+#include <array>
+#include <string>
+#include <utils/SAParameters.hpp>
+#include <Dataset.hpp>
+
+struct RecordParams
+{
+    std::string prefijo_save;
+    std::string ruta_save;
+    std::string name_exp;
+    std::vector <bool> activated_files;
+};
+
+class RecordManager
+{
+private:
+    std::ofstream info;
+    std::ofstream infoRegister;
+    std::ofstream infoGraphics;
+    std::ofstream infoGraphicsBestSolution;
+    std::ofstream infoGraphicsBestSolutionRBD;
+    std::ofstream infoSimce;
+    std::ofstream infoMove;
+    std::ofstream infoJson;
+    std::array<std::string, 8> path_names;
+    std::vector<bool> empty_files;
+    RecordParams &rMgrParams;
+    SimulatedParams &saParams;
+
+private:
+    void open_file(std::size_t n_file, std::ofstream &file);
+
+public:
+    std::vector<double> vector_costCurrentSolution;
+    std::vector<double> vector_meanDist;
+    std::vector<double> vector_segregation;
+    std::vector<double> vector_costoCupo;
+    std::vector<double> vector_penalty;
+    std::vector<double> vector_temp;
+    std::vector<int> vector_count;
+    std::vector<double> vector_historyCostSolution;
+    std::vector<double> vector_historyTemp;
+    std::vector<double> vector_historymeanDist;
+    std::vector<double> vector_historymeanDistNorm;
+    std::vector<double> vector_historySegregation;
+    std::vector<double> vector_historycostoCupo;
+    std::vector<bool> vector_historyAcceptSolution;
+    std::vector<int> vector_historystu;
+    std::vector<int> vector_historycol;
+    std::vector<double> vector_temp_percentage;
+    std::vector<double> vector_percentage;
+    std::vector<int> vector_it_percentage;
+    std::vector<bool> vector_activated_files;
+    int threshold_count = 0;
+
+public:
+    RecordManager(SimulatedParams &saParams_, RecordParams &params_);
+
+    RecordParams& getRmgrParams() { return rMgrParams; }
+
+    void openRecordInfo();
+    void openRecordRegister();
+    void openRecordGraphics();
+    void openRecordGraphicsBestSolution();
+    void openRecordGraphicsBestSolutionRBD();
+    void openRecordInfoSimce();
+    void openRecordMoveSolution();
+    void openRecordInfoJson();
+
+    void closeRecordInfo();
+    void closeRecordRegister();
+    void closeRecordGraphics();
+    void closeRecordGraphicsBestSolution();
+    void closeRecordGraphicsBestSolutionRBD();
+    void closeRecordInfoSimce();
+    void closeRecordMoveSolution();
+    void closeRecordInfoJson();
+
+    void SaveInfoInit(double costBestSolution,
+                      double meanDist,
+                      double S,
+                      double costCupo,
+                      double penaltyParents);
+
+    void SaveInfoFinish(double costPreviousSolution,
+                        double costBestSolution,
+                        double costCurrentSolution,
+                        double time_taken,
+                        double meanDist,
+                        double S,
+                        double costCupo,
+                        double penaltyParents);
+
+    void SaveInfoRegister(
+        double time_taken,
+        double costBestSolution,
+        double meanDist,
+        double S,
+        double costCupo,
+        double penaltyParents,
+        double coolingRate,
+        double k_reheating_init,
+        double e_const,
+        int n_reheating,
+        int len1_init,
+        int len2_init,
+        double len3_init,
+        double len4_init,
+        int len1,
+        int len2,
+        double len3,
+        double len4,
+        double Th,
+        int n_block,
+        int n_thread,
+        int *solution,
+        int unnasigned,
+        int alu_sobrecupo,
+        int col_con_cupo,
+        int col_sobrecupo
+    );
+
+    void SaveGraphicsInit(double meanDist,
+                          double S,
+                          double costCupo,
+                          double costCurrentSolution,
+                          double penaltyParents);
+
+    void SaveGraphicsFinish();
+    void AllGraphicsFinish();
+    void AllMovementFinish();
+
+    void SaveGraphicsBestSolution(int *solution);
+    void SaveGraphicsFirstSolutionRBD(int *solution, Info_colegio *ptr_colegios, Info_alu *ptr_students);
+    void SaveGraphicsUpdateSolutionRBD(int *solution, Info_colegio *ptr_colegios);
+
+    ~RecordManager();
+};
+
+#endif
