@@ -286,7 +286,24 @@ void CUDAWrapper::find_minimum(){
         d_previousVars,
         d_bestVars
     );
+    CUDAWrapper::synchronizeBucle();
+    int flag;
+    cudaMemcpyFromSymbol(&flag, d_flag_copy, sizeof(int));
+    if (flag==1){
+        copyMemSolution<<<cuParams.n_block,cuParams.n_thread,0,streams[0]>>>(d_bestSolution, d_currentSolution,saParams.n_students);
+        copyMemSolution<<<cuParams.n_block,cuParams.n_thread,0,streams[1]>>>(d_previousSolution, d_currentSolution,saParams.n_students);
+        copyMemCol<<<cuParams.n_block,cuParams.n_thread,0,streams[2]>>>(d_previousAluxcol, d_aluxcol,saParams.n_colegios);
+        copyMemCol<<<cuParams.n_block,cuParams.n_thread,0,streams[3]>>>(d_previousAluVulxCol, d_aluVulxCol,saParams.n_colegios);
+    }
+    if (flag==2){
+        copyMemSolution<<<cuParams.n_block,cuParams.n_thread,0,streams[1]>>>(d_previousSolution, d_currentSolution,saParams.n_students);
+        copyMemCol<<<cuParams.n_block,cuParams.n_thread,0,streams[2]>>>(d_previousAluxcol, d_aluxcol,saParams.n_colegios);
+        copyMemCol<<<cuParams.n_block,cuParams.n_thread,0,streams[3]>>>(d_previousAluVulxCol, d_aluVulxCol,saParams.n_colegios);
+    }
 
+#if !ENABLE_GPU_RECORD_TIME
+    CUDAWrapper::synchronizeBucle();
+#endif
 
 #ifdef ENABLE_GPU_RECORD_TIME
     cudaEventRecord(stop);
@@ -295,11 +312,7 @@ void CUDAWrapper::find_minimum(){
     cudaEventElapsedTime(&ms, start, stop);
     time_GPU << std::setprecision(10)<<int((ms)*1e6) <<",";
     time_GPU.flush();
-#endif
 
-    CUDAWrapper::synchronizeBucle();
-
-#ifdef ENABLE_GPU_RECORD_TIME
     cudaEventDestroy(start);
     cudaEventDestroy(stop);
 #endif
@@ -571,18 +584,6 @@ void CUDAWrapper::compute_penalty_matrix(
     //liberar lo que no se utilizara
     cudaFree(d_preferences_matrix);
     cudaFree(d_num_preferences);
-}
-
-void CUDAWrapper::shuffleGPU()
-{
-    shuffleVectorGPU<<<1, 256, saParams.max_changes_students * sizeof(int)>>>(d_shuffle_students, saParams.max_changes_students, saParams.seed, saParams.count);
-    chooseRandomSchool<<<1, 32>>>(d_shuffle_colegios, saParams.n_colegios, saParams.seed, saParams.count);
-    errSync  = cudaGetLastError();
-    errAsync = cudaDeviceSynchronize();
-    if (errSync != cudaSuccess) 
-        printf("10 Sync kernel error: %s\n", cudaGetErrorString(errSync));
-    if (errAsync != cudaSuccess)
-        printf("10 Async kernel error: %s\n", cudaGetErrorString(errAsync));
 }
 
 

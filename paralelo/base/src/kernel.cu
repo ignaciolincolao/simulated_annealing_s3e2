@@ -17,6 +17,7 @@ __device__ int    d_c_cooling_temp    = 0;
 __device__ int    d_iter              = 1;
 __device__ double d_current_temp;
 __device__ double d_costBestSolution;
+__device__ int    d_flag_copy;
 
 
 __global__ void newSolution_kernel(
@@ -217,26 +218,27 @@ __global__ void reduce_kernel(DataResult *d_array_current_Solution, int N){
     }
 }
 
-
-__global__ void reduce_kernel_update(DataResult *d_array_current_Solution, 
-                                    int N, 
-                                    GPU_move *d_matrix_solution,
-                                    double *d_currentVars,
-                                    int *d_aluxcol,
-                                    int *d_aluVulxCol,
-                                    int *d_currentSolution,
-                                    double *d_costCurrentSolution,
-                                    double *d_costPreviousSolution,
-                                    int *d_bestSolution,
-                                    int *d_previousSolution,
-                                    int *d_previousAluxcol,
-                                    int *d_previousAluVulxCol,
-                                    double *d_previousVars,
-                                    double *d_bestVars
-                                ){
+__global__ void reduce_kernel_update(
+    DataResult *d_array_current_Solution, 
+    int N, 
+    GPU_move *d_matrix_solution,
+    double *d_currentVars,
+    int *d_aluxcol,
+    int *d_aluVulxCol,
+    int *d_currentSolution,
+    double *d_costCurrentSolution,
+    double *d_costPreviousSolution,
+    int *d_bestSolution,
+    int *d_previousSolution,
+    int *d_previousAluxcol,
+    int *d_previousAluVulxCol,
+    double *d_previousVars,
+    double *d_bestVars
+){
     #define FULL_MASK 0xFFFFFFFF
     extern __shared__ DataResult sharedMem[];
     DataResult* solutions = (DataResult*)sharedMem;
+
     const int idx = blockIdx.x * blockDim.x + threadIdx.x;
     DataResult val;
     val.costSolution=(double)(0xffffffffffffffff);
@@ -244,58 +246,63 @@ __global__ void reduce_kernel_update(DataResult *d_array_current_Solution,
     val.stu = -1;
 
     if (idx < N) {
-        val.costSolution = d_array_current_Solution[idx].costSolution;
-        val.col = d_array_current_Solution[idx].col;
-        val.stu = d_array_current_Solution[idx].stu;
+        val = d_array_current_Solution[idx];
     }
-    int warpID = threadIdx.x>>5 ;
-    int threadWarp = threadIdx.x & 31;
-    __syncthreads();
 
-    // Reducción a nivel de warp, cada warp encontrara al mejor y lo dejara en la memoria compartida
-    for (int salto=16; salto>0; salto>>=1){ // salto>>=1 es igual a salto/2 
-        double neighbour_solution = __shfl_down_sync(FULL_MASK,val.costSolution,salto);
-        int col = __shfl_down_sync(FULL_MASK,val.col,salto);
-        int stu = __shfl_down_sync(FULL_MASK,val.stu,salto);
-        if(neighbour_solution < val.costSolution){
-            val.costSolution = neighbour_solution;
-            val.col = col;
-            val.stu = stu;
+    int warpID     = threadIdx.x >> 5;
+    int threadWarp = threadIdx.x & 31;
+
+    // ---- reducción intra-warp ----
+    for (int salto = 16; salto > 0; salto >>= 1) {
+        double neigh_cost = __shfl_down_sync(FULL_MASK, val.costSolution, salto);
+        int neigh_col      = __shfl_down_sync(FULL_MASK, val.col,          salto);
+        int neigh_stu      = __shfl_down_sync(FULL_MASK, val.stu,          salto);
+        if (neigh_cost < val.costSolution) {
+            val.costSolution = neigh_cost;
+            val.col          = neigh_col;
+            val.stu          = neigh_stu;
         }
     }
 
     __syncthreads();
 
-    if (threadWarp==0){
-        solutions[warpID].costSolution = val.costSolution;
-        solutions[warpID].col = val.col;
-        solutions[warpID].stu = val.stu;
+    if (threadWarp == 0) {
+        solutions[warpID] = val;
     }
     __syncthreads();
-    // Reducción entre los mejores de los warps
+
+    // ---- reducción entre warps (warp 0) ----
     DataResult val2;
-    val2.costSolution=(double)(0xffffffffffffffff);
+    val2.costSolution = (double)(0xffffffffffffffff);
     val2.col = -1;
     val2.stu = -1;
-    if(warpID == 0){
-        val = (threadIdx.x < blockDim.x/32)?solutions[threadWarp]:val2;
-        for(int salto=16; salto>0; salto>>=1){
-            double neighbour_solution = __shfl_down_sync(FULL_MASK,val.costSolution,salto);
-            int a1 = __shfl_down_sync(FULL_MASK,val.col,salto);
-            int a2 = __shfl_down_sync(FULL_MASK,val.stu,salto);
-            if(neighbour_solution < val.costSolution){
-                val.costSolution = neighbour_solution;
-                val.col = a1;
-                val.stu = a2;
+
+    if (warpID == 0) {
+        // cargar soluciones de cada warp
+        val = (threadIdx.x < (blockDim.x / 32)) ? solutions[threadWarp] : val2;
+
+        for (int salto = 16; salto > 0; salto >>= 1) {
+            double neigh_cost = __shfl_down_sync(FULL_MASK, val.costSolution, salto);
+            int    a1         = __shfl_down_sync(FULL_MASK, val.col,          salto);
+            int    a2         = __shfl_down_sync(FULL_MASK, val.stu,          salto);
+            if (neigh_cost < val.costSolution) {
+                val.costSolution = neigh_cost;
+                val.col          = a1;
+                val.stu          = a2;
             }
         }
+
         __syncthreads();
-        if(threadWarp==0){
-            //borrable
+
+        if (threadWarp == 0) {
+
+            // -----------------------------
+            // Aquí val tiene el mejor movimiento del bloque.
+            // -----------------------------
+
+            // (1) Actualizar estado actual con ese movimiento
             d_array_current_Solution[blockIdx.x].costSolution = val.costSolution;
-            //d_array_current_Solution[blockIdx.x].col = val.col;
-            d_array_current_Solution[blockIdx.x].stu = val.stu;
-            //fin borrable
+            d_array_current_Solution[blockIdx.x].stu          = val.stu;
 
             d_currentVars[0] = d_matrix_solution[val.col].currentVars[0];
             d_currentVars[1] = d_matrix_solution[val.col].currentVars[1];
@@ -303,25 +310,23 @@ __global__ void reduce_kernel_update(DataResult *d_array_current_Solution,
             d_currentVars[3] = d_matrix_solution[val.col].currentVars[3];
 
             int currentSchool = d_matrix_solution[val.col].aluxcol[0];
-            d_aluxcol[currentSchool] = d_matrix_solution[val.col].aluxcol[1];
+            d_aluxcol[currentSchool]    = d_matrix_solution[val.col].aluxcol[1];
             d_aluVulxCol[currentSchool] = d_matrix_solution[val.col].aluxcol[2];
 
             int newSchool = d_matrix_solution[val.col].aluxcol[3];
-            //d_aluxcol[newSchool] = d_matrix_solution[val.col].aluxcol[4];
-            //d_aluVulxCol[newSchool] = d_matrix_solution[val.col].aluxcol[5];
-
-            d_aluxcol[newSchool] = d_matrix_solution[val.col].aluxcol[4];
+            d_aluxcol[newSchool]    = d_matrix_solution[val.col].aluxcol[4];
             d_aluVulxCol[newSchool] = d_matrix_solution[val.col].aluxcol[5];
-            //printf("costo current: %f \n", val.costSolution);
+
             d_costCurrentSolution[0] = val.costSolution;
-
-
             d_currentSolution[val.stu] = newSchool;
 
-            //memcpy(d_currentVars, d_matrix_solution.d_currentVars, sizeof(double)*4)
-            //printf("solucion actual: %f, mejor solucion: %f, temp :%f cooling %f \n",val.costSolution,d_costBestSolution, d_current_temp, d_coolingRate);
+
+            if (val.costSolution < 0){
+                //printf("1: %f, 2: %f 3: %f, 4:%f \n",d_aluxcol[currentSchool], d_aluVulxCol[currentSchool],d_aluxcol[newSchool],d_aluVulxCol[newSchool] );
+            }
+
             if (val.costSolution < d_costBestSolution) {
-                //printf("mejor solucion: %f, iter %d, temp :%f \n",val.costSolution,d_iter, d_current_temp);
+                // Mejor absoluto
                 d_costBestSolution     = val.costSolution;
                 d_costPreviousSolution[0] = val.costSolution;
 
@@ -336,17 +341,8 @@ __global__ void reduce_kernel_update(DataResult *d_array_current_Solution,
                 d_previousVars[2] = d_currentVars[2];
                 d_previousVars[3] = d_currentVars[3];
 
-                // Copia vectores completos (forma simple y clara)
-                for (int i = 0; i < d_n_students; i++) {
-                    d_bestSolution[i]     = d_currentSolution[i];
-                    d_previousSolution[i] = d_currentSolution[i];
-                }
-                for (int i = 0; i < d_n_colegios; i++) {
-                    d_previousAluxcol[i]   = d_aluxcol[i];
-                    d_previousAluVulxCol[i] = d_aluVulxCol[i];
-                }
-
                 d_c_accepta++;
+                d_flag_copy = 2;  // actualizar best y previous
 
             } else {
                 int accept = acceptanceCriterionGPU(
@@ -356,7 +352,7 @@ __global__ void reduce_kernel_update(DataResult *d_array_current_Solution,
                     d_seed,
                     (unsigned long long)d_iter
                 );
-                if (accept == 1){
+                if (accept == 1) {
                     d_costPreviousSolution[0] = val.costSolution;
 
                     d_previousVars[0] = d_currentVars[0];
@@ -364,17 +360,14 @@ __global__ void reduce_kernel_update(DataResult *d_array_current_Solution,
                     d_previousVars[2] = d_currentVars[2];
                     d_previousVars[3] = d_currentVars[3];
 
-                    for (int i = 0; i < d_n_students; i++) {
-                        d_previousSolution[i] = d_currentSolution[i];
-                    }
-
-                    for (int i = 0; i < d_n_colegios; i++) {
-                        d_previousAluxcol[i]   = d_aluxcol[i];
-                        d_previousAluVulxCol[i] = d_aluVulxCol[i];
-                    }
                     d_c_accepta++;
+                    d_flag_copy = 1;  // solo previous
+                } else {
+                    d_flag_copy = 0;  // rechazado: no copiar arrays
                 }
             }
+
+            // Cooling (lo deja listo para la siguiente iteración)
             coolingCriterionGPU(
                 d_c_accepta,
                 d_iter,
@@ -385,10 +378,9 @@ __global__ void reduce_kernel_update(DataResult *d_array_current_Solution,
                 d_coolingRate
             );
             d_iter++;
-
-
         }
     }
+    __syncthreads();
 }
 
 
