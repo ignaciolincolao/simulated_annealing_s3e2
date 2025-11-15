@@ -169,8 +169,8 @@ double SimulatedAnnealing::runGPU(){
         ///  Selecciona aleatoria mente a los alumnos
         ///////////////////////////////////////////////////
         shuffle(saParams.shuffle_student, saParams.max_changes_students, dist);
-        shuffle_col(saParams.shuffle_colegios, dist2);
-        //shuffle(saParams.shuffle_colegios, saParams.max_changes_school, dist2);
+        //shuffle_col(saParams.shuffle_colegios, dist2);
+        shuffle(saParams.shuffle_colegios, saParams.max_changes_school, dist2);
 
         ///////////////////////////////////////////////////
         ///  Envia datos a GPU
@@ -202,9 +202,7 @@ double SimulatedAnnealing::runGPU(){
         #endif
 
         saParams.count++;
-        if (saParams.count % 1000 == 0){
-            cudaMemcpyFromSymbol(&saParams.temp, d_current_temp, sizeof(double));
-        }
+        cudaMemcpyFromSymbol(&saParams.temp, d_current_temp, sizeof(double));
 
         #ifdef ENABLE_GPU_RECORD_TIME
         auto end_post = std::chrono::high_resolution_clock::now();

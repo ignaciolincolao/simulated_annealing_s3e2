@@ -25,6 +25,7 @@ extern __constant__ double d_coolingRate;
 extern __constant__ int d_seed;
 extern __device__ double d_current_temp;
 extern __device__ double d_costBestSolution;
+extern __device__ int    d_flag_copy;
 
 
 
