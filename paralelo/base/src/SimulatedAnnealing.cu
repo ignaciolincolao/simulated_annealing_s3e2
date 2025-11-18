@@ -1256,7 +1256,8 @@ int* SimulatedAnnealing::summaryCostoCupo(const int* currentSolution,
     }
 
     for (int j = 0; j < n_colegios; ++j) {
-        int capacidad = (int)std::floor(colegios[j].num_alu * 1.1); 
+        //int capacidad = (int)std::floor(colegios[j].num_alu * 1.1); 
+        int capacidad = colegios[j].cupos;
         int ocup = ocupados[j];
         int vacantes = capacidad - ocup;
 
