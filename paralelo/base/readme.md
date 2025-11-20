@@ -49,3 +49,5 @@ para windows se puede utilizar vcpkg y decirle a cmake que lea las librerias de 
 -DCMAKE_TOOLCHAIN_FILE=(ruta a vcpkg)/vcpkg/scripts/buildsystems/vcpkg.cmake
 
 nsys profile --stats=true --cuda-memory-usage=true -o parelelo-reduce-2 paralelo
+
+cmake -DBUILD_SHARED_LIB=OFF -DENABLE_SAVE_DATA=ON -DENABLE_OPEN_RECORD_INFO=OFF -DENABLE_OPEN_RECORD_GRAPHICS=OFF -DENABLE_OPEN_RECORD_GRAPHICS_BEST_SOLUTION=OFF -DENABLE_OPEN_RECORD_REGISTER=ON -DENABLE_OPEN_ITERATION_REGISTER=OFF -DENABLE_OPEN_RECORD_MOVE_SOLUTION=OFF -DENABLE_GPU_RECORD_TIME=OFF -DCMAKE_BUILD_TYPE=Release ..

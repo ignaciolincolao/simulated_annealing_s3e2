@@ -390,7 +390,7 @@ double SimulatedAnnealing::runGPU(){
         cuParams.n_thread,
         bestSolution,
         unassigned,
-        data_costocupo[1],
+        data_costocupo[3],
         data_costocupo[0],
         data_costocupo[2]
 
@@ -1252,16 +1252,17 @@ int* SimulatedAnnealing::summaryCostoCupo(const int* currentSolution,
     //[0] = colegios con cupos
     //[1] = cupos restantes totales
     //[2] = colegios en sobrecupo
-    int* resumen = new int[3]();
+    int* resumen = new int[4]();
 
     std::ofstream fout("summaryCupos.txt");
     if (!fout.is_open()) {
         std::cerr << "Error abriendo summaryCupos.txt\n";
     }
-
+    int capacidad_total = 0;
     for (int j = 0; j < n_colegios; ++j) {
         //int capacidad = (int)std::floor(colegios[j].num_alu * 1.1); 
         int capacidad = colegios[j].cupos;
+        capacidad_total += capacidad;
         int ocup = ocupados[j];
         int vacantes = capacidad - ocup;
 
@@ -1276,9 +1277,10 @@ int* SimulatedAnnealing::summaryCostoCupo(const int* currentSolution,
         fout << colegios[j].rbd << "\t" << capacidad << "\t" << ocup << "\n";
     }
     fout.close();
+    resumen[4] = resumen[1] - (capacidad_total-saParams.n_students);
     std::cout << "\n" << "Colegios aun con vacantes: " << resumen[0]
-            << " | Vacantes totales restantes: " << resumen[1] << " | colegios en sobrecupo: " << resumen[2] << "\n";
-    resumen[1] = resumen[1] - 277;
+            << " | Vacantes totales restantes: " << resumen[1] << " | colegios en sobrecupo: " << resumen[2] 
+            << " | Alumnos en sobrecupo "<< resumen[4] << "\n";
     return resumen;
 
 }
