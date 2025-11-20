@@ -56,6 +56,7 @@ CUDAWrapper::~CUDAWrapper(){
 
     //variables de update de penalty
     cudaFree(d_penalty_matrix);
+    cudaFree(d_matrix_solution);
     
     cudaEventDestroy(start_cuda);
     cudaEventDestroy(stop_cuda);
