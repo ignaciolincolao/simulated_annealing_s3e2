@@ -9,7 +9,8 @@ if (WIN32)
 endif (WIN32)
 
 if (UNIX)
-    set(CMAKE_CUDA_COMPILER /usr/bin/nvcc)
+    set(CMAKE_CUDA_COMPILER /usr/local/cuda-12.4/bin/nvcc)
+    #set(CMAKE_CUDA_COMPILER /usr/bin/nvcc)
     set(CMAKE_CUDA_ARCHITECTURES 52 60 61 75 86 89) 
 endif (UNIX)
 
@@ -39,7 +40,9 @@ option(ENABLE_OPEN_RECORD_INFO "Enable openRecordInfo" OFF)
 option(ENABLE_OPEN_RECORD_GRAPHICS "Enable openRecordGraphics" OFF)
 option(ENABLE_OPEN_RECORD_GRAPHICS_BEST_SOLUTION "Enable openRecordGraphicsBestSolution" OFF)
 option(ENABLE_OPEN_RECORD_GRAPHICS_BEST_SOLUTION_RBD "Enable openRecordGraphicsBestSolutionRBD" OFF)
-option(ENABLE_OPEN_RECORD_REGISTER "Enable openRecordRegister" OFF)
+#la flag que importa es ENABLE_OPEN_RECORD_REGISTER
+option(ENABLE_OPEN_RECORD_REGISTER "Enable openRecordRegister" ON)
+option(ENABLE_OPEN_ITERATION_REGISTER "Enable openIterationRegister" ON)
 option(ENABLE_OPEN_RECORD_MOVE_SOLUTION "Enable openRecordMoveSolution" OFF)
 option(ENABLE_GPU_RECORD_TIME "Enable GPURecordTime" OFF)
 
@@ -74,6 +77,11 @@ endif()
 if (ENABLE_GPU_RECORD_TIME)
     add_definitions(-DENABLE_GPU_RECORD_TIME)
 endif()
+
+if (ENABLE_OPEN_ITERATION_REGISTER)
+    add_definitions(-DENABLE_OPEN_ITERATION_REGISTER)
+endif()
+
 
 
 include_directories(${PROJECT_SOURCE_DIR}/include)
@@ -110,6 +118,19 @@ else()
     configure_file(${CMAKE_CURRENT_SOURCE_DIR}/data/data_alu_utmv4.txt ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
     configure_file(${CMAKE_CURRENT_SOURCE_DIR}/data/data_col_utmv4.txt ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
     configure_file(${CMAKE_CURRENT_SOURCE_DIR}/data/data_parents_utmv4.txt ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
+    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/data/df_alu_SAE_2018.txt ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
+    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/data/df_alu_SAE_2019.txt ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
+    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/data/df_alu_SAE_2022.txt ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
+    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/data/df_alu_SAE_2023.txt ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
+    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/data/df_col_SAE_2018.txt ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
+    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/data/df_col_SAE_2019.txt ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
+    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/data/df_col_SAE_2022.txt ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
+    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/data/df_col_SAE_2023.txt ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
+    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/data/df_pref_SAE_2018.txt ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
+    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/data/df_pref_SAE_2019.txt ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
+    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/data/df_pref_SAE_2022.txt ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
+    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/data/df_pref_SAE_2023.txt ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
+
 
     target_link_libraries(grid_executable PRIVATE nlohmann_json::nlohmann_json)
     target_link_libraries(paralelo PRIVATE nlohmann_json::nlohmann_json)

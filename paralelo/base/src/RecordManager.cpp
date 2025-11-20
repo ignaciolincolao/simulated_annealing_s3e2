@@ -459,6 +459,8 @@ void RecordManager::SaveInfoRegister(
     for (int i=0; i < vector_percentage.size(); i++){
         data["percentage_"+std::to_string(vector_percentage[i])] = vector_it_percentage.at(i);
     }
+    #if ENABLE_OPEN_ITERATION_REGISTER
+
     std::vector<json>info_json;
     for (std::size_t x = 0; x < vector_count.size(); x++)
     {
@@ -477,6 +479,7 @@ void RecordManager::SaveInfoRegister(
     data["info-graphics"] = info_json;
     std::vector<double> bestSolution_vector(solution, solution + saParams.n_students);
     data["bestSolution"] = bestSolution_vector;
+    #endif
     if(empty_files[1]){
         infoJson  << std::fixed << data.dump(4) << std::setprecision(9);
     }

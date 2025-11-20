@@ -41,7 +41,7 @@ float len1;
 float len2;
 int count = 0;
 
-void algorithm_sample(const double config[4],  string timestr, string pathSave,int argc, char *argv[]){
+void algorithm_sample(const double config[4], int seed,  string timestr, string pathSave,int argc, char *argv[]){
     random_device rd;
     mt19937 mt(rd());
 
@@ -52,7 +52,7 @@ void algorithm_sample(const double config[4],  string timestr, string pathSave,i
                 .name_exp = "base",
                 .activated_files = {false,true,false,false,false}};
 
-    seed = mt();
+    //seed = mt();
     SimulatedParams* saParams = new SimulatedParams{
         .seed = seed,
         .n_students = 0,
@@ -77,7 +77,7 @@ void algorithm_sample(const double config[4],  string timestr, string pathSave,i
         .costPrevious = 0.0,
         .costCurrent = 0.0,
         .alpha = {config[0], config[1], config[2], config[3]},
-        .max_choices = 10,
+        .max_choices = 12,
         .penalty_curve = 0.5f,      //parametro que indica que tan curva es la maquina
         .penalty_max_pref = 0.5f   //maxima penalidad por la ultima preferencia
     };
@@ -85,7 +85,7 @@ void algorithm_sample(const double config[4],  string timestr, string pathSave,i
     AcceptanceParams* acParams = new AcceptanceParams{
         .Th = 1.1};
     CoolingParams* csParams = new CoolingParams{
-        .coolingRate = 0.97};
+        .coolingRate = 0.98};
     LengthParams* ltParams = new LengthParams{
         .len1 = 1,
         .len2 = 2,
@@ -99,7 +99,7 @@ void algorithm_sample(const double config[4],  string timestr, string pathSave,i
         .k_reheating_init = 0};
 
     CUDAParams* cuParams = new CUDAParams{
-        .n_block = 94,
+        .n_block = 31,
         .n_thread = 32,
         .selectThread = 0,
         .selectBlock = 0};
@@ -129,7 +129,7 @@ void algorithm_sample(const double config[4],  string timestr, string pathSave,i
     csParams->coolingRate = coolingRate;
     ltParams->len1 = len1;
     ltParams->len2 = len2;
-    cout<< " | n_iter= " << count
+    cout<< " | n_iters= " << count
         << " | a_dist= " << config[0]
         << " | a_seg= "  << config[1]
         << " | a_costcup= " << config[2]
@@ -242,6 +242,7 @@ random_device rd;
     // Rejilla en el simplex truncado: p_i = 0.1 + k_i*delta_eff, sum k_i = L
     // Iteramos con 3 bucles y cerramos con k4 = L - k1 - k2 - k3.
 
+    int seed = 1000000;
     for (long k1 = 0; k1 <= L; ++k1) {
         for (long k2 = 0; k2 <= L - k1; ++k2) {
             for (long k3 = 0; k3 <= L - k1 - k2; ++k3) {
@@ -258,7 +259,8 @@ random_device rd;
                         continue;
                     }else{
                         double config[4] = {p1, p2, p3, p4};
-                        algorithm_sample(config, timestr, file_name,argc,argv);
+                        algorithm_sample(config, seed, timestr, file_name,argc,argv);
+                        seed ++;
                     }
                 }
             }
@@ -266,7 +268,7 @@ random_device rd;
     }
 
 
-    
+
     
     return (EXIT_SUCCESS);
 }

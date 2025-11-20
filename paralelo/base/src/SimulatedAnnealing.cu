@@ -154,6 +154,7 @@ double SimulatedAnnealing::runGPU(){
     tiempoGPU.open("../../save/tiempo_GPU.txt", std::ios::app);
     #endif
 
+
     while(saParams.temp > saParams.min_temp){
         #ifdef ENABLE_GPU_RECORD_TIME
         auto start_shuffle = std::chrono::high_resolution_clock::now();
@@ -243,7 +244,8 @@ double SimulatedAnnealing::runGPU(){
             //cout << costCurrentSolution << " | " << saParams.count <<  endl;
 
 #if SAVE_DATA
-    #ifdef ENABLE_OPEN_RECORD_REGISTER       
+    #ifdef ENABLE_OPEN_RECORD_REGISTER
+        #ifdef ENABLE_OPEN_ITERATION_REGISTER      
             cudaWrapper->copySolutionToHost(bestSolution, previousSolution);
             recordManager->vector_costCurrentSolution.emplace_back(costBestSolution);
             recordManager->vector_meanDist.emplace_back(meanDist(bestSolution, distMat));
@@ -252,6 +254,7 @@ double SimulatedAnnealing::runGPU(){
             recordManager->vector_penalty.emplace_back(penaltyParents(bestSolution,h_penalty_matrix));
             recordManager->vector_temp.emplace_back(saParams.temp);
             recordManager->vector_count.emplace_back(saParams.count);
+        #endif
     #endif
     #ifdef ENABLE_OPEN_RECORD_MOVE_SOLUTION
         recordManager->vector_historyAcceptSolution.emplace_back(true);
@@ -277,6 +280,7 @@ double SimulatedAnnealing::runGPU(){
 
 #if SAVE_DATA
     #ifdef ENABLE_OPEN_RECORD_MOVE_SOLUTION
+
                 recordManager->vector_historyAcceptSolution.emplace_back(false);
     #endif
 #endif
