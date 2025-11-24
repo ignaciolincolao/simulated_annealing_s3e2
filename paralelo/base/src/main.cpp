@@ -85,7 +85,7 @@ int main(int argc, char *argv[])
         .k_reheating_init = 0};
 
     CUDAParams* cuParams = new CUDAParams{
-        .n_block = 94,
+        .n_block = 31,
         .n_thread = 32,
         .selectThread = 0,
         .selectBlock = 0};

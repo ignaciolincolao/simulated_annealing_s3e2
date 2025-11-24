@@ -120,7 +120,7 @@ public:
         int n_block,
         int n_thread,
         int *solution,
-        int unnasigned,
+        int* summaryPrefs,
         int alu_sobrecupo,
         int col_con_cupo,
         int col_sobrecupo

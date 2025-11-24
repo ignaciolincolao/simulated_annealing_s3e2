@@ -308,7 +308,7 @@ void RecordManager::SaveInfoRegister(
     int n_block,
     int n_thread,
     int *solution,
-    int unnasigned,
+    int* summaryPrefs,
     int alu_sobrecupo,
     int col_con_cupo,
     int col_sobrecupo
@@ -352,10 +352,13 @@ void RecordManager::SaveInfoRegister(
                  << "," << "n_block"
                  << "," << "n_thread"
                  << "," << "rMgrParams.name_exp"
-                 << "," << "unnasigned"
                  << "," << "alu_sobrecupo"
                  << "," << "col_con_cupo"
                  << "," << "col_sobrecupo";
+        for (int i=0; i < saParams.max_choices; i++){
+            infoRegister << "," << "pref_" << i+1;
+        }
+        infoRegister << "," << "unnasigned";
 
         for (int i=0; i < vector_percentage.size(); i++){
             infoRegister << "," << "percentage_" << vector_percentage[i];
@@ -400,10 +403,13 @@ void RecordManager::SaveInfoRegister(
                  << "," << n_block
                  << "," << n_thread
                  << "," << rMgrParams.name_exp
-                 << "," << unnasigned
                  << "," << alu_sobrecupo
                  << "," << col_con_cupo
                  << "," << col_sobrecupo;
+    for (int i=0; i < saParams.max_choices; i++){
+        infoRegister << "," << summaryPrefs[i];
+    }
+    infoRegister << "," << summaryPrefs[saParams.max_choices];
     for (int i=0; i < vector_percentage.size(); i++){
         infoRegister << "," << vector_it_percentage.at(i);
     }
@@ -451,7 +457,6 @@ void RecordManager::SaveInfoRegister(
         {"n_block",n_block},
         {"n_thread",n_thread},
         {"rMgrParams.name_exp",rMgrParams.name_exp},
-        {"unnasigned",unnasigned},
         {"alu_sobrecupo",alu_sobrecupo},
         {"col_con_cupo",col_con_cupo},
         {"col_sobrecupo",col_sobrecupo}

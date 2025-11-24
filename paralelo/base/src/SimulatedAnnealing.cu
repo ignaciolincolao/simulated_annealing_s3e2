@@ -190,8 +190,6 @@ double SimulatedAnnealing::runGPU(){
         //cudaWrapper->sortSolutions();
         //UpdateProb(saParams.count);
         id_select= 0;//selecSolution();
-
-        
     
         ///////////////////////////////////////////////////
         ///  Actualiza la nueva solución en la GPU
@@ -389,7 +387,7 @@ double SimulatedAnnealing::runGPU(){
         cuParams.n_block,
         cuParams.n_thread,
         bestSolution,
-        unassigned,
+        summaryPrefs,
         data_costocupo[3],
         data_costocupo[0],
         data_costocupo[2]

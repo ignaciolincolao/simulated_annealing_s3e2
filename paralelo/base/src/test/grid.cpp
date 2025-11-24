@@ -87,8 +87,8 @@ void algorithm_sample(const double config[4], int seed,  string timestr, string 
     CoolingParams* csParams = new CoolingParams{
         .coolingRate = 0.98};
     LengthParams* ltParams = new LengthParams{
-        .len1 = 1,
-        .len2 = 2,
+        .len1 = 5,
+        .len2 = 5,
         .len3 = 1.0,
         .len4 = 0.999};
     ReheatingParams* rtParams = new ReheatingParams{
