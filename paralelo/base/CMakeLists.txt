@@ -43,7 +43,7 @@ option(ENABLE_OPEN_RECORD_GRAPHICS_BEST_SOLUTION_RBD "Enable openRecordGraphicsB
 #la flag que importa es ENABLE_OPEN_RECORD_REGISTER
 option(ENABLE_OPEN_RECORD_REGISTER "Enable openRecordRegister" ON)
 option(ENABLE_OPEN_ITERATION_REGISTER "Enable openIterationRegister" ON)
-option(ENABLE_OPEN_RECORD_MOVE_SOLUTION "Enable openRecordMoveSolution" OFF)
+option(ENABLE_OPEN_RECORD_MOVE_SOLUTION "Enable openRecordMoveSolution" ON)
 option(ENABLE_GPU_RECORD_TIME "Enable GPURecordTime" OFF)
 
 if (ENABLE_OPEN_RECORD_INFO)

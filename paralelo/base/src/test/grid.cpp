@@ -146,55 +146,8 @@ void algorithm_sample(const double config[4], int seed,  string timestr, string 
             cuParams,
             mt);
 
-    double val = simulatedAnneling->runGPU();
-    it = simulatedAnneling->saParams.count;
-    count++;
-
-
-    std::ifstream inFile(pathSave);
-    bool isEmpty = inFile.peek() == std::ifstream::traits_type::eof();
-    inFile.close();
-    std::ofstream fileData(pathSave, std::ios::app);
-    if (!fileData.is_open()) {
-        std::cerr << "Error al abrir el archivo para escritura." << std::endl;
-        exit(1);
-    }
-    if (fileData.is_open()) {
-        if (isEmpty) {
-            fileData << "seed,"
-                <<  "z,"
-                <<  "it,"
-                <<  "n_block,"
-                <<  "n_thread,"
-                <<  "temp,"
-                <<  "coolingRate,"
-                <<  "len1,"
-                <<  "len2";
-                for (int i=0; i < simulatedAnneling->recordManager->vector_percentage.size(); i++){
-                    fileData << "," << simulatedAnneling->recordManager->vector_percentage.at(i);
-                }
-                fileData << endl;
-        }
-        fileData << seed << ","
-                    << val << ","
-                    << it << ","
-                    << n_block << ","
-                    << n_thread << ","
-                    << temp << ","
-                    << coolingRate << ","
-                    << len1 << ","
-                    << len2;
-        for (int i=0; i < simulatedAnneling->recordManager->vector_percentage.size(); i++){
-            fileData << "," << simulatedAnneling->recordManager->vector_it_percentage.at(i);
-        }
-        fileData << endl;
-    }
-    else{
-        std::cerr << "No se pudo abrir el archivo " << pathSave << std::endl;
-        }
-
-
-
+    simulatedAnneling->runSAE();
+    //simulatedAnneling->runGPU();
 
 
     
@@ -229,7 +182,7 @@ random_device rd;
 
 
 
-    
+    /*
 
     double delta_in = 0.10;  // paso deseado (puedes cambiarlo)
 
@@ -254,7 +207,7 @@ random_device rd;
                 double p4 = 0.1 + k4 * delta_eff;
 
                 // Verificación numérica de suma 1 (tolerancia eps)
-                for (int i=0; i<50; i++){
+                for (int i=0; i<100; i++){
                     if (count < init){
                         continue;
                     }else{
@@ -267,6 +220,13 @@ random_device rd;
         }
     }
 
+    */
+    int seed = 1000000;
+    for (int i=0; i<1000; i++){
+        double config[4] = {0.1, 0.2, 0.1, 0.6};
+        algorithm_sample(config, seed, timestr, file_name,argc,argv);
+        seed ++;
+    }
 
 
     

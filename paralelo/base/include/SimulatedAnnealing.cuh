@@ -150,6 +150,12 @@ public:
     double calcCostoCupo_sobrecupo(double p_costCupo);
 
     double runCPU();
+    void runSAE();
+
+    void guardarResultadoSAE(const std::string& filename,
+                        double var1, double var2, double var3, double var4,
+                        const std::vector<int>& asignacion_por_pref,
+                        int max_choices);
 };
 
 #endif

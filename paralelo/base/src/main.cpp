@@ -33,13 +33,15 @@ int main(int argc, char *argv[])
                 .name_exp = "base",
                 .activated_files = {true,true,true,true,true}};
 
-    double alp1 = 0.2; //distancia
-    double alp2 = 0.3; //segregacion
+    //configuracion tesis 0.1 0.2 0.1 0.6            
+    double alp1 = 0.1; //distancia
+    double alp2 = 0.2; //segregacion
     double alp3 = 0.1; //costocupo
-    double alp4 = 0.4; //penalty parents
+    double alp4 = 0.6; //penalty parents
+
     SimulatedParams* saParams = new SimulatedParams{
         //.seed = 1574067955,
-        .seed = 1574067956,
+        .seed = 1000008,
         .n_students = 0,
         .n_colegios = 0,
         .count_rechaso = 0,
@@ -50,7 +52,7 @@ int main(int argc, char *argv[])
         .k = 0.01,
         .pMax = 0.3,
         .pInit = 0.01,
-        .temp = 32768.0,
+        .temp = 100000,
         .min_temp = 0.00000009,
         .alpha1 = alp1,
         .alpha2 = alp2,
@@ -68,13 +70,13 @@ int main(int argc, char *argv[])
         .penalty_max_pref = 0.5f   //maxima penalidad por la ultima preferencia
     };
 
-    AcceptanceParams* acParams = new AcceptanceParams{
+AcceptanceParams* acParams = new AcceptanceParams{
         .Th = 1.1};
     CoolingParams* csParams = new CoolingParams{
         .coolingRate = 0.98};
     LengthParams* ltParams = new LengthParams{
-        .len1 = 5,
-        .len2 = 5,
+        .len1 = 1,
+        .len2 = 2,
         .len3 = 1.0,
         .len4 = 0.999};
     ReheatingParams* rtParams = new ReheatingParams{
@@ -109,7 +111,8 @@ int main(int argc, char *argv[])
             cuParams,
             mt);
 
-    simulatedAnneling->runGPU();
+    //simulatedAnneling->runGPU();
+    simulatedAnneling->runSAE();
     //simulatedAnneling->runCPU();
     //simulatedAnneling->ValidateGPU();
     delete simulatedAnneling;

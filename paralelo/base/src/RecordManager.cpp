@@ -475,7 +475,7 @@ void RecordManager::SaveInfoRegister(
         data_solution["meanDist"] = vector_meanDist.at(x);
         data_solution["S"] = vector_segregation.at(x);
         data_solution["costCupo"] = vector_costoCupo.at(x);
-        data_solution["penaltyParents"] = penaltyParents/saParams.n_students;
+        data_solution["penaltyParents"] = vector_penalty.at(x)/saParams.n_students;
         data_solution["penaltyParentsNorm"] = vector_penalty.at(x);
         data_solution["costCurrentSolution"] = vector_costCurrentSolution.at(x);
         data_solution["temp"] = vector_temp.at(x);
