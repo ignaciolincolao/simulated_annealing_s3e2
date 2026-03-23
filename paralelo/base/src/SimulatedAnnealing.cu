@@ -1628,7 +1628,7 @@ void SimulatedAnnealing::asignacionSAE(
         int rbd = idx2rbd[j];
         if (vac_by_rbd[rbd] > 0) ++colegios_con_vac_final;
     }
-    
+
     //rearmado del vector solucion en rbd
     std::vector<int> sol_idx(solution.size());
     std::transform(solution.begin(), solution.end(), sol_idx.begin(),
@@ -2124,7 +2124,7 @@ void SimulatedAnnealing::runSAE(){
 
     std::vector<int> solution;
     asignacionSAE(dataSet->students, dataSet->colegios, solution);
-    summaryCostoCupo(solution.data(), dataSet->colegios);
+    //summaryCostoCupo(solution.data(), dataSet->colegios);
 
 }
 

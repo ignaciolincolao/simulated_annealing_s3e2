@@ -1,0 +1,2 @@
+seed,distancia,segregacion,costocupo,penalty,Z,pref_1,pref_2,pref_3,pref_4,pref_5,pref_6,pref_7,pref_8,pref_9,pref_10,pref_11,pref_12,unassigned
+1000008,-nan(ind),0,-nan(ind),-nan(ind),-nan(ind),0,0,0,0,0,0,0,0,0,0,0,0,0

@@ -40,8 +40,8 @@ int main(int argc, char *argv[])
     double alp4 = 0.6; //penalty parents
 
     SimulatedParams* saParams = new SimulatedParams{
-        //.seed = 1574067955,
-        .seed = 1000008,
+        //.seed = 1574067954,
+        .seed = 1000009,
         .n_students = 0,
         .n_colegios = 0,
         .count_rechaso = 0,
@@ -111,7 +111,7 @@ AcceptanceParams* acParams = new AcceptanceParams{
             cuParams,
             mt);
 
-    //simulatedAnneling->runGPU();
+    simulatedAnneling->runGPU();
     simulatedAnneling->runSAE();
     //simulatedAnneling->runCPU();
     //simulatedAnneling->ValidateGPU();
